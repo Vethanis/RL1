@@ -128,6 +128,7 @@ void Window::Poll(Camera& cam)
         v.y -= glfwGetKey(m_window, GLFW_KEY_LEFT_SHIFT)    ? 1.0f : 0.0f;
     }
 
+    cam.resize(m_width, m_height);
     cam.move(v * m_dt);
     cam.yaw(m_dcx * m_dt * 1000.0f);
     cam.pitch(m_dcy * m_dt * 1000.0f);
