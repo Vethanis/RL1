@@ -7,15 +7,22 @@
 
 #include "sokol_time.h"
 
+struct ResMeta
+{
+    uint64_t    m_timestamp;            // last time touched by entity
+    int32_t     m_name;                 // unique identifier, gives means to lookup path or indirect key
+    uint8_t     m_loader;               // which loader to use. ie generated vs load a file
+    uint8_t     m_loaded        : 1;    // is loaded        -> m_data valid
+    uint8_t     m_initialized   : 1;    // is initialized   -> m_item valid
+};
+
 template<typename T>
 struct Resources
 {
-    struct Metadata;
-
-    typedef void (*LoadFn)(T&, Metadata&);
-    typedef void (*FreeFn)(T&, Metadata&);
-    typedef void (*InitFn)(T&, Metadata&);
-    typedef void (*ShutdownFn)(T&, Metadata&);
+    typedef void (*LoadFn)(     T&, const ResMeta&);
+    typedef void (*FreeFn)(     T&, const ResMeta&);
+    typedef void (*InitFn)(     T&, const ResMeta&);
+    typedef void (*ShutdownFn)( T&, const ResMeta&);
 
     struct Loader
     {
@@ -25,18 +32,9 @@ struct Resources
         ShutdownFn  m_shutdown;     // shutdown fn  (sync)
     };
 
-    struct Metadata
-    {
-        uint64_t    m_timestamp;            // last time touched by entity
-        int32_t     m_name;                 // unique identifier, gives means to lookup path or indirect key
-        uint8_t     m_loader;               // which loader to use. ie generated vs load a file
-        uint8_t     m_loaded        : 1;    // is loaded        -> m_data valid
-        uint8_t     m_initialized   : 1;    // is initialized   -> m_item valid
-    };
-
     struct Item
     {
-        Metadata    meta;
+        ResMeta     meta;
         T           t;
     };
 
@@ -55,18 +53,52 @@ struct Resources
         d.data = this;
         d.fn = ComponentDestructor;
         RegisterDestructor(d);
+        RegisterLoader(
+            [](T&, const ResMeta&){},
+            [](T&, const ResMeta&){},
+            [](T&, const ResMeta&){},
+            [](T&, const ResMeta&){});
     }
-    uint8_t RegisterLoader(const Loader& loader)
+    uint8_t RegisterLoader(
+        LoadFn      loadFn, 
+        FreeFn      freeFn, 
+        InitFn      initFn, 
+        ShutdownFn  shutdownFn)
     {
+        Loader loader;
+        loader.m_load = loadFn;
+        loader.m_free = freeFn;
+        loader.m_init = initFn;
+        loader.m_shutdown = shutdownFn;
         m_loaders.grow() = loader;
         return (uint8_t)m_loaders.count() - 1u;
+    }
+    inline int32_t Count() const 
+    {
+        return m_items.Count();
+    }
+    inline T& Get(int32_t i)
+    {
+        return m_items.Get(i).t;
+    }
+    inline const T& Get(int32_t i) const
+    {
+        return m_items.Get(i).t;
+    }
+    inline Item& GetItem(int32_t i)
+    {
+        return m_items.Get(i);
+    }
+    inline const Item& GetItem(int32_t i) const
+    {
+        return m_items.Get(i);
     }
     void Add(Slot s, int32_t name, uint8_t loader)
     {
         m_items.Add(s);
         Item* item = m_items.Get(s);
         memset(item, 0, sizeof(Item));
-        Metadata& meta = item->meta;
+        ResMeta& meta = item->meta;
         meta.m_name = name;
         meta.m_loader = loader;
         meta.m_timestamp = stm_now();
@@ -76,7 +108,7 @@ struct Resources
         Item* item = m_items.Get(s);
         if(item)
         {
-            Metadata& meta = item->meta;
+            ResMeta& meta = item->meta;
             Loader& loader = m_loaders[meta.m_loader];
             if(meta.m_initialized)
             {
@@ -98,7 +130,7 @@ struct Resources
         Item* item = m_items.Get(s);
         if(item)
         {
-            Metadata& meta = item->meta;
+            ResMeta& meta = item->meta;
             meta.m_timestamp = stm_now();
 
             int32_t ready = 2;
@@ -196,7 +228,7 @@ struct Resources
         Item* item = m_slots.Get(s);
         if(item)
         {
-            Metadata& meta = item->meta;
+            ResMeta& meta = item->meta;
             if(!meta.m_loaded)
             {
                 Loader& loader = m_loaders[meta.m_loader];
@@ -210,7 +242,7 @@ struct Resources
         Item* item = m_slots.Get(s);
         if(item)
         {
-            Metadata& meta = item->meta;
+            ResMeta& meta = item->meta;
             if(meta.m_loaded)
             {
                 Loader& loader = m_loaders[meta.m_loader];
@@ -225,7 +257,7 @@ struct Resources
         Item* item = m_slots.Get(s);
         if(item)
         {
-            Metadata& meta = item->meta;
+            ResMeta& meta = item->meta;
             if(meta.m_loaded)
             {
                 if(!meta.m_initialized)
@@ -246,7 +278,7 @@ struct Resources
         Item* item = m_slots.Get(s);
         if(item)
         {
-            Metadata& meta = item->meta;
+            ResMeta& meta = item->meta;
             if(meta.m_initialized)
             {
                 Loader& loader = m_loaders[meta.m_loader];
