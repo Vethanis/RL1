@@ -1,0 +1,21 @@
+proposed mechanics and ideas:
+
+    DOOM roguelike, where possession is the core mechanic.
+
+    Start as a disembodied spirit wandering in a dark fog, occasionally stumbling into 
+    posessable characters.
+
+    Upon posession, you have little to no control over the character, but gradually gain
+    influence over where the character goes and what the character does.
+
+    Eventually you gain full control, the character is effectively a zombie that groans
+    as you force it to do your bidding.
+
+    If you weaken another character to a certain degree, you may attempt to possess that 
+    other character, losing the stats stored in your previous character but carrying over
+    augmentations to your spirit.
+
+    Character progression is capped, but spirit progression is not.
+
+    Each character has a different starting and ending ability capacity,
+    which is the reason why you would want to possess a defeated character.

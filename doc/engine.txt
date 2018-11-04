@@ -1,0 +1,19 @@
+all the game assets and shared resources should be in slots. 
+texture slots, mesh slots, transforms, rigidbodies, etc
+
+each slot will have an integer ID, a name, an indication of if it is loaded, a timestamp,
+and two function pointers: one to load, one to unload. 
+
+we should also provide a name service that takes a name and gives an ID. 
+ideally using hashed strings (fnv1a 64 bit)
+
+The timestamp represents last time that asset was touched by a referencing game entity,
+we should unload assets that havent been touched in a certain amount of time, and start
+loading as soon as possible when touched.
+
+OpenGL likes to use single threaded architecture, so we should create a load queue
+and only load a few items per frame since it has to be on the main thread partially
+
+The loading functions will need to be split into file io (async) 
+and context related initialization (synchronoous)
+
