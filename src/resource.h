@@ -3,6 +3,7 @@
 #include "slots.h"
 #include "task.h"
 #include "macro.h"
+#include "component_listener.h"
 
 #include "sokol_time.h"
 
@@ -33,7 +34,13 @@ struct Resources
         uint8_t     m_initialized   : 1;    // is initialized   -> m_item valid
     };
 
-    Slots2<T, Metadata> m_items;
+    struct Item
+    {
+        Metadata    meta;
+        T           t;
+    };
+
+    Slots<Item>         m_items;
     Array<Loader>       m_loaders;
     Array<slot>         m_loadQueue;
     Array<slot>         m_freeQueue;
@@ -42,102 +49,84 @@ struct Resources
     Array<slot>         m_removeQueue;
     uint64_t            m_timeout;
 
+    void Init()
+    {
+        EntityDestructor d;
+        d.data = this;
+        d.fn = ComponentDestructor;
+        RegisterDestructor(d);
+    }
     uint8_t RegisterLoader(const Loader& loader)
     {
         m_loaders.grow() = loader;
         return (uint8_t)m_loaders.count() - 1u;
     }
-    slot Add(int32_t name, uint8_t loader)
+    void Add(Slot s, int32_t name, uint8_t loader)
     {
-        slot s = m_items.Add();
-        Metadata* meta = m_items.GetU(s);
-        memset(meta, 0, sizeof(Metadata));
-        meta->m_name = name;
-        meta->m_loader = loader;
-        meta->m_timestamp = stm_now();
-        return s;
+        m_items.Add(s);
+        Item* item = m_items.Get(s);
+        memset(item, 0, sizeof(Item));
+        Metadata& meta = item->meta;
+        meta.m_name = name;
+        meta.m_loader = loader;
+        meta.m_timestamp = stm_now();
     }
     void Remove(slot s)
     {
-        Metadata* meta = m_items.GetU(s);
-        if(meta)
+        Item* item = m_items.Get(s);
+        if(item)
         {
-            T* item = m_items.GetT(s);
-            Loader& loader = m_loaders[meta->m_loader];
-            if(meta->m_initialized)
+            Metadata& meta = item->meta;
+            Loader& loader = m_loaders[meta.m_loader];
+            if(meta.m_initialized)
             {
-                loader.m_shutdown(*item, *meta);
+                loader.m_shutdown(item->t, meta);
             }
-            if(meta->m_loaded)
+            if(meta.m_loaded)
             {
-                loader.m_free(*item, *meta);
+                loader.m_free(item->t, meta);
             }
             m_items.Remove(s);
         }
     }
     inline bool Exists(slot s)
     {
-        return m_items.GetU(s) != nullptr;
+        return m_items.Get(s) != nullptr;
     }
     T* Get(slot s)
     {
-        Metadata* meta = m_items.GetU(s);
-        if(meta)
+        Item* item = m_items.Get(s);
+        if(item)
         {
-            meta->m_timestamp = stm_now();
+            Metadata& meta = item->meta;
+            meta.m_timestamp = stm_now();
 
             int32_t ready = 2;
-            if(meta->m_loaded == false)
+            if(meta.m_loaded == false)
             {
                 m_loadQueue.grow() = s;
                 --ready;
             }
-            if(meta->m_initialized == false)
+            if(meta.m_initialized == false)
             {
                 m_initQueue.grow() = s;
                 --ready;
             }
             if(ready == 2)
             {
-                return m_items.GetT(s);
+                return item;
             }
         }
         return nullptr;
     }
     void Update()
     {
-        uint64_t curTime = stm_now();
-        for(int32_t i = 0; i < m_items.count(); ++i)
-        {
-            Metadata& meta = m_items.GetU(i);
-            if(curTime - meta.m_timestamp > m_timeout)
-            {
-                int32_t id = m_items.m_live[i];
-                int32_t gen = m_items.m_gen[id];
-                slot s = { id, gen };
-                m_shutdownQueue.grow() = s;
-                m_freeQueue.grow() = s;
-            }
-        }
-
         for(int32_t i = m_initQueue.count() - 1; i >= 0; --i)
         {
             slot s = m_initQueue[i];
-            Metadata* meta = m_slots.GetU(s);
-            if(!meta)
+            if(Init(s))
             {
                 m_initQueue.remove(i);
-            }
-            else if(meta->m_loaded)
-            {
-                m_initQueue.remove(i);
-                if(meta->m_initialized == false)
-                {
-                    Loader& loader = m_loaders[meta->m_loader];
-                    T* item = m_slots.GetT(s);
-                    loader.m_init(*item, *meta);
-                    meta->m_initialized = true;
-                }
             }
         }
 
@@ -145,60 +134,124 @@ struct Resources
         {
             slot s = m_shutdownQueue.back();
             m_shutdownQueue.pop();
-            Metadata* meta = m_slots.GetU(s);
-            if(meta && meta->m_initialized)
+            Shutdown(s);
+        }
+
+        uint64_t curTime = stm_now();
+        for(int32_t i = 0; i < m_items.Count(); ++i)
+        {
+            Item& item = m_items.Get(i);
+            if(curTime - item.meta.m_timestamp > m_timeout)
             {
-                Loader& loader = m_loaders[meta->m_loader];
-                T* item = m_slots.GetT(s);
-                loader.m_shutdown(*item, *meta);
-                meta->m_initialized = false;
+                slot s = m_items.GetSlot(i);
+                m_shutdownQueue.grow() = s;
+                m_freeQueue.grow() = s;
             }
         }
     }
-    static void TaskRunner(Task* task)
+    static void TaskLoad(Task* task)
     {
         Resources* res = nullptr;
-        memcpy(&res, task->mem + 0, sizeof(size_t));
-        res->UpdateAsync();
+        slot s = {0};
+        memcpy(&res, task->mem + 0, sizeof(Resources*));
+        memcpy(&s,   task->mem + 1, sizeof(slot));
+        res->Load(s);
+    }
+    static void TaskFree(Task* task)
+    {
+        Resources* res = nullptr;
+        slot s = {0};
+        memcpy(&res, task->mem + 0, sizeof(Resources*));
+        memcpy(&s,   task->mem + 1, sizeof(slot));
+        res->Free(s);
+    }
+    static void ComponentDestructor(void* data, slot s)
+    {
+        Resources* res = (Resources*)data;
+        res->Remove(s);
     }
     void CreateTasks(TaskManager& manager)
     {
-        int32_t count = Max(m_loadQueue.count(), m_freeQueue.count());
-        Task task;
-        task.fn = TaskRunner;
-        memcpy(task.mem + 0, &this, sizeof(size_t));
-        for(int32_t i = 0; i < count; ++i)
+        for(slot s : m_loadQueue)
         {
+            Task task;
+            task.fn = TaskLoad;
+            memcpy(task.mem + 0, &this, sizeof(Resources*));
+            memcpy(task.mem + 1, &s,    sizeof(slot));
             manager.Add(task);
         }
+        for(slot s : m_freeQueue)
+        {
+            Task task;
+            task.fn = TaskFree;
+            memcpy(task.mem + 0, &this, sizeof(Resources*));
+            memcpy(task.mem + 1, &s,    sizeof(slot));
+            manager.Add(task);
+        }
+        m_loadQueue.clear();
+        m_freeQueue.clear();
     }
-    void UpdateAsync()
+    void Load(slot s)
     {
-        if(!m_loadQueue.empty())
+        Item* item = m_slots.Get(s);
+        if(item)
         {
-            slot s = m_loadQueue.back();
-            m_loadQueue.pop();
-            Metadata* meta = m_slots.GetU(s);
-            if(meta && !meta->m_loaded)
+            Metadata& meta = item->meta;
+            if(!meta.m_loaded)
             {
-                Loader& loader = m_loaders[meta->m_loader];
-                T* item = m_slots.GetT(s);
-                loader.m_load(*item, *meta);
-                meta->m_loaded = true;
+                Loader& loader = m_loaders[meta.m_loader];
+                loader.m_load(item->t, meta);
+                meta.m_loaded = true;
             }
-        }        
-        
-        if(!m_freeQueue.empty())
+        }
+    }
+    void Free(slot s)
+    {
+        Item* item = m_slots.Get(s);
+        if(item)
         {
-            slot s = m_freeQueue.back();
-            m_freeQueue.pop();
-            Metadata* meta = m_slots.GetU(s);
-            if(meta && meta->m_loaded)
+            Metadata& meta = item->meta;
+            if(meta.m_loaded)
             {
-                Loader& loader = m_loaders[meta->m_loader];
-                T* item = m_slots.GetT(s);
-                loader.m_free(*item, *meta);
-                meta->m_loaded = false;
+                Loader& loader = m_loaders[meta.m_loader];
+                loader.m_free(item->t, meta);
+                meta.m_loaded = false;
+            }
+        }
+    }
+    // returns whether to remove from queue
+    bool Init(slot s)
+    {
+        Item* item = m_slots.Get(s);
+        if(item)
+        {
+            Metadata& meta = item->meta;
+            if(meta.m_loaded)
+            {
+                if(!meta.m_initialized)
+                {
+                    Loader& loader = m_loaders[meta.m_loader];
+                    loader.m_init(item->t, meta);
+                    meta.m_initialized = true;
+                }
+                return true;
+            }
+            // not loaded yet, keep in queue
+            return false;
+        }
+        return true;
+    }
+    void Shutdown(slot s)
+    {
+        Item* item = m_slots.Get(s);
+        if(item)
+        {
+            Metadata& meta = item->meta;
+            if(meta.m_initialized)
+            {
+                Loader& loader = m_loaders[meta.m_loader];
+                loader.m_shutdown(item->t, meta);
+                meta.m_initialized = false;
             }
         }
     }

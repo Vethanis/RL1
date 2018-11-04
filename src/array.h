@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-template<typename T, bool POD = true>
+template<typename T>
 struct Array
 {
     T*      m_data;
@@ -17,17 +17,7 @@ struct Array
     {
         memset(this, 0, sizeof(*this));
         resize(other.count());
-        if(POD)
-        {
-            memcpy(begin(), other.begin(), bytes());
-        }
-        else
-        {
-            for(int32_t i = 0; i < count(); ++i)
-            {
-                m_data[i] = other[i];
-            }
-        }
+        memcpy(begin(), other.begin(), bytes());
     }
     Array(Array&& other) noexcept
     {
@@ -38,17 +28,7 @@ struct Array
     {
         reset();
         resize(other.count());
-        if(POD)
-        {
-            memcpy(begin(), other.begin(), bytes());
-        }
-        else
-        {
-            for(int32_t i = 0; i < count(); ++i)
-            {
-                m_data[i] = other[i];
-            }
-        }
+        memcpy(begin(), other.begin(), bytes());
         return *this;
     }
     Array& operator=(Array&& other) noexcept 
@@ -87,23 +67,9 @@ struct Array
     }
     void resize(const int32_t new_size)
     {
-        if(!POD)
-        {
-            for(int32_t i = count() - 1; i >= new_size; --i)
-            {
-                (m_data + i)->~T();
-            }
-        }
         if(new_size > m_capacity)
         {
             reserve(new_size);
-        }
-        if(!POD)
-        {
-            for(int32_t i = count(); i < new_size; ++i)
-            {
-                new (m_data + i) T();
-            }
         }
         m_count = new_size;
     }
@@ -111,10 +77,6 @@ struct Array
     {
         ++m_count;
         T* item = &back();
-        if(!POD)
-        {
-            new (item) T();
-        }
         return *item;
     }
     inline T& grow()
@@ -127,22 +89,10 @@ struct Array
     }
     inline void pop()
     {
-        if(!POD)
-        {
-            T* item = &back();
-            item->~T();
-        }
         --m_count;
     }
     inline void clear() 
     {
-        if(!POD)
-        {
-            for(int32_t i = 0; i < count(); ++i)
-            {
-                (m_data + i)->~T();
-            }
-        }
         m_count = 0; 
     }
     inline void reset()
@@ -239,6 +189,22 @@ struct Array2
     inline const T& backT() const { return m_ts[count() - 1]; }
     inline U& backU() { return m_us[count() - 1]; }
     inline const U& backU() const { return m_us[count() - 1]; }
+    inline T& GetT(int32_t i)
+    {
+        return m_ts[i];
+    }
+    inline const T& GetT(int32_t i) const
+    {
+        return m_ts[i];
+    }
+    inline U& GetU(int32_t i)
+    {
+        return m_us[i];
+    }
+    inline const U& GetU(int32_t i) const
+    {
+        return m_us[i];
+    }
     inline void reserve(int32_t new_cap)
     {
         if(new_cap > capacity())

@@ -1,308 +1,98 @@
 #pragma once
 
-#include <stdint.h>
-#include <new>
+#include "slot.h"
 
 #include "array.h"
 #include "macro.h"
 
-struct slot
-{
-    int32_t id;
-    int32_t gen;
-};
-
-template<typename T, bool POD = true>
+template<typename T>
 struct Slots
 {
-    Array<T> m_data;
-    Array<int32_t> m_gen;
-    Array<int32_t> m_live;
-    Array<int32_t> m_free;
+    Array2<T, slot> m_data;
+    Array<int32_t>  m_s2d;
 
-    Slots()
+    void Add(slot s)
     {
-
-    }
-    ~Slots()
-    {
-        Clear();
-    }
-    Slots(const Slots& other)
-    {
-        Assert(false);
-    }
-    Slots(Slots&& other) noexcept
-    {
-        Assert(false);
-    }
-    Slots& operator=(const Slots& other)
-    {
-        Assert(false);
-        return *this;
-    }
-    Slots& operator=(Slots&& other) noexcept
-    {
-        Assert(false);
-        return *this;
-    }
-    void Clear()
-    {
-        if(!POD)
+        if(s.id >= m_s2d.count())
         {
-            for(int32_t idx : m_live)
+            int32_t oldCount = m_s2d.count();
+            m_s2d.resize(s.id + 1);
+            for(int32_t i = oldCount; i < m_s2d.count(); ++i)
             {
-                T* item = &m_data[idx];
-                item->~T();
+                m_s2d[i] = -1;
             }
         }
-        m_live.clear();
-    }
-    void Reset()
-    {
-        Clear();
-        m_data.reset();
-        m_gen.reset();
-        m_live.reset();
-        m_free.reset();
-    }
-    slot Add()
-    {
-        slot s;
-
-        if(!m_free.empty())
+        int32_t& idx = m_s2d[s.id];
+        if(idx == -1)
         {
-            s.id = m_free.back();
-            m_free.pop();
+            idx = m_data.count();
+            m_data.grow();
+            m_data.GetU() = s;
+            T& item = m_data.GetT();
+            memset(&item, 0, sizeof(T));
         }
         else
         {
-            s.id = m_data.count();
-            m_data.grow();
-            m_gen.grow() = 0;
+            Assert(false);
         }
-
-        m_live.grow() = s.id;
-        s.gen = m_gen[s.id];
-
-        if(!POD)
-        {
-            T* item = &m_data[s.id];
-            new (item) T();
-        }
-        
-        return s;
     }
     void Remove(slot s)
     {
-        if(s.gen != m_gen[s.id])
+        if(s.id >= m_s2d.count())
         {
             return;
         }
-
-        m_gen[s.id]++;
-        m_free.grow() = s.id;
-
-        if(!POD)
+        int32_t idx = m_s2d[s.id];
+        if(idx != -1)
         {
-            T* item = &m_data[s.id];
-            item->~T();
-        }
-
-        m_live.findRemove(s.id);
-    }
-    inline T* operator[](slot s)
-    {
-        if(s.gen != m_gen[s.id])
-        {
-            return nullptr;
-        }
-        return &m_data[s.id];
-    }
-    inline const T* operator[](slot s) const
-    {
-        if(s.gen != m_gen[s.id])
-        {
-            return nullptr;
-        }
-        return &m_data[s.id];
-    }
-    inline int32_t Count() const 
-    {
-        return m_live.count();
-    }
-    inline T& operator[](int32_t i)
-    {
-        int32_t idx = m_live[i];
-        return m_data[idx];
-    }
-    inline const T& operator[](int32_t i) const
-    {
-        int32_t idx = m_live[i];
-        return m_data[idx];
-    }
-};
-
-
-template<typename T, typename U, bool POD = true>
-struct Slots2
-{
-    Array2<T, U>    m_data;
-    Array<int32_t>  m_gen;
-    Array<int32_t>  m_live;
-    Array<int32_t>  m_free;
-
-    Slots2()
-    {
-
-    }
-    ~Slots2()
-    {
-        Clear();
-    }
-    Slots2(const Slots2& other)
-    {
-        Assert(false);
-    }
-    Slots2(Slots2&& other) noexcept
-    {
-        Assert(false);
-    }
-    Slots2& operator=(const Slots2& other)
-    {
-        Assert(false);
-        return *this;
-    }
-    Slots2& operator=(Slots2&& other) noexcept
-    {
-        Assert(false);
-        return *this;
-    }
-    void Clear()
-    {
-        if(!POD)
-        {
-            for(int32_t idx : m_live)
+            Assert(idx < m_data.count());
+            slot t = m_data.GetU(idx);
+            Assert(t.id == s.id);
+            if(t.gen != s.gen)
             {
-                T* t = &m_data.m_ts[idx];
-                U* u = &m_data.m_us[idx];
-                t->~T();
-                u->~U();
+                return;
             }
-        }
-        m_live.clear();
-    }
-    void Reset()
-    {
-        Clear();
-        m_data.reset();
-        m_gen.reset();
-        m_live.reset();
-        m_free.reset();
-    }
-    slot Add()
-    {
-        slot s;
-
-        if(!m_free.empty())
-        {
-            s.id = m_free.back();
-            m_free.pop();
+            slot r = m_data.backU();
+            m_s2d[r.id] = idx;
+            m_data.remove(idx);
+            m_s2d[s.id] = -1;
         }
         else
         {
-            s.id = m_data.count();
-            m_data.grow();
-            m_gen.grow() = 0;
+            Assert(false);
         }
-
-        m_live.grow() = s.id;
-        s.gen = m_gen[s.id];
-
-        if(!POD)
-        {
-            T* t = &m_data.m_ts[s.id];
-            U* u = &m_data.m_us[s.id];
-            new (t) T();
-            new (u) U();
-        }
-        
-        return s;
     }
-    void Remove(slot s)
+    T* Get(slot s)
     {
-        if(s.gen != m_gen[s.id])
-        {
-            return;
-        }
-
-        m_gen[s.id]++;
-        m_free.grow() = s.id;
-
-        if(!POD)
-        {
-            T* t = &m_data.m_ts[s.id];
-            U* u = &m_data.m_us[s.id];
-            t->~T();
-            u->~U();
-        }
-
-        m_live.findRemove(s.id);
-    }
-    inline T* GetT(slot s)
-    {
-        if(s.gen != m_gen[s.id])
+        if(s.id >= m_s2d.count())
         {
             return nullptr;
         }
-        return &m_data.m_ts[s.id];
-    }
-    inline const T* GetT(slot s) const
-    {
-        if(s.gen != m_gen[s.id])
+        int32_t idx = m_s2d[s.id];
+        if(idx == -1)
         {
             return nullptr;
         }
-        return &m_data.m_ts[s.id];
-    }
-    inline U* GetU(slot s)
-    {
-        if(s.gen != m_gen[s.id])
+        Assert(idx < m_data.count());
+        slot t = m_data.GetU(idx);
+        if(t.gen != s.gen)
         {
             return nullptr;
         }
-        return &m_data.m_us[s.id];
+        Assert(t.id == s.id);
+        return &m_data.GetT(idx);
     }
-    inline const U* GetU(slot s) const
+    inline T& Get(int32_t i)
     {
-        if(s.gen != m_gen[s.id])
-        {
-            return nullptr;
-        }
-        return &m_data.m_us[s.id];
+        return m_data.GetT(i);
     }
-    inline int32_t Count() const 
+    inline const T& Get(int32_t i) const
     {
-        return m_live.count();
+        return m_data.GetT(i);
     }
-    inline T& GetT(int32_t i)
+    inline slot GetSlot(int32_t i) const 
     {
-        int32_t idx = m_live[i];
-        return m_data.m_ts[idx];
+        return m_data.GetU(i);
     }
-    inline const T& GetT(int32_t i) const
-    {
-        int32_t idx = m_live[i];
-        return m_data.m_ts[idx];
-    }
-    inline U& GetU(int32_t i)
-    {
-        int32_t idx = m_live[i];
-        return m_data.m_us[idx];
-    }
-    inline const U& GetU(int32_t i) const
-    {
-        int32_t idx = m_live[i];
-        return m_data.m_us[idx];
-    }
+    inline int32_t Count() const { return m_data.count(); }
 };

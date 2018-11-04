@@ -9,8 +9,8 @@
 
 struct Task
 {
-    void (*fn)(Task*);  // function to use data
-    uint64_t mem[3];    // data to use
+    void (*fn)(Task*);
+    uint64_t mem[3];
 };
 
 struct TaskManager
@@ -21,12 +21,12 @@ struct TaskManager
     Task*           tasks;
     uint64_t        duration;
 
+    // will use up to ms milliseconds to do parallel updates; can early out
     void SetDuration(uint64_t ms)
     {
         duration = ms * 1000000ull;
     }
-    // begins multithreaded phase of engine frame
-    // blocking.
+    // begins multithreaded phase of engine frame; blocking
     void Start()
     {
         for(Thread& t : threads)
@@ -38,15 +38,18 @@ struct TaskManager
             t.Join();
         }
     }
+    // add task to task stack (not a queue!)
     void Add(const Task& task)
     {
         tasks.grow() = task;
     }
+    // internal
     static void SRun(void* data)
     {
         TaskManager* m = (TaskManager*)data;
         m->Run();
     }
+    // internal
     void Run()
     {
         uint64_t started = stm_now();
