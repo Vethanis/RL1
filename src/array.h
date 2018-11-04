@@ -156,7 +156,7 @@ struct Array
         m_data[idx] = back();
         pop();
     }
-    int32_t find(const T& t)
+    int32_t find(const T& t) const
     {
         for(int32_t i = 0; i < count(); ++i)
         {
@@ -289,7 +289,7 @@ struct Array2
         m_us[idx] = backU();
         pop();
     }
-    int32_t find(const T& t)
+    int32_t find(const T& t) const
     {
         for(int32_t i = 0; i < count(); ++i)
         {
@@ -298,7 +298,7 @@ struct Array2
         }
         return -1;
     }
-    int32_t find(const U& u)
+    int32_t find(const U& u) const
     {
         for(int32_t i = 0; i < count(); ++i)
         {

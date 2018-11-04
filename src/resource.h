@@ -26,11 +26,11 @@ struct Resources
 
     struct Metadata
     {
-        uint64_t    m_name;         // unique identifier, gives means to lookup path or indirect key
-        uint64_t    m_timestamp;    // last time touched by entity
-        int32_t     m_loader;
-        bool        m_loaded;       // is loaded        -> m_data valid
-        bool        m_initialized;  // is initialized   -> m_item valid
+        uint64_t    m_timestamp;            // last time touched by entity
+        int32_t     m_name;                 // unique identifier, gives means to lookup path or indirect key
+        uint8_t     m_loader;               // which loader to use. ie generated vs load a file
+        uint8_t     m_loaded        : 1;    // is loaded        -> m_data valid
+        uint8_t     m_initialized   : 1;    // is initialized   -> m_item valid
     };
 
     Slots2<T, Metadata> m_items;
@@ -42,12 +42,12 @@ struct Resources
     Array<slot>         m_removeQueue;
     uint64_t            m_timeout;
 
-    int32_t RegisterLoader(const Loader& loader)
+    uint8_t RegisterLoader(const Loader& loader)
     {
         m_loaders.grow() = loader;
-        return m_loaders.count() - 1;
+        return (uint8_t)m_loaders.count() - 1u;
     }
-    slot Add(uint64_t name, int32_t loader)
+    slot Add(int32_t name, uint8_t loader)
     {
         slot s = m_items.Add();
         Metadata* meta = m_items.GetU(s);
