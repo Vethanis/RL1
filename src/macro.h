@@ -11,7 +11,7 @@
 #define HEAVY_ASSERTS 0
 
 #if HEAVY_ASSERTS
-    #define Assert(x) { if(!x){ printf("%s failed %s %i\n", #x, __FILE__, __LINE__); __debugbreak(); }}
+    #define Assert(x) { if(!(x)){ printf("%s failed %s %i\n", #x, __FILE__, __LINE__); __debugbreak(); }}
 #else 
-    #define Assert(x) { if(!x) { __debugbreak(); } }
+    #define Assert(x) { if(!(x)) { __debugbreak(); } }
 #endif // HEAVY_ASSERTS

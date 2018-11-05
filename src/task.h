@@ -18,7 +18,6 @@ struct TaskManager
     Thread          threads[4];
     Semaphore       sema;
     Array<Task>     tasks;
-    Task*           tasks;
     uint64_t        duration;
 
     // will use up to ms milliseconds to do parallel updates; can early out

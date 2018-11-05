@@ -2,6 +2,6 @@
 
 struct Thread
 {
-    Thread(void (*fn)(void*), void*);
+    Thread(void (*fn)(void*), void* data);
     void Join();
 };

@@ -6,12 +6,18 @@
 #include "array.h"
 #include "fnv.h"
 
+enum Namespace
+{
+    NS_Buffer = 0,
+    NS_Image,
+    NS_Count
+};
+
 struct Text
 {
     char data[64];
 };
 
-// use a separate one of these for each resource for more speed
 struct Names
 {
     Array<Text>     m_text;
@@ -45,4 +51,11 @@ struct Names
     {
         return Find(Fnv64(name));
     }
+
+    static inline Names& Get(Namespace ns)
+    {
+        return ms_names[ns];
+    }
+
+    static Names ms_names[NS_Count];
 };

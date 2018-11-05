@@ -6,7 +6,7 @@
 #include "slots.h"
 #include "macro.h"
 
-#include "component_listener.h"
+#include "resourcebase.h"
 
 typedef slot Entity;
 
@@ -43,11 +43,12 @@ struct Entities
         {
             return;
         }
+
+        ResourceBase::RemoveAll(s);
+
         m_slots[s.id].gen++;
         m_free.grow() = s.id;
         m_live.findRemove(s.id);
-
-        EntityDestroyed(s);
     }
     inline int32_t Count() const { return m_live.count(); }
     inline Entity operator[](int32_t i) const

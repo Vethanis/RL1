@@ -3,43 +3,53 @@
 #include "slots.h"
 #include "task.h"
 #include "macro.h"
-#include "component_listener.h"
 
 #include "sokol_time.h"
 
-struct ResMeta
+#include "resourcebase.h"
+
+template<typename T>
+struct ResourceSimple : public ResourceBase
 {
-    uint64_t    m_timestamp;            // last time touched by entity
-    int32_t     m_name;                 // unique identifier, gives means to lookup path or indirect key
-    uint8_t     m_loader;               // which loader to use. ie generated vs load a file
-    uint8_t     m_loaded        : 1;    // is loaded        -> m_data valid
-    uint8_t     m_initialized   : 1;    // is initialized   -> m_item valid
+    Slots<T>    m_items;
+
+    inline int32_t Count() const final { return m_items.Count(); }
+    inline void Add(slot s, int32_t, uint8_t) final
+    {
+        m_items.Add(s);
+    }
+    inline void Remove(slot s) final
+    {
+        m_items.Remove(s);
+    }
+    inline bool Exists(slot s) final
+    {
+        return m_items.Get(s) != nullptr;
+    }
+    inline void* Get(slot s) final
+    {
+        return m_items.Get(s);
+    }
+    inline void Update() final {}
+    inline void CreateTasks(TaskManager&) final {}
+    inline void Load(slot) final {}
+    inline void Free(slot) final {}
+    inline bool Init(slot) final { return true; }
+    inline void Shutdown(slot) final {}
 };
 
 template<typename T>
-struct Resources
+struct Resource : public ResourceBase
 {
-    typedef void (*LoadFn)(     T&, const ResMeta&);
-    typedef void (*FreeFn)(     T&, const ResMeta&);
-    typedef void (*InitFn)(     T&, const ResMeta&);
-    typedef void (*ShutdownFn)( T&, const ResMeta&);
-
-    struct Loader
-    {
-        LoadFn      m_load;         // load fn      (async)
-        FreeFn      m_free;         // free fn      (async)
-        InitFn      m_init;         // init fn      (sync)
-        ShutdownFn  m_shutdown;     // shutdown fn  (sync)
-    };
-
     struct Item
     {
         ResMeta     meta;
         T           t;
     };
 
+    typedef void (*Loader)(const ResMeta&, T&);
+
     Slots<Item>         m_items;
-    Array<Loader>       m_loaders;
     Array<slot>         m_loadQueue;
     Array<slot>         m_freeQueue;
     Array<slot>         m_initQueue;
@@ -47,33 +57,7 @@ struct Resources
     Array<slot>         m_removeQueue;
     uint64_t            m_timeout;
 
-    void Init()
-    {
-        EntityDestructor d;
-        d.data = this;
-        d.fn = ComponentDestructor;
-        RegisterDestructor(d);
-        RegisterLoader(
-            [](T&, const ResMeta&){},
-            [](T&, const ResMeta&){},
-            [](T&, const ResMeta&){},
-            [](T&, const ResMeta&){});
-    }
-    uint8_t RegisterLoader(
-        LoadFn      loadFn, 
-        FreeFn      freeFn, 
-        InitFn      initFn, 
-        ShutdownFn  shutdownFn)
-    {
-        Loader loader;
-        loader.m_load = loadFn;
-        loader.m_free = freeFn;
-        loader.m_init = initFn;
-        loader.m_shutdown = shutdownFn;
-        m_loaders.grow() = loader;
-        return (uint8_t)m_loaders.count() - 1u;
-    }
-    inline int32_t Count() const 
+    inline int32_t Count() const final
     {
         return m_items.Count();
     }
@@ -93,7 +77,7 @@ struct Resources
     {
         return m_items.Get(i);
     }
-    void Add(Slot s, int32_t name, uint8_t loader)
+    void Add(slot s, int32_t name, uint8_t loader) final
     {
         m_items.Add(s);
         Item* item = m_items.Get(s);
@@ -103,29 +87,28 @@ struct Resources
         meta.m_loader = loader;
         meta.m_timestamp = stm_now();
     }
-    void Remove(slot s)
+    void Remove(slot s) final
     {
         Item* item = m_items.Get(s);
         if(item)
         {
             ResMeta& meta = item->meta;
-            Loader& loader = m_loaders[meta.m_loader];
             if(meta.m_initialized)
             {
-                loader.m_shutdown(item->t, meta);
+                T::Shutdown(meta, item->t);
             }
             if(meta.m_loaded)
             {
-                loader.m_free(item->t, meta);
+                T::Free(meta, item->t);
             }
             m_items.Remove(s);
         }
     }
-    inline bool Exists(slot s)
+    inline bool Exists(slot s) final
     {
         return m_items.Get(s) != nullptr;
     }
-    T* Get(slot s)
+    void* Get(slot s) final
     {
         Item* item = m_items.Get(s);
         if(item)
@@ -146,12 +129,12 @@ struct Resources
             }
             if(ready == 2)
             {
-                return item;
+                return &(item->t);
             }
         }
         return nullptr;
     }
-    void Update()
+    void Update() final
     {
         for(int32_t i = m_initQueue.count() - 1; i >= 0; --i)
         {
@@ -183,32 +166,28 @@ struct Resources
     }
     static void TaskLoad(Task* task)
     {
-        Resources* res = nullptr;
+        Resource* res = nullptr;
         slot s = {0};
-        memcpy(&res, task->mem + 0, sizeof(Resources*));
+        memcpy(&res, task->mem + 0, sizeof(Resource*));
         memcpy(&s,   task->mem + 1, sizeof(slot));
         res->Load(s);
     }
     static void TaskFree(Task* task)
     {
-        Resources* res = nullptr;
+        Resource* res = nullptr;
         slot s = {0};
-        memcpy(&res, task->mem + 0, sizeof(Resources*));
+        memcpy(&res, task->mem + 0, sizeof(Resource*));
         memcpy(&s,   task->mem + 1, sizeof(slot));
         res->Free(s);
     }
-    static void ComponentDestructor(void* data, slot s)
-    {
-        Resources* res = (Resources*)data;
-        res->Remove(s);
-    }
-    void CreateTasks(TaskManager& manager)
+    void CreateTasks(TaskManager& manager) final
     {
         for(slot s : m_loadQueue)
         {
             Task task;
             task.fn = TaskLoad;
-            memcpy(task.mem + 0, &this, sizeof(Resources*));
+            Resource* res = this;
+            memcpy(task.mem + 0, &res,  sizeof(Resource*));
             memcpy(task.mem + 1, &s,    sizeof(slot));
             manager.Add(task);
         }
@@ -216,45 +195,44 @@ struct Resources
         {
             Task task;
             task.fn = TaskFree;
-            memcpy(task.mem + 0, &this, sizeof(Resources*));
+            Resource* res = this;
+            memcpy(task.mem + 0, &res,  sizeof(Resource*));
             memcpy(task.mem + 1, &s,    sizeof(slot));
             manager.Add(task);
         }
         m_loadQueue.clear();
         m_freeQueue.clear();
     }
-    void Load(slot s)
+    void Load(slot s) final
     {
-        Item* item = m_slots.Get(s);
+        Item* item = m_items.Get(s);
         if(item)
         {
             ResMeta& meta = item->meta;
             if(!meta.m_loaded)
             {
-                Loader& loader = m_loaders[meta.m_loader];
-                loader.m_load(item->t, meta);
+                T::Load(meta, item->t);
                 meta.m_loaded = true;
             }
         }
     }
-    void Free(slot s)
+    void Free(slot s) final
     {
-        Item* item = m_slots.Get(s);
+        Item* item = m_items.Get(s);
         if(item)
         {
             ResMeta& meta = item->meta;
             if(meta.m_loaded)
             {
-                Loader& loader = m_loaders[meta.m_loader];
-                loader.m_free(item->t, meta);
+                T::Free(meta, item->t);
                 meta.m_loaded = false;
             }
         }
     }
     // returns whether to remove from queue
-    bool Init(slot s)
+    bool Init(slot s) final
     {
-        Item* item = m_slots.Get(s);
+        Item* item = m_items.Get(s);
         if(item)
         {
             ResMeta& meta = item->meta;
@@ -262,8 +240,7 @@ struct Resources
             {
                 if(!meta.m_initialized)
                 {
-                    Loader& loader = m_loaders[meta.m_loader];
-                    loader.m_init(item->t, meta);
+                    T::Init(meta, item->t);
                     meta.m_initialized = true;
                 }
                 return true;
@@ -273,16 +250,15 @@ struct Resources
         }
         return true;
     }
-    void Shutdown(slot s)
+    void Shutdown(slot s) final
     {
-        Item* item = m_slots.Get(s);
+        Item* item = m_items.Get(s);
         if(item)
         {
             ResMeta& meta = item->meta;
             if(meta.m_initialized)
             {
-                Loader& loader = m_loaders[meta.m_loader];
-                loader.m_shutdown(item->t, meta);
+                T::Shutdown(meta, item->t);
                 meta.m_initialized = false;
             }
         }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "sokol_id.h"
+
 /*
     sokol_gfx.h -- simple 3D API wrapper
 
@@ -400,12 +402,6 @@ extern "C" {
     The resource ids are wrapped into a struct so that the compiler
     can complain when the wrong resource type is used.
 */
-typedef struct { uint32_t id; } sg_buffer;
-typedef struct { uint32_t id; } sg_image;
-typedef struct { uint32_t id; } sg_shader;
-typedef struct { uint32_t id; } sg_pipeline;
-typedef struct { uint32_t id; } sg_pass;
-typedef struct { uint32_t id; } sg_context;
 
 /*
     various compile-time constants

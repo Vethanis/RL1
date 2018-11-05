@@ -27,8 +27,8 @@ struct Slots
         {
             idx = m_data.count();
             m_data.grow();
-            m_data.GetU() = s;
-            T& item = m_data.GetT();
+            m_data.backU() = s;
+            T& item = m_data.backT();
             memset(&item, 0, sizeof(T));
         }
         else
