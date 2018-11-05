@@ -47,8 +47,6 @@ struct Resource : public ResourceBase
         T           t;
     };
 
-    typedef void (*Loader)(const ResMeta&, T&);
-
     Slots<Item>         m_items;
     Array<slot>         m_loadQueue;
     Array<slot>         m_freeQueue;
