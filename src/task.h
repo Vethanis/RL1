@@ -5,6 +5,7 @@
 #include "array.h"
 #include "thread.h"
 #include "sema.h"
+#include "comptype.h"
 #include "sokol_time.h"
 
 struct Task
@@ -15,22 +16,15 @@ struct Task
 
 struct TaskManager
 {
-    Thread          threads[4];
-    Semaphore       sema;
-    Array<Task>     tasks;
-    uint64_t        duration;
-
     // will use up to ms milliseconds to do parallel updates; can early out
-    void SetDuration(uint64_t ms)
-    {
-        duration = ms * 1000000ull;
-    }
     // begins multithreaded phase of engine frame; blocking
-    void Start()
+    static void Start(ComponentType space, uint64_t ms)
     {
+        curspace = space;
+        duration = ms * 1000000ull;
         for(Thread& t : threads)
         {
-            t = Thread(SRun, this);
+            t = Thread(Run, nullptr);
         }
         for(Thread& t : threads)
         {
@@ -38,19 +32,14 @@ struct TaskManager
         }
     }
     // add task to task stack (not a queue!)
-    void Add(const Task& task)
+    static inline void Add(ComponentType space, const Task& task)
     {
-        tasks.grow() = task;
+        tasks[space].grow() = task;
     }
     // internal
-    static void SRun(void* data)
+    static void Run(void*)
     {
-        TaskManager* m = (TaskManager*)data;
-        m->Run();
-    }
-    // internal
-    void Run()
-    {
+        Array<Task>& queue = tasks[curspace];
         uint64_t started = stm_now();
         while(true)
         {
@@ -63,14 +52,20 @@ struct TaskManager
             Task t;
             {
                 LockGuard guard(sema);
-                if(tasks.empty())
+                if(queue.empty())
                 {
                     break;
                 }
-                t = tasks.back();
-                tasks.pop();
+                t = queue.back();
+                queue.pop();
             }
             t.fn(&t);
         }
     }
+
+    static Thread          threads[4];
+    static Semaphore       sema;
+    static Array<Task>     tasks[CT_Count];
+    static uint64_t        duration;
+    static ComponentType    curspace;
 };

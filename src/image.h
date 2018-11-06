@@ -1,9 +1,10 @@
 #pragma once
 
 #include <stdint.h>
+#include "comptype.h"
 #include "sokol_id.h"
 
-struct ResMeta;
+struct LoaderMeta;
 
 struct Image
 {
@@ -12,8 +13,10 @@ struct Image
     int32_t     width;
     int32_t     height;
 
-    static void Load(const ResMeta& meta, Image& x);
-    static void Free(const ResMeta& meta, Image& x);
-    static void Init(const ResMeta& meta, Image& x);
-    static void Shutdown(const ResMeta& meta, Image& x);
+    static void Load(const LoaderMeta& meta, Image& x);
+    static void Free(const LoaderMeta& meta, Image& x);
+    static void Init(const LoaderMeta& meta, Image& x);
+    static void Shutdown(const LoaderMeta& meta, Image& x);
+
+    static const ComponentType ms_type = CT_Image;
 };

@@ -1,13 +1,13 @@
 #include "image.h"
 
-#include "resourcebase.h"
+#include "resource.h"
 #include "name.h"
 #include "macro.h"
 
 #include "sokol_gfx.h"
 #include "stb_image.h"
 
-void Image::Load(const ResMeta& meta, Image& x)
+void Image::Load(const LoaderMeta& meta, Image& x)
 {
     const char* path = Names::Get(NS_Image)[meta.m_name];
     Assert(path);
@@ -15,14 +15,14 @@ void Image::Load(const ResMeta& meta, Image& x)
     Assert(x.data);
 }
 
-void Image::Free(const ResMeta& meta, Image& x)
+void Image::Free(const LoaderMeta& meta, Image& x)
 {
     Assert(x.data);
     stbi_image_free(x.data);
     x.data = nullptr;
 }
 
-void Image::Init(const ResMeta& meta, Image& x)
+void Image::Init(const LoaderMeta& meta, Image& x)
 {
     sg_image_desc desc = {0};
     desc.width = x.width;
@@ -33,7 +33,7 @@ void Image::Init(const ResMeta& meta, Image& x)
     Assert(x.id.id != SG_INVALID_ID);
 }
 
-void Image::Shutdown(const ResMeta& meta, Image& x)
+void Image::Shutdown(const LoaderMeta& meta, Image& x)
 {
     sg_destroy_image(x.id);
     x.id.id = SG_INVALID_ID;

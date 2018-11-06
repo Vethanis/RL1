@@ -1,7 +1,7 @@
 #include "buffer.h"
 
 #include "sokol_gfx.h"
-#include "resourcebase.h"
+#include "resource.h"
 #include "name.h"
 
 float* ReadBuffer(const char* path, int32_t& count)
@@ -25,11 +25,11 @@ float* GenerateBuffer(const char* seed, int32_t& count)
     return nullptr;
 }
 
-void Buffer::Load(const ResMeta& meta, Buffer& x)
+void Buffer::Load(const LoaderMeta& meta, Buffer& x)
 {
     const char* path = Names::Get(NS_Buffer)[meta.m_name];
     Assert(path);
-    switch(meta.m_loader)
+    switch(meta.m_method)
     {
         case BL_File:
         {
@@ -50,7 +50,7 @@ void Buffer::Load(const ResMeta& meta, Buffer& x)
     Assert(x.verts);
 }
 
-void Buffer::Free(const ResMeta& meta, Buffer& x)
+void Buffer::Free(const LoaderMeta& meta, Buffer& x)
 {
     Assert(x.verts);
     free(x.verts);
@@ -58,7 +58,7 @@ void Buffer::Free(const ResMeta& meta, Buffer& x)
     x.count = 0;
 }
 
-void Buffer::Init(const ResMeta& meta, Buffer& x)
+void Buffer::Init(const LoaderMeta& meta, Buffer& x)
 {
     sg_buffer_desc desc = {0};
     desc.content = x.verts;
@@ -67,7 +67,7 @@ void Buffer::Init(const ResMeta& meta, Buffer& x)
     Assert(x.id.id != SG_INVALID_ID);
 }
 
-void Buffer::Shutdown(const ResMeta& meta, Buffer& x)
+void Buffer::Shutdown(const LoaderMeta& meta, Buffer& x)
 {
     Assert(x.id.id != SG_INVALID_ID);
     sg_destroy_buffer(x.id);

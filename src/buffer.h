@@ -1,6 +1,8 @@
 #pragma once
 
 #include <stdint.h>
+#include "slot.h"
+#include "comptype.h"
 #include "sokol_id.h"
 
 enum BufferLoader
@@ -10,7 +12,7 @@ enum BufferLoader
     BL_Count
 };
 
-struct ResMeta;
+struct LoaderMeta;
 
 struct Buffer
 {
@@ -18,8 +20,10 @@ struct Buffer
     float*      verts;
     int32_t     count;
 
-    static void Load(const ResMeta& meta, Buffer& x);
-    static void Free(const ResMeta& meta, Buffer& x);
-    static void Init(const ResMeta& meta, Buffer& x);
-    static void Shutdown(const ResMeta& meta, Buffer& x);
+    static void Load(const LoaderMeta& meta, Buffer& x);
+    static void Free(const LoaderMeta& meta, Buffer& x);
+    static void Init(const LoaderMeta& meta, Buffer& x);
+    static void Shutdown(const LoaderMeta& meta, Buffer& x);
+
+    static const ComponentType ms_type = CT_Buffer;
 };

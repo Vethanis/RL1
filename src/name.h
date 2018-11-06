@@ -23,22 +23,7 @@ struct Names
     Array<Text>     m_text;
     Array<uint64_t> m_hashes;
 
-    int32_t Add(const char* name)
-    {
-        Text& t = m_text.grow();
-        uint64_t hash = m_hashes.grow();
-        hash = Fnv64(name);
-
-        int32_t i = 0;
-        const int32_t len = NELEM(t.data) - 1;
-        for(; i < len && name[i]; ++i)
-        {
-            t.data[i] = name[i];
-        }
-        t.data[i] = '\0';
-
-        return m_text.count() - 1;
-    }
+    int32_t Add(const char* name);
     inline const char* operator[](int32_t i) const
     {
         return m_text[i].data;

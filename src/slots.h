@@ -2,97 +2,53 @@
 
 #include "slot.h"
 
+#include "blockalloc.h"
 #include "array.h"
 #include "macro.h"
 
 template<typename T>
 struct Slots
 {
-    Array2<T, slot> m_data;
-    Array<int32_t>  m_s2d;
+    struct Item
+    {
+        T*       ptr;
+        uint32_t gen;
+    };
+    BlockAlloc<T>   m_storage;
+    Array<Item>     m_items;
 
     void Add(slot s)
     {
-        if(s.id >= m_s2d.count())
+        if(s.id >= m_items.count())
         {
-            int32_t oldCount = m_s2d.count();
-            m_s2d.resize(s.id + 1);
-            for(int32_t i = oldCount; i < m_s2d.count(); ++i)
+            int32_t oldCount = m_items.count();
+            m_items.resize(s.id + 1);
+            for(int32_t i = oldCount; i < m_items.count(); ++i)
             {
-                m_s2d[i] = -1;
+                memset(&m_items[i], 0, sizeof(Item));
             }
         }
-        int32_t& idx = m_s2d[s.id];
-        if(idx == -1)
-        {
-            idx = m_data.count();
-            m_data.grow();
-            m_data.backU() = s;
-            T& item = m_data.backT();
-            memset(&item, 0, sizeof(T));
-        }
-        else
-        {
-            Assert(false);
-        }
+        Item& item = m_items[s.id];
+        Assert(!item.ptr);
+        item.gen = s.gen;
+        item.ptr = m_storage.Alloc();
     }
     void Remove(slot s)
     {
-        if(s.id >= m_s2d.count())
-        {
-            return;
-        }
-        int32_t idx = m_s2d[s.id];
-        if(idx != -1)
-        {
-            Assert(idx < m_data.count());
-            slot t = m_data.GetU(idx);
-            Assert(t.id == s.id);
-            if(t.gen != s.gen)
-            {
-                return;
-            }
-            slot r = m_data.backU();
-            m_s2d[r.id] = idx;
-            m_data.remove(idx);
-            m_s2d[s.id] = -1;
-        }
-        else
-        {
-            Assert(false);
-        }
+        Assert(Exists(s));
+        Item& item = m_items[s.id];
+        Assert(item.ptr);
+        m_storage.Free(item.ptr);
+        item.ptr = nullptr;
+        item.gen++;
     }
-    T* Get(slot s)
+    inline T* Get(slot s)
     {
-        if(s.id >= m_s2d.count())
-        {
-            return nullptr;
-        }
-        int32_t idx = m_s2d[s.id];
-        if(idx == -1)
-        {
-            return nullptr;
-        }
-        Assert(idx < m_data.count());
-        slot t = m_data.GetU(idx);
-        if(t.gen != s.gen)
-        {
-            return nullptr;
-        }
-        Assert(t.id == s.id);
-        return &m_data.GetT(idx);
+        Assert(Exists(s));
+        return m_items[s.id].ptr;
     }
-    inline T& Get(int32_t i)
+    inline bool Exists(slot s) const 
     {
-        return m_data.GetT(i);
+        return s.id < m_items.count() && s.gen == m_items[s.id].gen;
     }
-    inline const T& Get(int32_t i) const
-    {
-        return m_data.GetT(i);
-    }
-    inline slot GetSlot(int32_t i) const 
-    {
-        return m_data.GetU(i);
-    }
-    inline int32_t Count() const { return m_data.count(); }
 };
