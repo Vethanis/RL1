@@ -1,0 +1,14 @@
+test ECS a bunch
+
+add qu3e physics or similar, ensure it uses our transform and not its own internal one
+
+enable some sort of parallel update phase for components that can take advantage of it
+
+make task.cpp reuse threads instead of creating them over and over
+
+make a function to draw each entity
+
+implement thread and semaphores
+
+names.h/cpp are weird. archetype system instead? need a spot to declare some sort of plato apple so that resources can try to create a shadow of one
+

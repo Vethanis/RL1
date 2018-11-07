@@ -4,17 +4,18 @@
 #include "buffer.h"
 #include "image.h"
 
+LoaderImpl<BufferResource> ms_buf;
+LoaderImpl<ImageResource>  ms_img;
+
 namespace Loaders
 {
-    LoaderImpl<BufferResource> ms_buf;
-    LoaderImpl<ImageResource>  ms_img;
-
     Loader* ms_loaders[RT_Count] = 
     {
         nullptr,
         &ms_buf,
         &ms_img,
     };
+    uint64_t ms_budgets[RT_Count] = {0};
 
     slot Add(ResourceType type)
     {
@@ -40,8 +41,21 @@ namespace Loaders
     {
         ms_loaders[type]->Update();
     }
-    void DoTasks(ResourceType type, uint64_t ms)
+    void DoTasks(ResourceType type)
     {
-        ms_loaders[type]->DoTasks(ms);
+        ms_loaders[type]->DoTasks(ms_budgets[type]);
+    }
+    void SetBudget(ResourceType type, uint64_t ms)
+    {
+        ms_budgets[type] = ms;
+    }
+    void UpdateAll()
+    {
+        for(uint32_t i = 0; i < RT_Count; ++i)
+        {
+            ResourceType rt = (ResourceType)i;
+            DoTasks(rt);
+            Update(rt);
+        }
     }
 };

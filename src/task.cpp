@@ -40,14 +40,13 @@ void Run(void*)
 
 namespace TaskManager
 {
-    // will use up to ms milliseconds to do parallel updates; can early out
-    // begins multithreaded phase of engine frame; blocking
     void Start(ResourceType space, uint64_t ms)
     {
         ms_curtype = space;
         ms_duration = ms * 1000000ull;
         for(Thread& t : ms_threads)
         {
+            // need to make this re-use threads instead of launching new ones
             t = Thread(Run, nullptr);
         }
         for(Thread& t : ms_threads)
@@ -55,7 +54,6 @@ namespace TaskManager
             t.Join();
         }
     }
-    // add task to task stack (not a queue!)
     void Add(ResourceType space, const Task& task)
     {
         ms_tasks[space].grow() = task;

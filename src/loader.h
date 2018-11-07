@@ -24,7 +24,9 @@ namespace Loaders
     Resource* Get(ResourceType type, slot s);
     bool Exists(ResourceType type, slot s);
     void Update(ResourceType type);
-    void DoTasks(ResourceType type, uint64_t ms);
+    void DoTasks(ResourceType type);
+    void SetBudget(ResourceType type, uint64_t ms);
+    void UpdateAll();
 
     template<typename T>
     inline slot Add() { return Add(T::ms_type); }
