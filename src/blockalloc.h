@@ -1,15 +1,18 @@
 #pragma once
 
-#include <stdint.h>
-#include <stdlib.h>
-
-#include "array.h"
+#include "compalloc.h"
+#include <new>
 
 template<typename T, int32_t block_size = 64>
-struct BlockAlloc
+struct BlockAlloc : public ComponentAllocator
 {
-    Array<T*> m_blocks;
-    Array<T*> m_free;
+    struct Item
+    {
+        T    t;
+        bool live;
+    };
+    Array<Item*> m_blocks;
+    Array<Item*> m_free;
 
     BlockAlloc()
     {
@@ -17,27 +20,39 @@ struct BlockAlloc
     }
     ~BlockAlloc()
     {
-        for(T* block : m_blocks)
+        for(Item* block : m_blocks)
         {
+            for(int32_t i = 0; i < block_size; ++i)
+            {
+                if(block[i].live)
+                {
+                    (block + i)->~Item();
+                }
+            }
             free(block);
         }
     }
-    T* Alloc()
+    Component* Alloc() final
     {
-        if(m_free.count() == 0)
+        if(m_free.empty())
         {
-            T* block = (T*)calloc(block_size, sizeof(T));
-            for(int32_t i = block_size - 1; i >= 0; --i)
+            Item* items = (Item*)calloc(block_size, sizeof(Item));
+            for(int32_t i = 0; i < block_size; ++i)
             {
-                m_free.append() = block + i;
+                m_free.grow() = items + i;
             }
         }
-        T* item = m_free.back();
+        Item* c = m_free.back();
         m_free.pop();
-        return item;
+        new (c) Item();
+        c->live = true;
+        return reinterpret_cast<T*>(c);
     }
-    inline void Free(T* item)
+    inline void Free(Component* c) final
     {
+        Item* item = reinterpret_cast<Item*>(c);
+        item->live = false;
+        item->~Item();
         m_free.grow() = item;
     }
 };

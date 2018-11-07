@@ -1,29 +1,28 @@
 #pragma once
 
 #include <stdint.h>
-#include "slot.h"
-#include "comptype.h"
+#include "resource.h"
 #include "sokol_id.h"
 
-enum BufferLoader
+enum BufferType
 {
-    BL_File = 0,
-    BL_Gen,
-    BL_Count
+    BT_File = 0,
+    BT_Procedural,
+    BT_Count
 };
 
-struct LoaderMeta;
-
-struct Buffer
+struct BufferResource : public Resource
 {
-    sg_buffer   id;
-    float*      verts;
-    int32_t     count;
+    sg_buffer   m_id;
+    int32_t     m_name;
+    float*      m_verts;
+    int32_t     m_count;
+    BufferType  m_type;
 
-    static void Load(const LoaderMeta& meta, Buffer& x);
-    static void Free(const LoaderMeta& meta, Buffer& x);
-    static void Init(const LoaderMeta& meta, Buffer& x);
-    static void Shutdown(const LoaderMeta& meta, Buffer& x);
+    void Load() final;
+    void Free() final;
+    void Init() final;
+    void Shutdown() final;
 
-    static const ComponentType ms_type = CT_Buffer;
+    static const ResourceType ms_type = RT_Buffer;
 };

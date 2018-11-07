@@ -1,7 +1,6 @@
 #include "buffer.h"
 
 #include "sokol_gfx.h"
-#include "resource.h"
 #include "name.h"
 
 float* ReadBuffer(const char* path, int32_t& count)
@@ -25,51 +24,45 @@ float* GenerateBuffer(const char* seed, int32_t& count)
     return nullptr;
 }
 
-void Buffer::Load(const LoaderMeta& meta, Buffer& x)
+void BufferResource::Load() 
 {
-    const char* path = Names::Get(NS_Buffer)[meta.m_name];
+    const char* path = Names::Get(NS_Buffer)[m_name];
     Assert(path);
-    switch(meta.m_method)
+    switch(m_type)
     {
-        case BL_File:
+        case BT_File:
         {
-            x.verts = ReadBuffer(path, x.count);
+            m_verts = ReadBuffer(path, m_count);
         }
         break;
-        case BL_Gen:
+        case BT_Procedural:
         {
-            x.verts = GenerateBuffer(path, x.count);
-        }
-        break;
-        default:
-        {
-            Assert(false);
+            m_verts = GenerateBuffer(path, m_count);
         }
         break;
     }
-    Assert(x.verts);
+    Assert(m_verts);
 }
 
-void Buffer::Free(const LoaderMeta& meta, Buffer& x)
+void BufferResource::Free()
 {
-    Assert(x.verts);
-    free(x.verts);
-    x.verts = nullptr;
-    x.count = 0;
+    Assert(m_verts);
+    free(m_verts);
+    m_verts = nullptr;
 }
 
-void Buffer::Init(const LoaderMeta& meta, Buffer& x)
+void BufferResource::Init()
 {
     sg_buffer_desc desc = {0};
-    desc.content = x.verts;
-    desc.size = sizeof(float) * x.count;
-    x.id = sg_make_buffer(&desc);
-    Assert(x.id.id != SG_INVALID_ID);
+    desc.content = m_verts;
+    desc.size = sizeof(float) * m_count;
+    m_id = sg_make_buffer(&desc);
+    Assert(m_id.id != SG_INVALID_ID);
 }
 
-void Buffer::Shutdown(const LoaderMeta& meta, Buffer& x)
+void BufferResource::Shutdown()
 {
-    Assert(x.id.id != SG_INVALID_ID);
-    sg_destroy_buffer(x.id);
-    x.id.id = SG_INVALID_ID;
+    Assert(m_id.id != SG_INVALID_ID);
+    sg_destroy_buffer(m_id);
+    m_id.id = SG_INVALID_ID;
 }
