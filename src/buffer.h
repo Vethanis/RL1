@@ -30,7 +30,7 @@ namespace Buffers
     bool Exists(const char* name);
     slot Find(const char* name);
     slot Find(uint64_t hash);
-    static void Save(
+    void Save(
         const char*     name, 
         const Vertex*   vertices, 
         uint32_t        count);
