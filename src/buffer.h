@@ -19,7 +19,7 @@ struct Vertex
 
 namespace Buffers
 {
-    slot Create(const char* name);
+    slot Load(const char* name);
     slot Create(
         const char*     name,
         const Vertex*   vertices, 

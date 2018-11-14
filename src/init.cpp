@@ -82,7 +82,7 @@ void Init()
         -1.0f, -1.0f, 1.0f,     0.0f, 0.0f, 
     };
     slot bufslot = Buffers::Create("triangle", (Vertex*)verts, 3);
-    slot imgslot = Images::Create("penta");
+    slot imgslot = Images::Load("penta");
     
     slot ent = Components::Create();
     RenderComponent* rc = Components::GetAdd<RenderComponent>(ent);

@@ -13,7 +13,7 @@ namespace Images
 {
     Store<sg_image, 64> ms_store;
 
-    slot Create(const char* name)
+    slot Load(const char* name)
     {
         char path[256] = {0};
         sprintf(path, "assets/%s.png", name);
