@@ -22,6 +22,7 @@ namespace Buffers
 
         Vertex* verts = (Vertex*)malloc(sizeof(Vertex) * vertCount);
         fread(verts, sizeof(Vertex), vertCount, file);
+        fclose(file);
 
         slot s = Create(name, verts, vertCount);
 
@@ -29,7 +30,10 @@ namespace Buffers
 
         return s;
     }
-    slot Create(const char* name, const Vertex* vertices, uint32_t vertCount)
+    slot Create(
+        const char*     name, 
+        const Vertex*   vertices, 
+        uint32_t        vertCount)
     {
         sg_buffer_desc desc = {0};
         desc.content = vertices;
@@ -70,5 +74,18 @@ namespace Buffers
     slot Find(uint64_t hash)
     {
         return ms_store.Find(hash);
+    }
+    void Save(
+        const char*     name, 
+        const Vertex*   vertices, 
+        uint32_t        count)
+    {
+        char path[256] = {0};
+        sprintf(path, "assets/%s.vb", name);
+        FILE* file = fopen(path, "wb");
+        Assert(file);
+        fwrite(&count, sizeof(uint32_t), 1, file);
+        fwrite(vertices, sizeof(Vertex), count, file);
+        fclose(file);
     }
 };

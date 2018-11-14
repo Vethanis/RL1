@@ -45,11 +45,11 @@ struct Store
     }
     inline bool Exists(const char* name) const 
     {
-        return Find(name) != slot::CreateInvalid();
+        return Exists(Find(name));
     }
     inline bool Exists(uint64_t hash) const 
     {
-        return Find(hash) != slot::CreateInvalid();
+        return Exists(Find(hash));
     }
     inline slot Find(uint64_t hash) const
     {

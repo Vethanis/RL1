@@ -20,11 +20,18 @@ struct Vertex
 namespace Buffers
 {
     slot Create(const char* name);
-    slot Create(const char* name, const Vertex* vertices, uint32_t vertCount);
+    slot Create(
+        const char*     name,
+        const Vertex*   vertices, 
+        uint32_t        vertCount);
     void Destroy(slot s);
     const Buffer* Get(slot s);
     bool Exists(slot s);
     bool Exists(const char* name);
     slot Find(const char* name);
     slot Find(uint64_t hash);
+    static void Save(
+        const char*     name, 
+        const Vertex*   vertices, 
+        uint32_t        count);
 };
