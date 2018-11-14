@@ -8,6 +8,8 @@
 #define Clamp(x, lo, hi) ( Min(hi, Max(lo, x)) )
 #define Lerp(a, b, i) ( (a) + (i) * ((b) - (a)) )
 
+#define PLM() { printf("%s %d\n", __FILE__, __LINE__); }
+
 #define HEAVY_ASSERTS 0
 
 #if HEAVY_ASSERTS

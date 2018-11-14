@@ -35,21 +35,27 @@ struct Camera
     float   m_yaw;
     float   m_pitch;
 
-    Camera(
+    void Init(
+        int width,
+        int height, 
         float yaw = 0.0f,
         float pitch = 0.0f,
         float fov=60.0f, 
-        float ratio=16.0f/9.0f, 
         float near=0.1f, 
-        float far=100.0f) 
-            : 
-            m_fov(fov), 
-            m_whratio(ratio), 
-            m_near(near), 
-            m_far(far),
-            m_yaw(yaw),
-            m_pitch(pitch)
-    {}
+        float far=100.0f)
+    {
+        P = mat4();
+        V = mat4();
+        m_eye = vec3(0.0f);
+        m_at = vec3(0.0f, 0.0f, -1.0f);
+        m_fov = fov;
+        m_whratio = (float)width / (float)height;
+        m_near = near;
+        m_far = far;
+        m_yaw = yaw;
+        m_pitch = pitch;
+        update();
+    }
     void updateP()
     {
         P = glm::perspective(glm::radians(m_fov), m_whratio, m_near, m_far);
@@ -96,4 +102,7 @@ struct Camera
         m_near = near; 
         m_far = far;
     }
+
+    static Camera* GetActive();
+    static void SetActive(Camera* cam);
 };

@@ -6,13 +6,8 @@
 template<typename T, int32_t block_size = 64>
 struct BlockAlloc : public ComponentAllocator
 {
-    struct Item
-    {
-        T    t;
-        bool live;
-    };
-    Array<Item*> m_blocks;
-    Array<Item*> m_free;
+    Array<T*> m_blocks;
+    Array<T*> m_free;
 
     BlockAlloc()
     {
@@ -20,15 +15,8 @@ struct BlockAlloc : public ComponentAllocator
     }
     ~BlockAlloc()
     {
-        for(Item* block : m_blocks)
+        for(T* block : m_blocks)
         {
-            for(int32_t i = 0; i < block_size; ++i)
-            {
-                if(block[i].live)
-                {
-                    (block + i)->~Item();
-                }
-            }
             free(block);
         }
     }
@@ -36,23 +24,22 @@ struct BlockAlloc : public ComponentAllocator
     {
         if(m_free.empty())
         {
-            Item* items = (Item*)calloc(block_size, sizeof(Item));
+            T* items = (T*)calloc(block_size, sizeof(T));
+            m_blocks.grow() = items;
             for(int32_t i = 0; i < block_size; ++i)
             {
                 m_free.grow() = items + i;
             }
         }
-        Item* c = m_free.back();
+        T* t = m_free.back();
         m_free.pop();
-        new (c) Item();
-        c->live = true;
-        return reinterpret_cast<T*>(c);
+        new (t) T();
+        return t;
     }
     inline void Free(Component* c) final
     {
-        Item* item = reinterpret_cast<Item*>(c);
-        item->live = false;
-        item->~Item();
-        m_free.grow() = item;
+        T* t = static_cast<T*>(c);
+        t->~T();
+        m_free.grow() = t;
     }
 };

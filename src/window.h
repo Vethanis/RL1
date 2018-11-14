@@ -21,4 +21,7 @@ struct Window
     bool Open();
     void Swap();
     void Poll(Camera& cam);
+
+    static Window* GetActive();
+    static void SetActive(Window* window);
 };

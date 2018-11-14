@@ -1,29 +1,18 @@
 #pragma once
 
 #include <stdint.h>
-#include "resource.h"
+
+#include "slot.h"
 #include "sokol_id.h"
 
-enum ImageType
+namespace Images
 {
-    IT_File = 0,
-    IT_Procedural,
-    IT_Count
-};
-
-struct ImageResource : public Resource
-{
-    sg_image    m_id;
-    int32_t     m_name;
-    uint8_t*    m_data;
-    int32_t     m_width;
-    int32_t     m_height;
-    ImageType   m_type;
-
-    void Load() final;
-    void Free() final;
-    void Init() final;
-    void Shutdown() final;
-
-    static const ResourceType ms_type = RT_Image;
+    slot Create(const char* name);
+    slot Create(const char* name, const void* data, int32_t width, int32_t height);
+    void Destroy(slot s);
+    const sg_image* Get(slot s);
+    bool Exists(slot s);
+    bool Exists(const char* name);
+    slot Find(const char* name);
+    slot Find(uint64_t hash);
 };

@@ -7,8 +7,9 @@
 #include "macro.h"
 #include "camera.h"
 
-static int32_t  glfwRefs = 0;
-static bool     gladInit = false;
+static int32_t  ms_glfwRefs = 0;
+static bool     ms_gladInit = false;
+static Window*  ms_active = nullptr;
 
 static void error_callback(
     int32_t     error, 
@@ -19,8 +20,10 @@ static void error_callback(
 
 void Window::Init(const char* title, bool fullscreen)
 {
-    ++glfwRefs;
-    if(glfwRefs == 1)
+    memset(this, 0, sizeof(*this));
+
+    ++ms_glfwRefs;
+    if(ms_glfwRefs == 1)
     {
         int32_t glfwLoaded = glfwInit();
         Assert(glfwLoaded);
@@ -57,11 +60,11 @@ void Window::Init(const char* title, bool fullscreen)
     glfwGetWindowSize(m_window, &m_width, &m_height);
     glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-    if(!gladInit)
+    if(!ms_gladInit)
     {
         int32_t gladLoaded = gladLoadGL();
         Assert(gladLoaded);
-        gladInit = true;
+        ms_gladInit = true;
     }
 
     glViewport(0, 0, m_width, m_height);
@@ -71,8 +74,8 @@ void Window::Shutdown()
 {
     glfwDestroyWindow(m_window);
 
-    --glfwRefs;
-    if(glfwRefs == 0)
+    --ms_glfwRefs;
+    if(ms_glfwRefs == 0)
     {
         glfwTerminate();
     }
@@ -132,4 +135,14 @@ void Window::Poll(Camera& cam)
     cam.move(v * m_dt);
     cam.yaw(m_dcx * m_dt * 1000.0f);
     cam.pitch(m_dcy * m_dt * 1000.0f);
+}
+
+Window* Window::GetActive()
+{
+    return ms_active;
+}
+
+void Window::SetActive(Window* window)
+{
+    ms_active = window;
 }

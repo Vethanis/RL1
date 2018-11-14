@@ -1,28 +1,30 @@
 #pragma once
 
 #include <stdint.h>
-#include "resource.h"
+
+#include "slot.h"
 #include "sokol_id.h"
 
-enum BufferType
-{
-    BT_File = 0,
-    BT_Procedural,
-    BT_Count
-};
-
-struct BufferResource : public Resource
+struct Buffer
 {
     sg_buffer   m_id;
-    int32_t     m_name;
-    float*      m_verts;
     int32_t     m_count;
-    BufferType  m_type;
+};
 
-    void Load() final;
-    void Free() final;
-    void Init() final;
-    void Shutdown() final;
+struct Vertex
+{
+    float position[3];
+    float uv[2];
+};
 
-    static const ResourceType ms_type = RT_Buffer;
+namespace Buffers
+{
+    slot Create(const char* name);
+    slot Create(const char* name, const Vertex* vertices, uint32_t vertCount);
+    void Destroy(slot s);
+    const Buffer* Get(slot s);
+    bool Exists(slot s);
+    bool Exists(const char* name);
+    slot Find(const char* name);
+    slot Find(uint64_t hash);
 };

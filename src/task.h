@@ -1,7 +1,12 @@
 #pragma once
 
 #include <stdint.h>
-#include "resource.h"
+
+enum TaskType
+{
+    TT_General = 0,
+    TT_Count
+};
 
 struct Task
 {
@@ -11,9 +16,11 @@ struct Task
 
 namespace TaskManager
 {
+    void Init();
+    void Shutdown();
     // will use up to ms milliseconds to do parallel updates; can early out
     // begins multithreaded phase of engine frame; blocking
-    void Start(ResourceType type, uint64_t ms);
+    void Start(TaskType type, uint64_t ms);
     // add task to task stack (not a queue!)
-    void Add(ResourceType type, const Task& task);
+    void Add(TaskType type, const Task& task);
 };

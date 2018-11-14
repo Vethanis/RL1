@@ -1,68 +1,74 @@
+#define _CRT_SECURE_NO_WARNINGS
+
 #include "buffer.h"
 
 #include "sokol_gfx.h"
-#include "name.h"
+#include "macro.h"
+#include "store.h"
 
-float* ReadBuffer(const char* path, int32_t& count)
+namespace Buffers
 {
-    FILE* file = nullptr;
-    fopen_s(&file, path, "rb");
-    Assert(file);
-    int32_t numRead = (int32_t)fread(&count, sizeof(int32_t), 1, file);
-    Assert(numRead == 1);
-    float* data = (float*)malloc(sizeof(float) * count);
-    Assert(data);
-    numRead = (int32_t)fread(data, sizeof(float), count, file);
-    Assert(numRead == count);
-    fclose(file);
-    return data;
-}
+    Store<Buffer, 64> ms_store;
 
-float* GenerateBuffer(const char* seed, int32_t& count)
-{
-    count = 0;
-    return nullptr;
-}
-
-void BufferResource::Load() 
-{
-    const char* path = Names::Get(NS_Buffer)[m_name];
-    Assert(path);
-    switch(m_type)
+    slot Create(const char* name)
     {
-        case BT_File:
-        {
-            m_verts = ReadBuffer(path, m_count);
-        }
-        break;
-        case BT_Procedural:
-        {
-            m_verts = GenerateBuffer(path, m_count);
-        }
-        break;
+        char path[256] = {0};
+        sprintf(path, "assets/%s.vb", name);
+        FILE* file = fopen(path, "rb");
+        Assert(file);
+
+        uint32_t vertCount = 0;
+        fread(&vertCount, sizeof(uint32_t), 1, file);
+
+        Vertex* verts = (Vertex*)malloc(sizeof(Vertex) * vertCount);
+        fread(verts, sizeof(Vertex), vertCount, file);
+
+        slot s = Create(name, verts, vertCount);
+
+        free(verts);
+
+        return s;
     }
-    Assert(m_verts);
-}
-
-void BufferResource::Free()
-{
-    Assert(m_verts);
-    free(m_verts);
-    m_verts = nullptr;
-}
-
-void BufferResource::Init()
-{
-    sg_buffer_desc desc = {0};
-    desc.content = m_verts;
-    desc.size = sizeof(float) * m_count;
-    m_id = sg_make_buffer(&desc);
-    Assert(m_id.id != SG_INVALID_ID);
-}
-
-void BufferResource::Shutdown()
-{
-    Assert(m_id.id != SG_INVALID_ID);
-    sg_destroy_buffer(m_id);
-    m_id.id = SG_INVALID_ID;
-}
+    slot Create(const char* name, const Vertex* vertices, uint32_t vertCount)
+    {
+        sg_buffer_desc desc = {0};
+        desc.content = vertices;
+        desc.size = sizeof(Vertex) * vertCount;
+        slot s = ms_store.Create(name);
+        Buffer* p = ms_store.Get(s);
+        p->m_id = sg_make_buffer(&desc);
+        p->m_count = vertCount;
+        Assert(p->m_id.id != SG_INVALID_ID);
+        return s;
+    }
+    void Destroy(slot s)
+    {
+        if(!Exists(s))
+        {
+            return;
+        }
+        Buffer* p = ms_store.Get(s);
+        sg_destroy_buffer(p->m_id);
+        ms_store.DestroyUnchecked(s);
+    }
+    const Buffer* Get(slot s)
+    {
+        return ms_store.Get(s);
+    }
+    bool Exists(slot s)
+    {
+        return ms_store.Exists(s);
+    }
+    bool Exists(const char* name)
+    {
+        return ms_store.Exists(name);
+    }
+    slot Find(const char* name)
+    {
+        return ms_store.Find(name);
+    }
+    slot Find(uint64_t hash)
+    {
+        return ms_store.Find(hash);
+    }
+};

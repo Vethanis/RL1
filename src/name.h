@@ -1,15 +1,15 @@
 #pragma once
 
 #include <stdint.h>
-
 #include "macro.h"
-#include "array.h"
-#include "fnv.h"
+#include "strlcpy.h"
+#include "store.h"
 
 enum Namespace
 {
     NS_Buffer = 0,
     NS_Image,
+    NS_Entity,
     NS_Count
 };
 
@@ -20,21 +20,30 @@ struct Text
 
 struct Names
 {
-    Array<Text>     m_text;
-    Array<uint64_t> m_hashes;
+    Store<Text, 64> m_store;
 
-    int32_t Add(const char* name);
-    inline const char* operator[](int32_t i) const
+    inline slot Create(const char* name)
     {
-        return m_text[i].data;
+        slot s = m_store.Create(name);
+        Text* t = m_store.Get(s);
+        strlcpy(t->data, name, NELEM(t->data));
     }
-    inline int32_t Find(uint64_t hash) const
+    inline void Destroy(slot s)
     {
-        return m_hashes.find(hash);
+        m_store.Destroy(s);
     }
-    inline int32_t Find(const char* name) const
+    inline const char* operator[](slot s) const
     {
-        return Find(Fnv64(name));
+        const Text* text = m_store.Get(s);
+        return text ? text->data : nullptr;
+    }
+    inline slot Find(uint64_t hash) const
+    {
+        return m_store.Find(hash);
+    }
+    inline slot Find(const char* name) const
+    {
+        return m_store.Find(name);
     }
 
     static inline Names& Get(Namespace ns)

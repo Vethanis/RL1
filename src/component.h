@@ -5,13 +5,12 @@
 #include "slot.h"
 #include "array.h"
 #include "transform.h"
+#include "sokol_id.h"
 
 enum ComponentType
 {
     CT_Transform = 0,
-    CT_Buffer,
-    CT_Image,
-    CT_Material,
+    CT_Render,
     CT_Collision,
     CT_Rigidbody,
     CT_Children,
@@ -29,32 +28,68 @@ struct Component
     virtual ~Component(){}
 };
 
+namespace Components
+{
+    void Init();
+    slot Create(const char* name);
+    void Destroy(slot s);
+    Component* Get(ComponentType type, slot s);
+    const Component* GetConst(ComponentType type, slot s);
+    void Add(ComponentType type, slot s);
+    void Remove(ComponentType type, slot s);
+    bool Exists(slot s);
+    bool Has(ComponentType type, slot s);
+    Component* GetAdd(ComponentType type, slot s);
+    
+    const slot* begin();
+    const slot* end();
+
+    template<typename T>
+    inline T* Get(slot s)
+    {
+        return static_cast<T*>(Get(T::ms_type, s));
+    }
+    template<typename T>
+    inline const T* GetConst(slot s)
+    {
+        return static_cast<T*>(GetConst(T::ms_type, s));
+    }
+    template<typename T>
+    inline void Add(slot s)
+    {
+        Add(T::ms_type, s);
+    }
+    template<typename T>
+    inline void Remove(slot s)
+    {
+        Remove(T::ms_type, s);
+    }
+    template<typename T>
+    inline bool Has(slot s)
+    {
+        return Has(T::ms_type, s);
+    }
+    template<typename T>
+    inline T* GetAdd(slot s)
+    {
+        return static_cast<T*>(GetAdd(T::ms_type, s));
+    }
+};
+
 struct TransformComponent : public Component
 {
     Transform m_mat;
+
     static const ComponentType ms_type = CT_Transform;
 };
 
-struct BufferComponent : public Component
+struct RenderComponent : public Component
 {
-    slot m_ref;
-    static const ComponentType ms_type = CT_Buffer;
-};
+    slot m_buf;
+    slot m_img;
+    slot m_pipeline;
 
-struct ImageComponent : public Component
-{
-    slot m_ref;
-    static const ComponentType ms_type = CT_Image;
-};
-
-struct MaterialComponent : public Component
-{
-    vec2  m_texScale;
-    float m_metalness;
-    float m_roughness;
-    float m_alpha;
-    float m_brightness;
-    static const ComponentType ms_type = CT_Material;
+    static const ComponentType ms_type = CT_Render;
 };
 
 struct CollisionComponent : public Component
@@ -83,7 +118,7 @@ struct ChildrenComponent : public Component
 struct PathfindComponent : public Component
 {
     Array<vec3>   m_path;
-    vec3                m_goal;
+    vec3          m_goal;
     static const ComponentType ms_type = CT_Pathfind;
 };
 
