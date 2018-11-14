@@ -84,7 +84,7 @@ void Init()
     slot bufslot = Buffers::Create("triangle", (Vertex*)verts, 3);
     slot imgslot = Images::Create("penta");
     
-    slot ent = Components::Create("penta_tri");
+    slot ent = Components::Create();
     RenderComponent* rc = Components::GetAdd<RenderComponent>(ent);
     TransformComponent* xform = Components::GetAdd<TransformComponent>(ent);
     

@@ -31,7 +31,7 @@ struct Component
 namespace Components
 {
     void Init();
-    slot Create(const char* name);
+    slot Create();
     void Destroy(slot s);
     Component* Get(ComponentType type, slot s);
     const Component* GetConst(ComponentType type, slot s);

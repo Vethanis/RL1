@@ -1,6 +1,6 @@
 #include "component.h"
 
-#include "store.h"
+#include "gen_array.h"
 #include "macro.h"
 #include "compalloc.h"
 #include "blockalloc.h"
@@ -16,7 +16,7 @@ namespace Components
         Component*  m_components[CT_Count];
     };
     
-    Store<Row, 256>     ms_rows;
+    gen_array<Row>      ms_rows;
     Array<slot>         ms_alive;
     ComponentAllocator* ms_allocs[CT_Count] = {0};
 
@@ -38,9 +38,9 @@ namespace Components
         ms_allocs[CT_Control] = new BlockAlloc<ControlComponent>();
         ms_allocs[CT_Inventory] = new BlockAlloc<InventoryComponent>();
     }
-    slot Create(const char* name)
+    slot Create()
     {
-        slot s = ms_rows.Create(name);
+        slot s = ms_rows.Create();
         ms_alive.grow() = s;
         return s;
     }
