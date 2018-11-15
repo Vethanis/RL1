@@ -1,7 +1,6 @@
 #pragma once
 
 #include "compalloc.h"
-#include <new>
 
 template<typename T, int32_t block_size = 64>
 struct BlockAlloc : public ComponentAllocator
@@ -26,20 +25,17 @@ struct BlockAlloc : public ComponentAllocator
         {
             T* items = (T*)calloc(block_size, sizeof(T));
             m_blocks.grow() = items;
-            for(int32_t i = 0; i < block_size; ++i)
+            for(int32_t i = block_size - 1; i >= 0; --i)
             {
                 m_free.grow() = items + i;
             }
         }
         T* t = m_free.back();
         m_free.pop();
-        new (t) T();
         return t;
     }
     inline void Free(Component* c) final
     {
-        T* t = static_cast<T*>(c);
-        t->~T();
-        m_free.grow() = t;
+        m_free.grow() = static_cast<T*>(c);
     }
 };

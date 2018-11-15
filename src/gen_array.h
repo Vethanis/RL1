@@ -15,8 +15,7 @@ struct gen_array
         if(m_free.empty())
         {
             m_free.grow() = (uint32_t)m_data.count();
-            T& item = m_data.grow();
-            memset(&item, 0, sizeof(T));
+            m_data.grow();
             m_gen.grow() = 0;
         }
 
@@ -24,6 +23,8 @@ struct gen_array
         s.id = m_free.back();
         m_free.pop();
         s.gen = m_gen[s.id];
+
+        memset(&m_data[s.id], 0, sizeof(T));
 
         return s;
     }
@@ -65,8 +66,6 @@ struct gen_array
     {
         m_gen[s.id]++;
         m_free.grow() = s.id;
-        T* item = &m_data[s.id];
-        memset(item, 0, sizeof(T));
     }
     inline bool Exists(slot s) const
     {

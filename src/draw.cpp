@@ -29,8 +29,9 @@ void Draw()
     
     for(const slot* s = Components::begin(); s != Components::end(); ++s)
     {
-        RenderComponent* rc = Components::Get<RenderComponent>(*s);
-        TransformComponent* xform = Components::Get<TransformComponent>(*s);
+        const Row& row = Components::GetUnchecked(*s);
+        const RenderComponent* rc = row.Get<RenderComponent>();
+        const TransformComponent* xform = row.Get<TransformComponent>();
         if(!rc || !xform)
         {
             continue;

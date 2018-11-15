@@ -11,11 +11,6 @@
 
 namespace Components
 {
-    struct Row
-    {
-        Component*  m_components[CT_Count];
-    };
-    
     gen_array<Row>      ms_rows;
     Array<slot>         ms_alive;
     ComponentAllocator* ms_allocs[CT_Count] = {0};
@@ -60,6 +55,14 @@ namespace Components
             ms_rows.DestroyUnchecked(s);
             ms_alive.findRemove(s);
         }
+    }
+    const Row* Get(slot s)
+    {
+        return ms_rows.Get(s);
+    }
+    const Row& GetUnchecked(slot s)
+    {
+        return ms_rows.GetUnchecked(s);
     }
     Component* Get(ComponentType type, slot s)
     {

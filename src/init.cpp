@@ -39,7 +39,7 @@ const char fs_src[] = "#version 330 core\n"
 
 void Init()
 {
-    window.Init("RL1", false);
+    window.Init("RL1", true);
     Window::SetActive(&window);
     camera.Init(window.m_width, window.m_height);
     Camera::SetActive(&camera);

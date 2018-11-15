@@ -23,9 +23,17 @@ enum ComponentType
     CT_Count  
 };
 
-struct Component 
+struct Component {};
+
+struct Row
 {
-    virtual ~Component(){}
+    Component* m_components[CT_Count];
+
+    template<typename T>
+    inline const T* Get() const
+    {
+        return static_cast<T*>(m_components[T::ms_type]);
+    }
 };
 
 namespace Components
@@ -33,6 +41,8 @@ namespace Components
     void Init();
     slot Create();
     void Destroy(slot s);
+    const Row* Get(slot s);
+    const Row& GetUnchecked(slot s);
     Component* Get(ComponentType type, slot s);
     const Component* GetConst(ComponentType type, slot s);
     void Add(ComponentType type, slot s);
@@ -111,14 +121,16 @@ struct RigidbodyComponent : public Component
 
 struct ChildrenComponent : public Component
 {
-    Array<slot> m_children;
+    slot m_children[16];
+    int32_t m_count;
     static const ComponentType ms_type = CT_Children;
 };
 
 struct PathfindComponent : public Component
 {
-    Array<vec3>   m_path;
-    vec3          m_goal;
+    vec3 m_goal;
+    vec3 m_path[16];
+    int32_t m_count;
     static const ComponentType ms_type = CT_Pathfind;
 };
 
@@ -150,6 +162,7 @@ struct ControlComponent : public Component
 
 struct InventoryComponent : public Component
 {
-    Array<slot> m_items;
+    slot m_items[64];
+    int32_t m_count;
     static const ComponentType ms_type = CT_Inventory;
 };
