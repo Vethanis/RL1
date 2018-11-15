@@ -69,12 +69,20 @@ void Init()
     pdesc.layout.attrs[1].format = SG_VERTEXFORMAT_FLOAT2;
     pdesc.depth_stencil.depth_write_enabled = true;
     pdesc.depth_stencil.depth_compare_func = SG_COMPAREFUNC_LESS_EQUAL;
-    pdesc.rasterizer.cull_mode = SG_CULLMODE_BACK;
+    //pdesc.rasterizer.cull_mode = SG_CULLMODE_BACK;
     pdesc.rasterizer.face_winding = SG_FACEWINDING_CCW;
     
     slot pipeslot = Pipelines::Create("textured_static", pdesc);
 
-    slot bufslot = Buffers::Load("triangle");
+    const float verts[] = 
+    {
+        // positions            // uvs
+        -0.5f, -0.5f, 0.0f,     0.0f, 0.0f,
+        0.5f,  -0.5f, 0.0f,     1.0f, 0.0f,
+        0.0f,  0.5f,  0.0f,     0.0f, 1.0f,
+    };
+
+    slot bufslot = Buffers::Create("triangle", (const Vertex*)verts, 3);
     slot imgslot = Images::Load("penta");
     
     slot ent = Components::Create();
@@ -85,5 +93,7 @@ void Init()
     rc->m_img = imgslot;
     rc->m_pipeline = pipeslot;
     
-    xform->m_mat = mat4(1.0f);
+    xform->m_position = vec3(0.0f);
+    xform->m_scale = vec3(1.0f);
+    xform->m_rotation = glm::angleAxis(glm::radians(0.0f), vec3(0.0f, 1.0f, 0.0f));
 }

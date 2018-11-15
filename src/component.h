@@ -11,8 +11,7 @@ enum ComponentType
 {
     CT_Transform = 0,
     CT_Render,
-    CT_Collision,
-    CT_Rigidbody,
+    CT_Physics,
     CT_Children,
     CT_Pathfind,
     CT_AI,
@@ -88,7 +87,9 @@ namespace Components
 
 struct TransformComponent : public Component
 {
-    Transform m_mat;
+    vec3        m_position;
+    quat        m_rotation;
+    vec3        m_scale;
 
     static const ComponentType ms_type = CT_Transform;
 };
@@ -102,21 +103,46 @@ struct RenderComponent : public Component
     static const ComponentType ms_type = CT_Render;
 };
 
-struct CollisionComponent : public Component
+struct PhysicsComponent : public Component
 {
-    void (*m_handler)(slot, slot);
-    vec3 m_aabb[2];
-    static const ComponentType ms_type = CT_Collision;
-};
+    void    (*m_handler)(slot, slot, vec3);
+    vec3    m_hi;
+    vec3    m_lo;
+    vec3    m_moi;
+    vec3    m_linearVelocity;
+    quat    m_angularVelocity;
+    vec3    m_linearDamping;
+    quat    m_angularDamping;
+    float   m_mass;
 
-struct RigidbodyComponent : public Component
-{
-    float m_mass;
-    vec3  m_linearDamping;
-    vec3  m_angularDamping;
-    vec3  m_linearVelocity;
-    vec3  m_angularVelocity;
-    static const ComponentType ms_type = CT_Rigidbody;
+    void CalcMomentOfInertia()
+    {
+        vec3 dim = m_hi - m_lo;
+        dim *= dim;
+        m_moi = (m_mass / 12.0f) * vec3(
+            dim.z + dim.y,
+            dim.x + dim.z,
+            dim.x + dim.y);
+    }
+    void Update(
+        float       dt, 
+        const vec3& linearForce, 
+        const quat& angularForce,
+        TransformComponent& xform)
+    {
+        const float inv = 1.0f / m_mass;
+        vec3 linearAcc = linearForce * inv;
+        quat angularAcc = angularForce * inv;
+
+        m_linearVelocity += linearAcc * dt;
+        m_angularVelocity *= angularAcc * dt;
+        m_linearVelocity *= m_linearDamping;
+        m_angularVelocity *= m_angularDamping;
+        xform.m_position += m_linearVelocity * dt;
+        xform.m_rotation *= m_angularVelocity * dt;
+    }
+
+    static const ComponentType ms_type = CT_Physics;
 };
 
 struct ChildrenComponent : public Component

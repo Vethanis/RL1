@@ -1,3 +1,3 @@
 #pragma once
 
-void Update();
+void Update(float t, float dt);

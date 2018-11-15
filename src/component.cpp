@@ -23,8 +23,7 @@ namespace Components
         }
         ms_allocs[CT_Transform] = new BlockAlloc<TransformComponent>();
         ms_allocs[CT_Render] = new BlockAlloc<RenderComponent>();
-        ms_allocs[CT_Collision] = new BlockAlloc<CollisionComponent>();
-        ms_allocs[CT_Rigidbody] = new BlockAlloc<RigidbodyComponent>();
+        ms_allocs[CT_Physics] = new BlockAlloc<PhysicsComponent>();
         ms_allocs[CT_Children] = new BlockAlloc<ChildrenComponent>();
         ms_allocs[CT_Pathfind] = new BlockAlloc<PathfindComponent>();
         ms_allocs[CT_AI] = new BlockAlloc<AIComponent>();

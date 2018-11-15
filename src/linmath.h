@@ -1,6 +1,8 @@
 #pragma once
 
+#define GLM_FORCE_RADIANS 
 #include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 typedef glm::mat4 mat4;
 typedef glm::mat3 mat3;
@@ -14,3 +16,4 @@ typedef glm::ivec2 ivec2;
 typedef glm::uvec4 uvec4;
 typedef glm::uvec3 uvec3;
 typedef glm::uvec2 uvec2;
+typedef glm::quat quat;

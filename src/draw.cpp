@@ -14,7 +14,7 @@ sg_pass_action action = {0};
 
 void Draw()
 {
-    action.colors[0] = { SG_ACTION_CLEAR, { 0.0f, 0.0f, 0.0f, 1.0f } };
+    action.colors[0] = { SG_ACTION_CLEAR, { 0.1f, 0.1f, 0.25f, 1.0f } };
     
     Window* window = Window::GetActive();
     Camera* cam = Camera::GetActive();
@@ -50,8 +50,12 @@ void Draw()
         state.vertex_buffers[0] = buf->m_id;
         state.fs_images[0] = *img;
         state.pipeline = *pipe;
-    
-        Transform MVP = VP * xform->m_mat;
+
+        mat4 T = glm::translate(mat4(1.0f), xform->m_position);
+        mat4 R = glm::mat4_cast(xform->m_rotation);
+        mat4 S = glm::scale(mat4(1.0f), xform->m_scale);
+        Transform M = S * R * T;
+        Transform MVP = VP * M;
 
         sg_apply_draw_state(&state);
         sg_apply_uniform_block(SG_SHADERSTAGE_VS, 0, &MVP, sizeof(Transform));
