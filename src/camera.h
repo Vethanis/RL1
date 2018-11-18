@@ -3,24 +3,6 @@
 #include <stdint.h>
 #include <math.h>
 #include "linmath.h"
-#include <glm/gtc/matrix_transform.hpp>
-
-#define UP vec3(0.0f, 1.0f, 0.0f)
-
-inline vec3 getRight(const mat4& m)
-{
-    return vec3(m[0][0], m[1][0], m[2][0]);
-}
-
-inline vec3 getUp(const mat4& m)
-{
-    return vec3(m[0][1], m[1][1], m[2][1]);
-}
-
-inline vec3 getForward(const mat4& m)
-{
-    return vec3(-m[0][2], -m[1][2], -m[2][2]);
-}
 
 struct Camera
 {
@@ -58,7 +40,11 @@ struct Camera
     }
     void updateP()
     {
-        P = glm::perspective(glm::radians(m_fov), m_whratio, m_near, m_far);
+        P = glm::perspective(
+            glm::radians(m_fov), 
+            m_whratio, 
+            m_near, 
+            m_far);
     }
     void updateV()
     {
@@ -84,17 +70,18 @@ struct Camera
     }
     void move(const vec3& v)
     {
-        m_eye += v.x * getRight(V) + v.y * getUp(V) - v.z * getForward(V);
+        m_eye += 
+            v.x * getRight(V) + 
+            v.y * getUp(V) + 
+            v.z * getForward(V);
     }
     void pitch(float amt)
     {
-        m_pitch += amt;
-        m_pitch = glm::max(glm::min(89.0f, m_pitch), -89.0f);
+        m_pitch = glm::clamp(m_pitch + amt, -89.0f, 89.0f);
     }
     void yaw(float amt)
     {
-        m_yaw -= amt;
-        m_yaw = fmod(m_yaw, 360.0f);
+        m_yaw = fmod(m_yaw - amt, 360.0f);
     }
     const vec3 direction() const { return normalize(m_at - m_eye); }
     void setPlanes(float near, float far)

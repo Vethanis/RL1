@@ -123,8 +123,8 @@ void Window::Poll(Camera& cam)
 
     glm::vec3 v(0.0f);
     {
-        v.z -= glfwGetKey(m_window, GLFW_KEY_W)             ? 1.0f : 0.0f;
-        v.z += glfwGetKey(m_window, GLFW_KEY_S)             ? 1.0f : 0.0f;
+        v.z += glfwGetKey(m_window, GLFW_KEY_W)             ? 1.0f : 0.0f;
+        v.z -= glfwGetKey(m_window, GLFW_KEY_S)             ? 1.0f : 0.0f;
         v.x -= glfwGetKey(m_window, GLFW_KEY_A)             ? 1.0f : 0.0f;
         v.x += glfwGetKey(m_window, GLFW_KEY_D)             ? 1.0f : 0.0f;
         v.y += glfwGetKey(m_window, GLFW_KEY_SPACE)         ? 1.0f : 0.0f;

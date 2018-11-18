@@ -2,6 +2,7 @@
 
 #include "macro.h"
 #include "component.h"
+#include "transform.h"
 #include "buffer.h"
 #include "image.h"
 #include "pipeline.h"
@@ -51,11 +52,7 @@ void Draw()
         state.fs_images[0] = *img;
         state.pipeline = *pipe;
 
-        mat4 T = glm::translate(mat4(1.0f), xform->m_position);
-        mat4 R = glm::mat4_cast(xform->m_rotation);
-        mat4 S = glm::scale(mat4(1.0f), xform->m_scale);
-        Transform M = S * R * T;
-        Transform MVP = VP * M;
+        Transform MVP = VP * xform->m_matrix;
 
         sg_apply_draw_state(&state);
         sg_apply_uniform_block(SG_SHADERSTAGE_VS, 0, &MVP, sizeof(Transform));

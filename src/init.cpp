@@ -6,6 +6,7 @@
 #include "pipeline.h"
 #include "shader.h"
 #include "transform.h"
+#include "physics.h"
 #include "buffer.h"
 #include "image.h"
 #include "component.h"
@@ -39,7 +40,7 @@ const char fs_src[] = "#version 330 core\n"
 
 void Init()
 {
-    window.Init("RL1", true);
+    window.Init("RL1", false);
     Window::SetActive(&window);
     camera.Init(window.m_width, window.m_height);
     Camera::SetActive(&camera);
@@ -50,6 +51,7 @@ void Init()
 
     Components::Init();
     TaskManager::Init();
+    Physics::Init(1.0f / 60.0f);
     
     sg_shader_desc shadesc = {0};
     shadesc.vs.source = vs_src;
@@ -85,15 +87,28 @@ void Init()
     slot bufslot = Buffers::Create("triangle", (const Vertex*)verts, 3);
     slot imgslot = Images::Load("penta");
     
-    slot ent = Components::Create();
-    RenderComponent* rc = Components::GetAdd<RenderComponent>(ent);
-    TransformComponent* xform = Components::GetAdd<TransformComponent>(ent);
-    
-    rc->m_buf = bufslot;
-    rc->m_img = imgslot;
-    rc->m_pipeline = pipeslot;
-    
-    xform->m_position = vec3(0.0f);
-    xform->m_scale = vec3(1.0f);
-    xform->m_rotation = glm::angleAxis(glm::radians(0.0f), vec3(0.0f, 1.0f, 0.0f));
+    {
+        slot ent = Components::Create();
+        Components::Add<TransformComponent>(ent);
+        RenderComponent* rc = Components::GetAdd<RenderComponent>(ent);
+        PhysicsComponent* pc = Components::GetAdd<PhysicsComponent>(ent);
+
+        pc->Init(10.0f, vec3(0.0f, 10.0f, 0.0f), vec3(1.0f));
+        
+        rc->m_buf = bufslot;
+        rc->m_img = imgslot;
+        rc->m_pipeline = pipeslot;
+    }
+    {
+        slot ent = Components::Create();
+        Components::Add<TransformComponent>(ent);
+        RenderComponent* rc = Components::GetAdd<RenderComponent>(ent);
+        PhysicsComponent* pc = Components::GetAdd<PhysicsComponent>(ent);
+
+        pc->Init(0.0f, vec3(0.0f, 0.0f, 0.0f), vec3(100.0f, 0.1f, 100.0f));
+        
+        rc->m_buf = bufslot;
+        rc->m_img = imgslot;
+        rc->m_pipeline = pipeslot;
+    }
 }
