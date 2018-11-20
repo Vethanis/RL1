@@ -20,7 +20,7 @@ struct Camera
     void Init(
         int width,
         int height, 
-        float yaw = 0.0f,
+        float yaw = -90.0f,
         float pitch = 0.0f,
         float fov=60.0f, 
         float near=0.1f, 

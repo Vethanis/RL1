@@ -10,6 +10,7 @@
 static int32_t  ms_glfwRefs = 0;
 static bool     ms_gladInit = false;
 static Window*  ms_active = nullptr;
+static int32_t  ms_frame = 0;
 
 static void error_callback(
     int32_t     error, 
@@ -103,6 +104,7 @@ void Window::Poll(Camera& cam)
     {
         m_dt = (float)glfwGetTime();
         glfwSetTime(0.0);
+        m_dt = glm::clamp(m_dt, 0.0f, 1.0f / 30.0f);
     }
 
     {
@@ -132,9 +134,15 @@ void Window::Poll(Camera& cam)
     }
 
     cam.resize(m_width, m_height);
-    cam.move(v * m_dt);
-    cam.yaw(m_dcx * m_dt * 1000.0f);
-    cam.pitch(m_dcy * m_dt * 1000.0f);
+    if(ms_frame != 0)
+    {
+        // first frame has a large offset we want to skip
+        cam.move(v * m_dt);
+        cam.yaw(m_dcx * m_dt * 1000.0f);
+        cam.pitch(m_dcy * m_dt * 1000.0f);
+    }
+
+    ++ms_frame;
 }
 
 Window* Window::GetActive()

@@ -43,6 +43,7 @@ void Init()
     window.Init("RL1", false);
     Window::SetActive(&window);
     camera.Init(window.m_width, window.m_height);
+    camera.move(vec3(0.0f, 0.0f, -3.0f));
     Camera::SetActive(&camera);
 
     sg_desc desc = {0};
