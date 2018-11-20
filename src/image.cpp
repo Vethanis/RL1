@@ -33,6 +33,10 @@ namespace Images
     slot Create(const char* name, const void* data, int32_t width, int32_t height)
     {
         sg_image_desc desc = {0};
+        desc.max_anisotropy = 4;
+        desc.num_mipmaps = 7;
+        desc.min_filter = SG_FILTER_LINEAR_MIPMAP_LINEAR;
+        desc.mag_filter = SG_FILTER_NEAREST;
         desc.content.subimage[0][0].ptr = data;
         desc.content.subimage[0][0].size = sizeof(uint8_t) * 4u * width * height;
         desc.width = width;

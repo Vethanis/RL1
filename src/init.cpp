@@ -1,5 +1,8 @@
 #include "init.h"
 
+#include <time.h>
+#include <stdlib.h>
+
 #include "macro.h"
 #include "window.h"
 #include "camera.h"
@@ -14,6 +17,7 @@
 
 #include "sokol_gfx.h"
 #include "sokol_time.h"
+
 
 Window window;
 Camera camera;
@@ -40,6 +44,8 @@ const char fs_src[] = "#version 330 core\n"
 
 void Init()
 {
+    srand((uint32_t)time(0));
+
     window.Init("RL1", false);
     Window::SetActive(&window);
     camera.Init(window.m_width, window.m_height);
@@ -72,10 +78,67 @@ void Init()
     pdesc.layout.attrs[1].format = SG_VERTEXFORMAT_FLOAT2;
     pdesc.depth_stencil.depth_write_enabled = true;
     pdesc.depth_stencil.depth_compare_func = SG_COMPAREFUNC_LESS_EQUAL;
-    //pdesc.rasterizer.cull_mode = SG_CULLMODE_BACK;
+    pdesc.rasterizer.cull_mode = SG_CULLMODE_BACK;
     pdesc.rasterizer.face_winding = SG_FACEWINDING_CCW;
+    // msaa
+    //pdesc.rasterizer.sample_count = 4;
     
     slot pipeslot = Pipelines::Create("textured_static", pdesc);
+
+    slot heightslot;
+    {
+        const uint32_t width = 20;
+        const uint32_t height = 20;
+        const float pitch = 0.5f;
+        const float hpitch = 0.33f;
+        float field[height][width] = {0};
+        Vertex verts[height - 1][width - 1][6] = {0};
+        for(uint32_t y = 0; y < height; ++y)
+        {
+            for(uint32_t x = 0; x < width; ++x)
+            {
+                field[y][x] = rand() / (float)RAND_MAX;
+            }
+        }
+        for(uint32_t y = 0; y < height - 1; ++y)
+        {
+            for(uint32_t x = 0; x < width - 1; ++x)
+            {
+                Vertex* vs = verts[y][x];
+                float pts[4][3] = {0};
+                float uvs[4][2] = {0};
+                pts[0][0] = (x + 0) * pitch;
+                pts[0][2] = (y + 0) * pitch;
+                pts[0][1] = field[y + 0][x + 0] * hpitch;
+                uvs[0][0] = 0.0f;
+                uvs[0][0] = 0.0f;
+                pts[1][0] = (x + 1) * pitch;
+                pts[1][2] = (y + 0) * pitch;
+                pts[1][1] = field[y + 0][x + 1] * hpitch;
+                uvs[1][0] = 1.0f;
+                uvs[1][1] = 0.0f;
+                pts[2][0] = (x + 1) * pitch;
+                pts[2][2] = (y + 1) * pitch;
+                pts[2][1] = field[y + 1][x + 1] * hpitch;
+                uvs[2][0] = 1.0f;
+                uvs[2][1] = 1.0f;
+                pts[3][0] = (x + 0) * pitch;
+                pts[3][2] = (y + 1) * pitch;
+                pts[3][1] = field[y + 1][x + 0] * hpitch;
+                uvs[3][0] = 0.0f;
+                uvs[3][1] = 1.0f;
+
+                const int32_t seq[] = { 0, 3, 2, 0, 2, 1 };
+                for(int32_t i = 0; i < 6; ++i)
+                {
+                    memcpy(vs[i].position, pts[seq[i]], sizeof(float) * 3);
+                    memcpy(vs[i].uv, uvs[seq[i]], sizeof(float) * 2);
+                }
+            }
+        }
+        heightslot = Buffers::Create("heightfield", &verts[0][0][0], (height - 1) * (width - 1) * 6);
+    }
+
 
     slot bufslot = Buffers::Load("triangle");
     slot imgslot = Images::Load("penta");
@@ -98,9 +161,9 @@ void Init()
         RenderComponent* rc = Components::GetAdd<RenderComponent>(ent);
         PhysicsComponent* pc = Components::GetAdd<PhysicsComponent>(ent);
 
-        pc->Init(0.0f, vec3(0.0f, 0.0f, 0.0f), vec3(100.0f, 0.1f, 100.0f));
+        pc->Init(0.0f, vec3(0.0f, 0.0f, 0.0f), vec3(10.0f, 0.33f, 10.0f));
         
-        rc->m_buf = bufslot;
+        rc->m_buf = heightslot;
         rc->m_img = imgslot;
         rc->m_pipeline = pipeslot;
     }
