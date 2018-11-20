@@ -77,15 +77,7 @@ void Init()
     
     slot pipeslot = Pipelines::Create("textured_static", pdesc);
 
-    const float verts[] = 
-    {
-        // positions            // uvs
-        -0.5f, -0.5f, 0.0f,     0.0f, 0.0f,
-        0.5f,  -0.5f, 0.0f,     1.0f, 0.0f,
-        0.0f,  0.5f,  0.0f,     0.0f, 1.0f,
-    };
-
-    slot bufslot = Buffers::Create("triangle", (const Vertex*)verts, 3);
+    slot bufslot = Buffers::Load("triangle");
     slot imgslot = Images::Load("penta");
     
     {

@@ -30,6 +30,19 @@ namespace Buffers
 
         return s;
     }
+    void Save(
+        const char*     name, 
+        const Vertex*   vertices, 
+        uint32_t        count)
+    {
+        char path[256] = {0};
+        sprintf(path, "assets/%s.vb", name);
+        FILE* file = fopen(path, "wb");
+        Assert(file);
+        fwrite(&count, sizeof(uint32_t), 1, file);
+        fwrite(vertices, sizeof(Vertex), count, file);
+        fclose(file);
+    }
     slot Create(
         const char*     name, 
         const Vertex*   vertices, 
@@ -74,18 +87,5 @@ namespace Buffers
     slot Find(uint64_t hash)
     {
         return ms_store.Find(hash);
-    }
-    void Save(
-        const char*     name, 
-        const Vertex*   vertices, 
-        uint32_t        count)
-    {
-        char path[256] = {0};
-        sprintf(path, "assets/%s.vb", name);
-        FILE* file = fopen(path, "wb");
-        Assert(file);
-        fwrite(&count, sizeof(uint32_t), 1, file);
-        fwrite(vertices, sizeof(Vertex), count, file);
-        fclose(file);
     }
 };
