@@ -4,6 +4,7 @@
 
 #include "slot.h"
 #include "sokol_id.h"
+#include "linmath.h"
 
 struct Buffer
 {
@@ -13,8 +14,8 @@ struct Buffer
 
 struct Vertex
 {
-    float position[3];
-    float uv[2];
+    vec3 position;
+    vec2 uv;
 };
 
 namespace Buffers

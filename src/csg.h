@@ -2,6 +2,7 @@
 
 #include "linmath.h"
 #include "array.h"
+#include "buffer.h"
 
 enum Shape : uint8_t
 {
@@ -144,144 +145,13 @@ struct CSGList
     }
 };
 
-#include "task.h"
-#include "sema.h"
-
-struct Hit
-{
-    vec3    m_center;
-    float   m_radius;
-    int32_t m_depth;
-};
-
-struct CSGContext
-{
-    Array<vec3>*    output;
-    const CSG*      csgs;
-    const CSGList*  list;
-    int32_t         max_depth;
-    Array<Hit>      hits;
-    std::mutex      hitMutex;
-    std::mutex      outputMutex;
-
-    void Start(vec3 center, float radius)
-    {
-        output->clear();
-        hits.clear();
-
-        hits.grow() = 
-        {
-            center,
-            radius, 
-            0
-        };
-
-        for(int32_t i = 0; i < 8; ++i)
-        {
-            Act();
-        }
-
-        Task task;
-        task.fn = SActLoop;
-        memcpy(task.mem + 0, this, sizeof(size_t));
-
-        TaskManager::Add(TT_General, task);
-        TaskManager::Start(TT_General, 1);
-    }
-    static void SActLoop(Task* task)
-    {
-        CSGContext* ctx;
-        memcpy(&ctx, task->mem + 0, sizeof(size_t));
-        ctx->ActLoop();
-    }
-    void ActLoop()
-    {
-        for(int32_t checks = 0; checks < 10; ++checks)
-        {
-            bool hasWork = true;
-            do
-            {
-                hasWork = Act();
-            }
-            while(hasWork);
-        }
-    }
-    bool Act()
-    {
-        Hit hit;
-
-        {
-            LockGuard guard(hitMutex);
-            if(hits.count() == 0)
-            {
-                return false;
-            }
-
-            Hit hit = hits.back();
-            hits.pop();
-        }
-        
-        maphit mh = list->Map(hit.m_center, csgs);
-
-        if(fabsf(mh.distance) > hit.m_radius * 1.732051f)
-        {
-            return true;
-        }
-
-        if(hit.m_depth == max_depth)
-        {
-            LockGuard guard(outputMutex);
-            output->grow() = hit.m_center;
-            return true;
-        }
-
-        const float hr = hit.m_radius * 0.5f;
-        for(int32_t i = 0; i < 8; i++)
-        {
-            vec3 c(hit.m_center);
-            c.x += (i & 4) ? hr : -hr;
-            c.y += (i & 2) ? hr : -hr;
-            c.z += (i & 1) ? hr : -hr;
-
-            Hit newHit;
-            newHit.m_center = c;
-            newHit.m_radius = hr;
-            newHit.m_depth = hit.m_depth + 1;
-
-            LockGuard guard(hitMutex);
-            hits.grow() = newHit;
-        }
-
-        return true;
-    }
-};
-
-
-template<int32_t fill_depth>
-static void Fill(
-    Array<vec3>&    output, 
-    const CSG*      csgs, 
+// returns pitch between points
+float CreatePoints(
     const CSGList&  list, 
-    const vec3&     center, 
-    float           radius)
-{
-    output.clear();
+    const CSG*      csgs, 
+    int32_t         max_depth, 
+    vec3            center, 
+    float           radius, 
+    Array<vec3>&    out);
 
-
-    auto DoOne = [&]()
-    {
-        
-    };
-
-    auto Fn = [&]()
-    {
-        for(int32_t i = 0; i < 10; ++i)
-        {
-            while(true)
-            {
-                DoOne();
-            }
-        }
-    };
-    
-}
+void PointsToCubes(const Array<vec3>& input, float pitch, Array<Vertex>& output);

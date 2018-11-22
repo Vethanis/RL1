@@ -6,7 +6,7 @@
 #include <thread>
 #include "sema.h"
 
-std::thread     ms_threads[8];
+std::thread     ms_threads[16];
 std::mutex      ms_lock;
 Semaphore       ms_barrier;
 Array<Task>     ms_tasks[TT_Count];

@@ -18,6 +18,8 @@
 #include "sokol_gfx.h"
 #include "sokol_time.h"
 
+#include "csg.h"
+
 
 Window window;
 Camera camera;
@@ -79,18 +81,18 @@ void Init()
     pdesc.depth_stencil.depth_write_enabled = true;
     pdesc.depth_stencil.depth_compare_func = SG_COMPAREFUNC_LESS_EQUAL;
     pdesc.rasterizer.cull_mode = SG_CULLMODE_BACK;
-    pdesc.rasterizer.face_winding = SG_FACEWINDING_CCW;
     
     slot pipeslot = Pipelines::Create("textured_static", pdesc);
 
     slot heightslot;
+    if(false)
     {
         const uint32_t width = 20;
         const uint32_t height = 20;
         const float pitch = 0.5f;
         const float hpitch = 0.33f;
-        float field[height][width] = {0};
-        Vertex verts[height - 1][width - 1][6] = {0};
+        float field[height][width];
+        Vertex verts[height - 1][width - 1][6];
         for(uint32_t y = 0; y < height; ++y)
         {
             for(uint32_t x = 0; x < width; ++x)
@@ -126,15 +128,41 @@ void Init()
                 uvs[3][0] = 0.0f;
                 uvs[3][1] = 1.0f;
 
-                const int32_t seq[] = { 0, 3, 2, 0, 2, 1 };
+                const int32_t seq[] = { 0, 2, 1, 0, 3, 2 };
                 for(int32_t i = 0; i < 6; ++i)
                 {
-                    memcpy(vs[i].position, pts[seq[i]], sizeof(float) * 3);
-                    memcpy(vs[i].uv, uvs[seq[i]], sizeof(float) * 2);
+                    memcpy(&vs[i].position, pts[seq[i]], sizeof(vec3));
+                    memcpy(&vs[i].uv, uvs[seq[i]], sizeof(vec2));
                 }
             }
         }
         heightslot = Buffers::Create("heightfield", &verts[0][0][0], (height - 1) * (width - 1) * 6);
+    }
+
+
+    {
+        CSG csgs[2];
+        csgs[0].size = vec3(2.0f, 0.1f, 2.0f);
+        csgs[0].shape = Box;
+        csgs[0].blend = SmoothAdd;
+        csgs[0].smoothness = 0.7f;
+
+        csgs[1].size = vec3(1.0f);
+        csgs[1].shape = Sphere;
+        csgs[1].blend = SmoothAdd;
+        csgs[1].smoothness = 0.7f;
+
+        CSGList csglist;
+        csglist.indices.grow() = 0;
+        csglist.indices.grow() = 1;
+
+        Array<vec3> pts;
+        Array<Vertex> verts;
+
+        float pitch = CreatePoints(csglist, csgs, 7, vec3(0.0f), 5.0f, pts);
+        PointsToCubes(pts, pitch, verts);
+
+        heightslot = Buffers::Create("heightfield", verts.begin(), verts.count());
     }
 
 
