@@ -68,10 +68,10 @@ void Init()
     shadesc.fs.images[0].name = "tex";
     shadesc.fs.images[0].type = SG_IMAGETYPE_2D;
 
-    Shaders::Create("textured_static", shadesc);
+    slot shaderSlot = Shaders::Create("textured_static", shadesc);
 
     sg_pipeline_desc pdesc = {0};
-    pdesc.shader = Shaders::Get(Shaders::Find("textured_static"));
+    pdesc.shader = Shaders::Get(shaderSlot);
     pdesc.layout.attrs[0].name = "position";
     pdesc.layout.attrs[0].format = SG_VERTEXFORMAT_FLOAT3;
     pdesc.layout.attrs[1].name = "uv0";
@@ -80,8 +80,6 @@ void Init()
     pdesc.depth_stencil.depth_compare_func = SG_COMPAREFUNC_LESS_EQUAL;
     pdesc.rasterizer.cull_mode = SG_CULLMODE_BACK;
     pdesc.rasterizer.face_winding = SG_FACEWINDING_CCW;
-    // msaa
-    //pdesc.rasterizer.sample_count = 4;
     
     slot pipeslot = Pipelines::Create("textured_static", pdesc);
 
@@ -141,7 +139,7 @@ void Init()
 
 
     slot bufslot = Buffers::Load("triangle");
-    slot imgslot = Images::Load("penta");
+    slot imgslot = Images::Load("dirt");
     
     {
         slot ent = Components::Create();

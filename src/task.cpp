@@ -1,12 +1,13 @@
 #include "task.h"
 
 #include "array.h"
-#include "thread.h"
-#include "sema.h"
 #include "sokol_time.h"
 
-Thread          ms_threads[8];
-Semaphore       ms_sema;
+#include <thread>
+#include "sema.h"
+
+std::thread     ms_threads[8];
+std::mutex      ms_lock;
 Semaphore       ms_barrier;
 Array<Task>     ms_tasks[TT_Count];
 uint64_t        ms_duration;
@@ -36,7 +37,7 @@ void Run(void*)
 
             Task t;
             {
-                LockGuard guard(ms_sema);
+                LockGuard guard(ms_lock);
                 if(queue.empty())
                 {
                     break;
@@ -54,34 +55,36 @@ namespace TaskManager
     void Init()
     {
         ms_running = true;
-        for(Thread& t : ms_threads)
+        for(std::thread& t : ms_threads)
         {
-            t = Thread(Run, nullptr);
+            t = std::thread(Run, nullptr);
         }
     }
     void Shutdown()
     {
         ms_running = false;
-        for(const Thread& t : ms_threads)
+        for(const std::thread& t : ms_threads)
         {
             ms_barrier.Signal();
         }
-        for(Thread& t : ms_threads)
+        for(std::thread& t : ms_threads)
         {
-            t.Join();
+            t.join();
         }
     }
     void Start(TaskType space, uint64_t ms)
     {
         ms_curtype = space;
         ms_duration = ms * 1000000ull;
-        for(const Thread& t : ms_threads)
+        for(const std::thread& t : ms_threads)
         {
             ms_barrier.Signal();
         }
+        std::this_thread::sleep_for(std::chrono::milliseconds(ms));
     }
     void Add(TaskType space, const Task& task)
     {
+        LockGuard guard(ms_lock);
         ms_tasks[space].grow() = task;
     }
 };
