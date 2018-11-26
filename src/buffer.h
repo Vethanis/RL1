@@ -14,8 +14,10 @@ struct Buffer
 
 struct Vertex
 {
-    vec3 position;
-    vec2 uv;
+    vec3    position;
+    vec3    normal;
+    vec2    uv;
+    float   ao;
 };
 
 namespace Buffers

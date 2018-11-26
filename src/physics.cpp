@@ -21,7 +21,7 @@ TBlockAlloc<btDefaultMotionState> ms_motionStates;
 
 namespace Physics
 {
-    void Init(float timestep)
+    void Init()
     {
         ms_world.setGravity(btVector3(0.0f, -9.81f, 0.0f));
     }

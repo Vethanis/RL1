@@ -33,7 +33,7 @@ inline mat4 toGLM(const btTransform& x)
 
 namespace Physics
 {
-    void Init(float timestep);
+    void Init();
     void Update(float dt);
     btRigidBody* Create(float mass, const vec3& position, const vec3& extent);
     void Destroy(btRigidBody* body);

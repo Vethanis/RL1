@@ -114,38 +114,45 @@ float CreatePoints(
     return pitch;
 }
 
+struct CubeVert
+{
+    vec3 position;
+    vec3 normal;
+    vec2 uv;
+};
+
 static const float cube[] = 
 {
-//  pos                     uvs
-    -0.5f, -0.5f, -0.5f,    0.0f, 0.0f,
-     0.5f, -0.5f, -0.5f,    1.0f, 0.0f,
-     0.5f,  0.5f, -0.5f,    1.0f, 1.0f,
-    -0.5f,  0.5f, -0.5f,    0.0f, 1.0f,
+//  pos                     normal          uvs
+    -0.5f, -0.5f, -0.5f,    0.0f, 0.0f, -1.0f,  0.0f, 0.0f,
+     0.5f, -0.5f, -0.5f,    0.0f, 0.0f, -1.0f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,    0.0f, 0.0f, -1.0f,  1.0f, 1.0f,
+    -0.5f,  0.5f, -0.5f,    0.0f, 0.0f, -1.0f,  0.0f, 1.0f,
 
-    -0.5f, -0.5f,  0.5f,    0.0f, 0.0f, 
-     0.5f, -0.5f,  0.5f,    1.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,    1.0f, 1.0f,
-    -0.5f,  0.5f,  0.5f,    0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,    0.0f, 0.0f, 1.0f,   0.0f, 0.0f, 
+     0.5f, -0.5f,  0.5f,    0.0f, 0.0f, 1.0f,   1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,    0.0f, 0.0f, 1.0f,   1.0f, 1.0f,
+    -0.5f,  0.5f,  0.5f,    0.0f, 0.0f, 1.0f,   0.0f, 1.0f,
 
-    -0.5f, -0.5f, -0.5f,    0.0f, 0.0f,
-    -0.5f,  0.5f, -0.5f,    1.0f, 0.0f,
-    -0.5f,  0.5f,  0.5f,    1.0f, 1.0f,
-    -0.5f, -0.5f,  0.5f,    0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,    -1.0f, 0.0f, 0.0f,  0.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,    -1.0f, 0.0f, 0.0f,  1.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,    -1.0f, 0.0f, 0.0f,  1.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,    -1.0f, 0.0f, 0.0f,  0.0f, 1.0f,
 
-     0.5f, -0.5f, -0.5f,    0.0f, 0.0f,
-     0.5f,  0.5f, -0.5f,    1.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,    1.0f, 1.0f,
-     0.5f, -0.5f,  0.5f,    0.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,    1.0f, 0.0f, 0.0f,   0.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,    1.0f, 0.0f, 0.0f,   1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,    1.0f, 0.0f, 0.0f,   1.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,    1.0f, 0.0f, 0.0f,   0.0f, 1.0f,
 
-    -0.5f, -0.5f, -0.5f,    0.0f, 0.0f,
-    -0.5f, -0.5f,  0.5f,    1.0f, 0.0f,
-     0.5f, -0.5f,  0.5f,    1.0f, 1.0f,
-     0.5f, -0.5f, -0.5f,    0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,    0.0f, -1.0f, 0.0f,  0.0f, 0.0f,
+    -0.5f, -0.5f,  0.5f,    0.0f, -1.0f, 0.0f,  1.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,    0.0f, -1.0f, 0.0f,  1.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,    0.0f, -1.0f, 0.0f,  0.0f, 1.0f,
 
-    -0.5f,  0.5f, -0.5f,    0.0f, 0.0f,
-    -0.5f,  0.5f,  0.5f,    1.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,    1.0f, 1.0f,
-     0.5f,  0.5f, -0.5f,    0.0f, 1.0f
+    -0.5f,  0.5f, -0.5f,    0.0f, 1.0f, 0.0f,   0.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,    0.0f, 1.0f, 0.0f,   1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,    0.0f, 1.0f, 0.0f,   1.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,    0.0f, 1.0f, 0.0f,   0.0f, 1.0f
 };
 
 static const int32_t indices[] = 
@@ -158,20 +165,50 @@ static const int32_t indices[] =
     22, 21, 20,     23, 22, 20
 };
 
-void PointsToCubes(const Array<vec3>& input, float pitch, Array<Vertex>& output)
+void PointsToCubes(
+    const Array<vec3>&  input, 
+    float               pitch, 
+    const CSGList&      list, 
+    const CSG*          csgs, 
+    Array<Vertex>&      output)
 {
     output.clear();
     output.reserve(input.count() * NELEM(indices));
 
-    const Vertex* verts = (const Vertex*)&cube[0];
+    const bool smooth = false;
+
+    const CubeVert* cvs = (const CubeVert*)cube;
     for(const vec3& pt : input)
     {
         for(int32_t i : indices)
         {
-            Vertex vert = verts[i];
-            vert.position *= pitch;
-            vert.position += pt;
-            output.append() = vert;
+            vec3 neighbor = pt + cvs[i].normal * pitch;
+
+            maphit mh = list.Map(neighbor, csgs);
+            if(fabsf(mh.distance) <= pitch * 0.5f * 1.732051f)
+            {
+                continue;
+            }
+
+            Vertex& vert = output.append();
+            vert.position = pt;
+            vert.position += pitch * cvs[i].position;
+            vert.uv = cvs[i].uv;
+
+            if(smooth)
+            {
+                for(int32_t j = 0; j < 3; ++j)
+                {
+                    vert.normal = list.Normal(vert.position, csgs);
+                    vert.position -= list.Map(vert.position, csgs).distance * vert.normal;
+                }
+            }
+            else
+            {
+                vert.normal = cvs[i].normal;
+            }
+
+            vert.ao = 0.0f;//list.AO(vert.position, vert.normal, csgs, pitch);
         }
     }
 }

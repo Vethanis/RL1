@@ -4,6 +4,7 @@
 #include "array.h"
 #include "buffer.h"
 #include "stb_perlin.h"
+#include "prng.h"
 
 enum Shape : uint8_t
 {
@@ -168,6 +169,28 @@ struct CSGList
             Map(p + vec3(0.0f, 0.0f, e), csgs) - Map(p - vec3(0.0f, 0.0f, e), csgs)
         ));
     }
+    float AO(
+        const vec3&     pt, 
+        const vec3&     N,
+        const CSG*      csgs, 
+        float           scale) const 
+    {
+        float d = Map(pt, csgs).distance;
+        int32_t ao = 0;
+        const int32_t num_samples = 8;
+        for(int32_t i = 0; i < num_samples; ++i)
+        {
+            vec3 dir = glm::normalize(N + vec3(randf2(), randf2(), randf2()));
+            vec3 x = pt + dir * scale;
+            float dis = Map(x, csgs).distance;
+            if(dis < 0.0f)
+            {
+                ++ao;
+            }
+        }
+
+        return (float)ao / (float)num_samples;
+    }
 };
 
 // returns pitch between points
@@ -179,4 +202,9 @@ float CreatePoints(
     float           radius, 
     Array<vec3>&    out);
 
-void PointsToCubes(const Array<vec3>& input, float pitch, Array<Vertex>& output);
+void PointsToCubes(
+    const Array<vec3>&  input, 
+    float               pitch, 
+    const CSGList&      list, 
+    const CSG*          csgs, 
+    Array<Vertex>&      output);
