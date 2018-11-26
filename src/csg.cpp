@@ -48,7 +48,7 @@ struct CSGContext
             }
         }
 
-        TaskManager::Start(TT_MeshGen, 1000);
+        TaskManager::Start(TT_MeshGen);
     }
     static void SAct(Task* task)
     {

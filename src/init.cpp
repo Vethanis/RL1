@@ -142,15 +142,13 @@ void Init()
 
     {
         CSG csgs[2];
-        csgs[0].size = vec3(2.0f, 0.1f, 2.0f);
-        csgs[0].shape = Box;
-        csgs[0].blend = SmoothAdd;
-        csgs[0].smoothness = 0.7f;
+        csgs[0].size = vec3(2.0f, 0.5f, 6.0f);
+        csgs[0].shape = Ridge;
+        csgs[0].blend = Add;
 
-        csgs[1].size = vec3(1.0f);
-        csgs[1].shape = Sphere;
-        csgs[1].blend = SmoothAdd;
-        csgs[1].smoothness = 0.7f;
+        csgs[1].size = vec3(0.0f, 1.0f, 0.0f);
+        csgs[1].shape = Plane;
+        csgs[1].blend = Filter;
 
         CSGList csglist;
         csglist.indices.grow() = 0;
@@ -159,7 +157,7 @@ void Init()
         Array<vec3> pts;
         Array<Vertex> verts;
 
-        float pitch = CreatePoints(csglist, csgs, 7, vec3(0.0f), 5.0f, pts);
+        float pitch = CreatePoints(csglist, csgs, 7, vec3(0.0f), 10.0f, pts);
         PointsToCubes(pts, pitch, verts);
 
         heightslot = Buffers::Create("heightfield", verts.begin(), verts.count());

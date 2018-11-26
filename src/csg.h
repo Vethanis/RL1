@@ -3,11 +3,14 @@
 #include "linmath.h"
 #include "array.h"
 #include "buffer.h"
+#include "stb_perlin.h"
 
 enum Shape : uint8_t
 {
     Sphere = 0,
     Box,
+    Plane,
+    Ridge,
     ShapeCount
 };
 
@@ -17,6 +20,7 @@ enum Blend : uint8_t
     Sub,
     SmoothAdd,
     SmoothSub,
+    Filter,
     BlendCount
 };
 
@@ -59,6 +63,19 @@ struct CSG
         return glm::min(glm::max(d.x, glm::max(d.y, d.z)), 0.0f) + 
             glm::length(glm::max(d, vec3(0.0f)));
     }
+    inline float Plane(const vec3& p) const 
+    {
+        vec3 d = p - center;
+        return glm::dot(d, size);
+    }
+    inline float Ridge(const vec3& p) const 
+    {
+        vec3 pt = p - center;
+        return stb_perlin_ridge_noise3(
+            pt.x, pt.y, pt.z,
+            size.x, size.y, 0.0f, (int32_t)size.z,
+            0, 0, 0);
+    }
     inline maphit Add(maphit a, maphit b) const
     {
         return (a.distance < b.distance) ? a : b;
@@ -85,6 +102,11 @@ struct CSG
         m.distance = -m.distance;
         return m;
     }
+    inline maphit Filter(maphit a, maphit b) const 
+    {
+        b.distance += a.distance;
+        return b;
+    }
     inline float Distance(const vec3& p) const 
     {
         switch(shape)
@@ -92,6 +114,8 @@ struct CSG
             default:
             case Shape::Sphere: return Sphere(p);
             case Shape::Box: return Box(p);
+            case Shape::Plane: return Plane(p);
+            case Shape::Ridge: return Ridge(p);
         }
     }
     inline maphit Blend(maphit a, maphit b) const 
@@ -103,6 +127,7 @@ struct CSG
             case Blend::Sub: return Sub(a, b);
             case Blend::SmoothAdd: return SmoothAdd(a, b);
             case Blend::SmoothSub: return SmoothSub(a, b);
+            case Blend::Filter: return Filter(a, b);
         }
     }
     inline vec3 Normal(const vec3& p) const
