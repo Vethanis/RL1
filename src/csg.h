@@ -105,7 +105,7 @@ struct CSG
     }
     inline maphit Filter(maphit a, maphit b) const 
     {
-        b.distance += a.distance;
+        b.distance += smoothness * a.distance;
         return b;
     }
     inline float Distance(const vec3& p) const 
@@ -180,10 +180,10 @@ struct CSGList
         const int32_t num_samples = 8;
         for(int32_t i = 0; i < num_samples; ++i)
         {
-            vec3 dir = glm::normalize(N + vec3(randf2(), randf2(), randf2()));
+            vec3 dir = 0.5f * N + 0.5f * glm::normalize(vec3(randf2(), randf2(), randf2()));
             vec3 x = pt + dir * scale;
             float dis = Map(x, csgs).distance;
-            if(dis < 0.0f)
+            if(dis <= d)
             {
                 ++ao;
             }

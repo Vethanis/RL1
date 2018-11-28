@@ -105,14 +105,16 @@ void Init()
 
     slot terrainSlot;
     {
-        CSG csgs[2];
-        csgs[0].size = vec3(2.0f, 0.1f, 3.0f);
-        csgs[0].shape = Ridge;
-        csgs[0].blend = Add;
+        CSG csgs[3];
+        csgs[0].size = vec3(0.0f, 1.0f, 0.0f);
+        csgs[0].shape = Plane;
+        csgs[0].blend = SmoothAdd;
+        csgs[0].smoothness = 0.75f;
 
-        csgs[1].size = vec3(0.0f, 1.0f, 0.0f);
-        csgs[1].shape = Plane;
-        csgs[1].blend = Filter;
+        csgs[1].size = vec3(2.0f);
+        csgs[1].shape = Sphere;
+        csgs[1].blend = SmoothAdd;
+        csgs[1].smoothness = 0.75f;
 
         CSGList csglist;
         csglist.indices.grow() = 0;
@@ -121,7 +123,7 @@ void Init()
         Array<vec3> pts;
         Array<Vertex> verts;
 
-        float pitch = CreatePoints(csglist, csgs, 5, vec3(0.0f), 3.0f, pts);
+        float pitch = CreatePoints(csglist, csgs, 5, vec3(0.0f), 4.0f, pts);
         PointsToCubes(pts, pitch, csglist, csgs, verts);
 
         terrainSlot = Buffers::Create("heightfield", verts.begin(), verts.count());

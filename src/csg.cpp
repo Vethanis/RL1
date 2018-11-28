@@ -167,15 +167,13 @@ static const int32_t indices[] =
 
 void PointsToCubes(
     const Array<vec3>&  input, 
-    float               pitch, 
+    float               pitch, // 2x the hit radius of max depth above
     const CSGList&      list, 
     const CSG*          csgs, 
     Array<Vertex>&      output)
 {
     output.clear();
     output.reserve(input.count() * NELEM(indices));
-
-    const bool smooth = false;
 
     const CubeVert* cvs = (const CubeVert*)cube;
     for(const vec3& pt : input)
@@ -193,22 +191,19 @@ void PointsToCubes(
             Vertex& vert = output.append();
             vert.position = pt;
             vert.position += pitch * cvs[i].position;
+            vert.normal = cvs[i].normal;
             vert.uv = cvs[i].uv;
 
-            if(smooth)
+            float dis;
+            do
             {
-                for(int32_t j = 0; j < 3; ++j)
-                {
-                    vert.normal = list.Normal(vert.position, csgs);
-                    vert.position -= list.Map(vert.position, csgs).distance * vert.normal;
-                }
+                vert.normal = list.Normal(vert.position, csgs);
+                dis = list.Map(vert.position, csgs).distance;
+                vert.position -= dis * vert.normal;
             }
-            else
-            {
-                vert.normal = cvs[i].normal;
-            }
+            while(fabsf(dis) > 0.001f);
 
-            vert.ao = 0.0f;//list.AO(vert.position, vert.normal, csgs, pitch);
+            vert.ao = 0.0f; //list.AO(vert.position, vert.normal, csgs, pitch);
         }
     }
 }
