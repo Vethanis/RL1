@@ -31,7 +31,7 @@ namespace Buffers
     bool Exists(slot s);
     bool Exists(const char* name);
     slot Find(const char* name);
-    slot Find(uint64_t hash);
+    slot Find(uint32_t hash);
     void Save(
         const char*     name, 
         const Vertex*   vertices, 

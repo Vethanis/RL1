@@ -10,5 +10,5 @@ namespace Shaders
     sg_shader Get(slot s);
     bool Exists(slot s);
     slot Find(const char* name);
-    slot Find(uint64_t hash);
+    slot Find(uint32_t hash);
 };

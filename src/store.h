@@ -5,20 +5,20 @@
 #include "dict.h"
 #include "fnv.h"
 
-template<typename T, uint64_t width>
+template<typename T, uint32_t width>
 struct Store
 {
     struct Item
     {
         T t;
-        uint64_t hash;
+        uint32_t hash;
     };
     gen_array<Item>     m_items;
     Dict<slot, width>   m_dict;
 
     slot Create(const char* name)
     {
-        uint64_t hash = Fnv64(name);
+        uint32_t hash = Fnv32(name);
         Assert(!Exists(hash));
         slot s = m_items.Create();
         m_items.GetUnchecked(s).hash = hash;
@@ -47,18 +47,18 @@ struct Store
     {
         return Exists(Find(name));
     }
-    inline bool Exists(uint64_t hash) const 
+    inline bool Exists(uint32_t hash) const 
     {
         return Exists(Find(hash));
     }
-    inline slot Find(uint64_t hash) const
+    inline slot Find(uint32_t hash) const
     {
         const slot* s = m_dict.Get(hash);
         return s ? *s : slot();
     }
     inline slot Find(const char* name) const 
     {
-        return Find(Fnv64(name));
+        return Find(Fnv32(name));
     }
     inline T* Get(slot s)
     {

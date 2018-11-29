@@ -84,7 +84,7 @@ namespace Buffers
     {
         return ms_store.Find(name);
     }
-    slot Find(uint64_t hash)
+    slot Find(uint32_t hash)
     {
         return ms_store.Find(hash);
     }

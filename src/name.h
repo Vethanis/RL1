@@ -37,7 +37,7 @@ struct Names
         const Text* text = m_store.Get(s);
         return text ? text->data : nullptr;
     }
-    inline slot Find(uint64_t hash) const
+    inline slot Find(uint32_t hash) const
     {
         return m_store.Find(hash);
     }

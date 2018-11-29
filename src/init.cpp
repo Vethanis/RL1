@@ -14,6 +14,7 @@
 #include "image.h"
 #include "component.h"
 #include "task.h"
+#include "prng.h"
 
 #include "sokol_gfx.h"
 #include "sokol_time.h"
@@ -53,7 +54,7 @@ const char fs_src[] = "#version 330 core\n"
 
 void Init()
 {
-    srand((uint32_t)time(0));
+    SRand(time(0));
 
     window.Init("RL1", false);
     Window::SetActive(&window);
