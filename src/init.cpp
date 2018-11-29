@@ -19,42 +19,15 @@
 #include "sokol_gfx.h"
 #include "sokol_time.h"
 
+#include "shaders/textured.h"
+
 Window window;
 Camera camera;
 
-const char vs_src[] = "#version 330 core\n"
-    "in vec3 position;\n"
-    "in vec3 normal;\n"
-    "in vec2 uv0;\n"
-    "out vec3 N;\n"
-    "out vec2 uv;\n"
-    "out float AO;\n"
-    "uniform mat4 mvp;\n"
-    "void main()\n"
-    "{\n"
-    "   gl_Position = mvp * vec4(position.xyz, 1.0);\n"
-    "   N = normal;\n"
-    "   uv = uv0;\n"
-    "}\n";
-
-const char fs_src[] = "#version 330 core\n"
-    "in vec3 N;\n"
-    "in vec2 uv;\n"
-    "out vec4 frag_color;\n"
-    "uniform sampler2D albedo;\n"
-    "void main()\n"
-    "{\n"
-    "   vec3 L = normalize(vec3(1.0, 2.0f, 0.0f));\n"
-    "   vec4 C = texture(albedo, uv);\n"
-    "   float D = max(0.0, dot(L, N));\n"
-    "   float amb = 0.25;\n"
-    "   C *= mix(amb, 1.0, D);\n"
-    "   frag_color = C;\n"
-    "}\n";
 
 void Init()
 {
-    SRand(time(0));
+    SRand(time(0) ^ (uint64_t)&puts);
 
     window.Init("RL1", false);
     Window::SetActive(&window);
@@ -71,12 +44,23 @@ void Init()
     Physics::Init();
     
     sg_shader_desc shadesc = {0};
-    shadesc.vs.source = vs_src;
-    shadesc.vs.uniform_blocks[0].size = sizeof(Transform);
-    shadesc.vs.uniform_blocks[0].uniforms[0] = { "mvp", SG_UNIFORMTYPE_MAT4 };
-    shadesc.fs.source = fs_src;
-    shadesc.fs.images[0].name = "albedo";
+
+    shadesc.vs.source = textured_vs;
+    shadesc.vs.uniform_blocks[0].size = sizeof(VSUniform);
+    shadesc.vs.uniform_blocks[0].uniforms[0] = { "MVP", SG_UNIFORMTYPE_MAT4 };
+    shadesc.vs.uniform_blocks[0].uniforms[1] = { "M",   SG_UNIFORMTYPE_MAT4 };
+
+    shadesc.fs.source = textured_fs;
+    shadesc.fs.uniform_blocks[0].size = sizeof(FSUniform);
+    shadesc.fs.uniform_blocks[0].uniforms[0] = { "Eye",             SG_UNIFORMTYPE_FLOAT3 };
+    shadesc.fs.uniform_blocks[0].uniforms[1] = { "LightDir",        SG_UNIFORMTYPE_FLOAT3 };
+    shadesc.fs.uniform_blocks[0].uniforms[2] = { "LightRad",        SG_UNIFORMTYPE_FLOAT3 };
+    shadesc.fs.uniform_blocks[0].uniforms[3] = { "BumpScale",       SG_UNIFORMTYPE_FLOAT  };
+    shadesc.fs.uniform_blocks[0].uniforms[4] = { "ParallaxScale",   SG_UNIFORMTYPE_FLOAT  };
+    shadesc.fs.images[0].name = "MatTex";
     shadesc.fs.images[0].type = SG_IMAGETYPE_2D;
+    shadesc.fs.images[1].name = "PalTex";
+    shadesc.fs.images[1].type = SG_IMAGETYPE_2D;
 
     slot shaderSlot = Shaders::Create("textured_static", shadesc);
 
@@ -91,9 +75,29 @@ void Init()
     pdesc.depth_stencil.depth_write_enabled = true;
     pdesc.depth_stencil.depth_compare_func = SG_COMPAREFUNC_LESS_EQUAL;
     pdesc.rasterizer.cull_mode = SG_CULLMODE_BACK;
+
+    uint32_t palette[16];
+    vec4 A = vec4(Randf(), Randf(), Randf(), 1.0f);
+    vec4 B = vec4(Randf(), Randf(), Randf(), 1.0f);
+    for(uint32_t i = 0; i < NELEM(palette); ++i)
+    {
+        float alpha = (float)i / (float)NELEM(palette);
+        vec4 x = glm::mix(A, B, alpha) * 255.0f;
+        uint8_t r, g, b, a;
+        r = (uint8_t)x.x;
+        g = (uint8_t)x.y;
+        b = (uint8_t)x.z;
+        a = (uint8_t)x.w;
+        uint32_t y = r;
+        y = (y << 8) | g;
+        y = (y << 8) | b;
+        y = (y << 8) | a;
+        palette[i] = y;
+    }
     
-    slot pipeslot = Pipelines::Create("textured_static", pdesc);
-    slot imgslot = Images::Load("dirt");
+    slot pipeslot       = Pipelines::Create("textured_static", pdesc);
+    slot matSlot        = Images::Load("bumpy");
+    slot paletteSlot    = Images::Create("rgb", palette, NELEM(palette), 1);
 
     const float verts[] = 
     {
@@ -114,7 +118,8 @@ void Init()
         pc->Init(0.0f, vec3(0.0f, 0.0f, 0.0f), vec3(10.0f, 0.33f, 10.0f));
         
         rc->m_buf = terrainSlot;
-        rc->m_img = imgslot;
+        rc->m_material = matSlot;
+        rc->m_palette = paletteSlot;
         rc->m_pipeline = pipeslot;
     }
 }
