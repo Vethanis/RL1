@@ -2,25 +2,29 @@
 
 #include <stdint.h>
 
-struct slot
+union slot
 {
-    uint32_t id;
-    uint32_t gen;
+    struct
+    {
+        uint16_t id;
+        uint16_t gen;
+    };
+    uint32_t value;
 
+    inline slot()
+    {
+        value = 0xFFFFFFFF;
+    }
     inline bool operator == (slot other) const 
     {
-        return id == other.id && gen == other.gen;
+        return value == other.value;
     }
     inline bool operator != (slot other) const 
     {
-        return id != other.id || gen != other.gen;
-    }
-    static inline slot CreateInvalid()
-    {
-        return { 0xFFFFFFFF, 0xFFFFFFFF };
+        return value != other.value;
     }
     static inline bool IsInvalid(slot s)
     {
-        return s == CreateInvalid();
+        return s == slot();
     }
 };

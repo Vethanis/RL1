@@ -35,6 +35,7 @@ namespace Physics
 {
     void Init();
     void Update(float dt);
+    void Shutdown();
     btRigidBody* Create(float mass, const vec3& position, const vec3& extent);
     void Destroy(btRigidBody* body);
 };

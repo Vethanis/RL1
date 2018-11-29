@@ -18,9 +18,6 @@
 #include "sokol_gfx.h"
 #include "sokol_time.h"
 
-#include "csg.h"
-
-
 Window window;
 Camera camera;
 
@@ -28,7 +25,6 @@ const char vs_src[] = "#version 330 core\n"
     "in vec3 position;\n"
     "in vec3 normal;\n"
     "in vec2 uv0;\n"
-    "in float ao0;\n"
     "out vec3 N;\n"
     "out vec2 uv;\n"
     "out float AO;\n"
@@ -38,23 +34,20 @@ const char vs_src[] = "#version 330 core\n"
     "   gl_Position = mvp * vec4(position.xyz, 1.0);\n"
     "   N = normal;\n"
     "   uv = uv0;\n"
-    "   AO = ao0;\n"
     "}\n";
 
 const char fs_src[] = "#version 330 core\n"
     "in vec3 N;\n"
     "in vec2 uv;\n"
-    "in float AO;\n"
     "out vec4 frag_color;\n"
-    "uniform sampler2D tex;\n"
+    "uniform sampler2D albedo;\n"
     "void main()\n"
     "{\n"
     "   vec3 L = normalize(vec3(1.0, 2.0f, 0.0f));\n"
-    "   vec4 C = texture(tex, uv);\n"
+    "   vec4 C = texture(albedo, uv);\n"
     "   float D = max(0.0, dot(L, N));\n"
     "   float amb = 0.25;\n"
     "   C *= mix(amb, 1.0, D);\n"
-    "   C *= mix(1.0, amb, AO);\n"
     "   frag_color = C;\n"
     "}\n";
 
@@ -81,7 +74,7 @@ void Init()
     shadesc.vs.uniform_blocks[0].size = sizeof(Transform);
     shadesc.vs.uniform_blocks[0].uniforms[0] = { "mvp", SG_UNIFORMTYPE_MAT4 };
     shadesc.fs.source = fs_src;
-    shadesc.fs.images[0].name = "tex";
+    shadesc.fs.images[0].name = "albedo";
     shadesc.fs.images[0].type = SG_IMAGETYPE_2D;
 
     slot shaderSlot = Shaders::Create("textured_static", shadesc);
@@ -94,8 +87,6 @@ void Init()
     pdesc.layout.attrs[1].format = SG_VERTEXFORMAT_FLOAT3;
     pdesc.layout.attrs[2].name = "uv0";
     pdesc.layout.attrs[2].format = SG_VERTEXFORMAT_FLOAT2;
-    pdesc.layout.attrs[3].name = "ao0";
-    pdesc.layout.attrs[3].format = SG_VERTEXFORMAT_FLOAT;
     pdesc.depth_stencil.depth_write_enabled = true;
     pdesc.depth_stencil.depth_compare_func = SG_COMPAREFUNC_LESS_EQUAL;
     pdesc.rasterizer.cull_mode = SG_CULLMODE_BACK;
@@ -103,31 +94,15 @@ void Init()
     slot pipeslot = Pipelines::Create("textured_static", pdesc);
     slot imgslot = Images::Load("dirt");
 
-    slot terrainSlot;
+    const float verts[] = 
     {
-        CSG csgs[3];
-        csgs[0].size = vec3(0.0f, 1.0f, 0.0f);
-        csgs[0].shape = Plane;
-        csgs[0].blend = SmoothAdd;
-        csgs[0].smoothness = 0.75f;
-
-        csgs[1].size = vec3(2.0f);
-        csgs[1].shape = Sphere;
-        csgs[1].blend = SmoothAdd;
-        csgs[1].smoothness = 0.75f;
-
-        CSGList csglist;
-        csglist.indices.grow() = 0;
-        csglist.indices.grow() = 1;
-
-        Array<vec3> pts;
-        Array<Vertex> verts;
-
-        float pitch = CreatePoints(csglist, csgs, 5, vec3(0.0f), 4.0f, pts);
-        PointsToCubes(pts, pitch, csglist, csgs, verts);
-
-        terrainSlot = Buffers::Create("heightfield", verts.begin(), verts.count());
-    }
+    //  position                  normal              uv
+        -0.5f, -0.5f,  0.0f,      0.0f, 0.0f, 1.0f,   0.0f, 0.0f,
+         0.0f,  0.5f,  0.0f,      0.0f, 0.0f, 1.0f,   0.0f, 1.0f,
+         0.5f, -0.5f,  0.0f,      0.0f, 0.0f, 1.0f,   1.0f, 0.0f,
+    };
+    //Buffers::Save("triangle", (const Vertex*)verts, 3);
+    slot terrainSlot = Buffers::Load("triangle");
 
     {
         slot ent = Components::Create();

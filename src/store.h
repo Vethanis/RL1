@@ -54,7 +54,7 @@ struct Store
     inline slot Find(uint64_t hash) const
     {
         const slot* s = m_dict.Get(hash);
-        return s ? *s : slot::CreateInvalid();
+        return s ? *s : slot();
     }
     inline slot Find(const char* name) const 
     {

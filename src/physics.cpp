@@ -6,18 +6,19 @@
 #include "transform.h"
 
 btDefaultCollisionConfiguration     ms_collisionConfig;
-btCollisionDispatcher               ms_dispatcher(&ms_collisionConfig);
+btCollisionDispatcher               ms_dispatcher = btCollisionDispatcher(
+                                        &ms_collisionConfig);
 btDbvtBroadphase                    ms_broadphase;
 btSequentialImpulseConstraintSolver ms_solver;
-btDiscreteDynamicsWorld             ms_world(
+btDiscreteDynamicsWorld             ms_world = btDiscreteDynamicsWorld(
                                         &ms_dispatcher, 
                                         &ms_broadphase, 
                                         &ms_solver, 
                                         &ms_collisionConfig);
 
-TBlockAlloc<btBoxShape> ms_shapes;
-TBlockAlloc<btRigidBody> ms_bodies;
-TBlockAlloc<btDefaultMotionState> ms_motionStates;
+TBlockAlloc<btBoxShape>             ms_shapes;
+TBlockAlloc<btRigidBody>            ms_bodies;
+TBlockAlloc<btDefaultMotionState>   ms_motionStates;
 
 namespace Physics
 {
@@ -40,6 +41,13 @@ namespace Physics
 
             tc->m_matrix = pc->GetTransform();
         }
+    }
+    void Shutdown()
+    {
+        // zero out ms_world so it doesnt try to delete addresses in .bss region
+        // THIS WILL LEAK, only use when you are REALLY shutting down!
+        // Bullet design demands operator new, which I dislike
+        memset(&ms_world, 0, sizeof(ms_world));
     }
     btRigidBody* Create(float mass, const vec3& position, const vec3& extent)
     {

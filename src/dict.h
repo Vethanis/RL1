@@ -17,20 +17,20 @@ struct Dict
     inline T* Get(uint64_t key)
     {
         uint64_t slot = key % width;
-        int32_t idx = m_keys[slot].find(key);
-        return idx == -1 ? nullptr : &(m_data[slot][idx]);
+        uint16_t idx = m_keys[slot].find(key);
+        return idx == 0xFFFF ? nullptr : &(m_data[slot][idx]);
     }
     inline const T* Get(uint64_t key) const
     {
         uint64_t slot = key % width;
-        int32_t idx = m_keys[slot].find(key);
-        return idx == -1 ? nullptr : &(m_data[slot][idx]);
+        uint16_t idx = m_keys[slot].find(key);
+        return idx == 0xFFFF ? nullptr : &(m_data[slot][idx]);
     }
     inline void Remove(uint64_t key)
     {
         uint64_t slot = key % width;
-        int32_t idx = m_keys[slot].find(key);
-        if(idx != -1)
+        uint16_t idx = m_keys[slot].find(key);
+        if(idx != 0xFFFF)
         {
             m_data[slot].remove(idx);
             m_keys[slot].remove(idx);

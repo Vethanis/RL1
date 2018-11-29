@@ -37,7 +37,7 @@ if(WIN32)
 
     set(PROJECT_LINK_LIBS OpenGL32 glfw3dll ${BULLET_LIBS})
 
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    if(0)
         set(PROJECT_LINK_LIBS OpenGL32 glfw3dll ${BULLET_DEBUG_LIBS})
     endif()
 

@@ -7,9 +7,9 @@
 template<typename T>
 struct Array
 {
-    T*      m_data;
-    int32_t m_count;
-    int32_t m_capacity;
+    T*          m_data;
+    uint16_t    m_count;
+    uint16_t    m_capacity;
 
     Array(){ memset(this, 0, sizeof(*this)); }
     ~Array() { reset(); }
@@ -44,8 +44,8 @@ struct Array
         memcpy(this, &other, sizeof(*this));
         memset(&other, 0, sizeof(*this));
     }
-    inline int32_t capacity()   const { return m_capacity; }
-    inline int32_t count()      const { return m_count; }
+    inline uint16_t capacity()   const { return m_capacity; }
+    inline uint16_t count()      const { return m_count; }
     inline bool full()          const { return count() == capacity(); }
     inline bool empty()         const { return count() == 0; }
     inline size_t bytes()       const { return sizeof(T) * (size_t)count(); }
@@ -53,11 +53,11 @@ struct Array
     inline const T* begin()     const { return m_data; }
     inline T* end()                   { return m_data + m_count; }
     inline const T* end()       const { return m_data + m_count; }
-    inline T& operator[](int32_t idx) { return m_data[idx]; }
-    inline const T& operator[](int32_t idx) const { return m_data[idx]; }
-    inline T& back()                  { return m_data[count() - 1]; }
-    inline const T& back()      const { return m_data[count() - 1]; }
-    inline void reserve(int32_t new_cap)
+    inline T& operator[](uint16_t idx) { return m_data[idx]; }
+    inline const T& operator[](uint16_t idx) const { return m_data[idx]; }
+    inline T& back()                  { return m_data[count() - 1u]; }
+    inline const T& back()      const { return m_data[count() - 1u]; }
+    inline void reserve(uint16_t new_cap)
     {
         if(new_cap > capacity())
         {
@@ -65,7 +65,7 @@ struct Array
             m_capacity = new_cap;
         }
     }
-    void resize(const int32_t new_size)
+    void resize(const uint16_t new_size)
     {
         if(new_size > m_capacity)
         {
@@ -101,31 +101,31 @@ struct Array
         free(m_data);
         memset(this, 0, sizeof(*this));
     }
-    inline void remove(int32_t idx)
+    inline void remove(uint16_t idx)
     {
         m_data[idx] = back();
         pop();
     }
-    int32_t find(const T& t) const
+    uint16_t find(const T& t) const
     {
-        for(int32_t i = 0; i < count(); ++i)
+        for(uint16_t i = 0; i < count(); ++i)
         {
             if(m_data[i] == t)
                 return i;
         }
-        return -1;
+        return 0xFFFF;
     }
     inline void uniquePush(const T& t)
     {
-        if(find(t) == -1)
+        if(find(t) == 0xFFFF)
         {
             grow() = t;
         }
     }
     inline void findRemove(const T& t)
     {
-        int32_t idx = find(t);
-        if(idx != -1)
+        uint16_t idx = find(t);
+        if(idx != 0xFFFF)
         {
             remove(idx);
         }
@@ -137,8 +137,8 @@ struct Array2
 {
     T* m_ts;
     U* m_us;
-    int32_t m_count;
-    int32_t m_capacity;
+    uint16_t m_count;
+    uint16_t m_capacity;
 
     Array2() { memset(this, 0, sizeof(*this)); }
     ~Array2() { reset(); }
@@ -175,8 +175,8 @@ struct Array2
         memcpy(this, &other, sizeof(*this));
         memset(&other, 0, sizeof(*this));
     }
-    inline int32_t capacity()   const { return m_capacity; }
-    inline int32_t count()      const { return m_count; }
+    inline uint16_t capacity()   const { return m_capacity; }
+    inline uint16_t count()      const { return m_count; }
     inline T* beginT() { return m_ts; }
     inline T* endT() { return m_ts + count(); }
     inline U* beginU() { return m_us; }
@@ -185,27 +185,27 @@ struct Array2
     inline const T* endT() const { return m_ts + count(); }
     inline const U* beginU() const { return m_us; }
     inline const U* endU() const { return m_us + count(); }
-    inline T& backT() { return m_ts[count() - 1]; }
-    inline const T& backT() const { return m_ts[count() - 1]; }
-    inline U& backU() { return m_us[count() - 1]; }
-    inline const U& backU() const { return m_us[count() - 1]; }
-    inline T& GetT(int32_t i)
+    inline T& backT() { return m_ts[count() - 1u]; }
+    inline const T& backT() const { return m_ts[count() - 1u]; }
+    inline U& backU() { return m_us[count() - 1u]; }
+    inline const U& backU() const { return m_us[count() - 1u]; }
+    inline T& GetT(uint16_t i)
     {
         return m_ts[i];
     }
-    inline const T& GetT(int32_t i) const
+    inline const T& GetT(uint16_t i) const
     {
         return m_ts[i];
     }
-    inline U& GetU(int32_t i)
+    inline U& GetU(uint16_t i)
     {
         return m_us[i];
     }
-    inline const U& GetU(int32_t i) const
+    inline const U& GetU(uint16_t i) const
     {
         return m_us[i];
     }
-    inline void reserve(int32_t new_cap)
+    inline void reserve(uint16_t new_cap)
     {
         if(new_cap > capacity())
         {
@@ -214,7 +214,7 @@ struct Array2
             m_capacity = new_cap;
         }
     }
-    void resize(const int32_t new_size)
+    void resize(const uint16_t new_size)
     {
         if(new_size > m_capacity)
         {
@@ -249,57 +249,57 @@ struct Array2
         free(m_us);
         memset(this, 0, sizeof(*this));
     }
-    inline void remove(int32_t idx)
+    inline void remove(uint16_t idx)
     {
         m_ts[idx] = backT();
         m_us[idx] = backU();
         pop();
     }
-    int32_t find(const T& t) const
+    uint16_t find(const T& t) const
     {
-        for(int32_t i = 0; i < count(); ++i)
+        for(uint16_t i = 0; i < count(); ++i)
         {
             if(m_ts[i] == t)
                 return i;
         }
-        return -1;
+        return 0xFFFF;
     }
-    int32_t find(const U& u) const
+    uint16_t find(const U& u) const
     {
-        for(int32_t i = 0; i < count(); ++i)
+        for(uint16_t i = 0; i < count(); ++i)
         {
             if(m_us[i] == u)
                 return i;
         }
-        return -1;
+        return 0xFFFF;
     }
     inline void uniquePush(const T& t)
     {
-        if(find(t) == -1)
+        if(find(t) == 0xFFFF)
         {
             grow() = t;
         }
     }
     inline void uniquePush(const U& u)
     {
-        if(find(u) == -1)
+        if(find(u) == 0xFFFF)
         {
             grow();
-            m_us[count() - 1] = u;
+            m_us[count() - 1u] = u;
         }
     }
     inline void findRemove(const T& t)
     {
-        int32_t idx = find(t);
-        if(idx != -1)
+        uint16_t idx = find(t);
+        if(idx != 0xFFFF)
         {
             remove(idx);
         }
     }
     inline void findRemove(const U& u)
     {
-        int32_t idx = find(u);
-        if(idx != -1)
+        uint16_t idx = find(u);
+        if(idx != 0xFFFF)
         {
             remove(idx);
         }
