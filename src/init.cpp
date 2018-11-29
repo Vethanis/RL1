@@ -76,24 +76,41 @@ void Init()
     pdesc.depth_stencil.depth_compare_func = SG_COMPAREFUNC_LESS_EQUAL;
     pdesc.rasterizer.cull_mode = SG_CULLMODE_BACK;
 
-    uint32_t palette[16];
-    vec4 A = vec4(Randf(), Randf(), Randf(), 1.0f);
-    vec4 B = vec4(Randf(), Randf(), Randf(), 1.0f);
-    for(uint32_t i = 0; i < NELEM(palette); ++i)
+    uint32_t palette[256];
+    vec4 colors[4];
+    memset(palette, 0, sizeof(palette));
+    for(vec4& c : colors)
     {
-        float alpha = (float)i / (float)NELEM(palette);
-        vec4 x = glm::mix(A, B, alpha) * 255.0f;
-        uint8_t r, g, b, a;
-        r = (uint8_t)x.x;
-        g = (uint8_t)x.y;
-        b = (uint8_t)x.z;
-        a = (uint8_t)x.w;
-        uint32_t y = r;
-        y = (y << 8) | g;
-        y = (y << 8) | b;
-        y = (y << 8) | a;
-        palette[i] = y;
+        c = vec4(Randf(), Randf(), Randf(), 1.0f) * 254.0f;
     }
+    const int32_t palPerCol = NELEM(palette) / NELEM(colors);
+    for(int32_t pal = 0; pal < NELEM(palette); ++pal)
+    {
+        for(int32_t col = 0; col < NELEM(colors); ++col)
+        {
+            int32_t pt = col * palPerCol;
+            int32_t dis = (int32_t)sqrtf((pal - pt) * (pal - pt));
+            if(dis < palPerCol)
+            {
+                uint32_t& x = palette[pal];
+                const float alpha = 1.0f - (float)dis / (float)palPerCol;
+                vec4 c = colors[col] * alpha;
+                uint8_t r = x & 0xff;
+                uint8_t g = (x & 0xff00) >> 8;
+                uint8_t b = (x & 0xff0000) >> 16;
+                uint8_t a = (x & 0xff000000) >> 24;
+                r += (uint8_t)c.x;
+                g += (uint8_t)c.y;
+                b += (uint8_t)c.z;
+                a += (uint8_t)c.w;
+                x = a;
+                x = (x << 8) | b;
+                x = (x << 8) | g;
+                x = (x << 8) | r;
+            }
+        }
+    }
+
     
     slot pipeslot       = Pipelines::Create("textured_static", pdesc);
     slot matSlot        = Images::Load("bumpy");

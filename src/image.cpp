@@ -35,7 +35,6 @@ namespace Images
         sg_image_desc desc = {0};
         desc.min_filter = SG_FILTER_LINEAR;
         desc.mag_filter = SG_FILTER_LINEAR;
-        //desc.num_mipmaps = 16;
         desc.content.subimage[0][0].ptr = data;
         desc.content.subimage[0][0].size = sizeof(uint8_t) * 4u * width * height;
         desc.width = width;
