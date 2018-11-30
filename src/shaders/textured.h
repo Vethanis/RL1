@@ -43,6 +43,8 @@ struct FSUniform
     vec3  LightRad;
     float BumpScale;
     float ParallaxScale;
+    float RoughnessOffset;
+    float MetalnessOffset;
 };
 
 static const char* textured_fs = 
@@ -64,23 +66,31 @@ uniform vec3    LightDir;
 uniform vec3    LightRad;
 uniform float   BumpScale;
 uniform float   ParallaxScale;
+uniform float   RoughnessOffset;
+uniform float   MetalnessOffset;
 
 float GetHeight(vec2 uv)
 {
     return texture(MatTex, uv).y;
 }
 
-mat3 GetBasis(vec3 N)
+mat3 GetBasis(vec3 V, vec3 N)
 {
-    mat3 TBN;
-    if(abs(N.x) > 0.001)
-        TBN[0] = cross(vec3(0.0, 1.0, 0.0), N);
-    else
-        TBN[0] = cross(vec3(1.0, 0.0, 0.0), N);
-    TBN[0] = normalize(TBN[0]);
-    TBN[1] = cross(N, TBN[0]);
-    TBN[2] = N;
-    return TBN;
+    vec3 T;
+    vec3 B;
+    {
+        vec3 t1, t2;
+        t1 = cross(N, -V);
+        t2 = cross(N, vec3(0.0, 1.0, 0.0));
+        T = t1;
+        if(dot(t2, t2) > dot(t1, t1))
+        {
+            T = t2;
+        }
+    }
+    T = normalize(T);
+    B = normalize(cross(N, T));
+    return mat3(T, B, N);
 }
 
 vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir, float scale)
@@ -112,7 +122,7 @@ vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir, float scale)
     return finalTexCoords;
 }
 
-vec3 Height2N(vec3 P, float h, float scale)
+vec3 Height2N(vec3 N, vec3 P, float h, float scale)
 {
     float dhdx = dFdx(h);
     float dhdy = dFdy(h);
@@ -120,12 +130,12 @@ vec3 Height2N(vec3 P, float h, float scale)
     vec3 dpdx = dFdx(P);
     vec3 dpdy = dFdy(P);
 
-    vec3 r1 = cross(dpdy, MacroNormal);
-    vec3 r2 = cross(MacroNormal, dpdx);
+    vec3 r1 = cross(dpdy, N);
+    vec3 r2 = cross(N, dpdx);
 
     vec3 g = (r1 * dhdx + r2 * dhdy) / dot(dpdx, r1);
 
-    return normalize(MacroNormal + -g * scale);
+    return normalize(N + -g * scale);
 }
 
 float DisGGX(vec3 N, vec3 H, float roughness)
@@ -208,16 +218,17 @@ void main()
 {
     vec3 P      = Position;
     vec3 V      = normalize(Eye - P);
-    vec3 tanV   = transpose(GetBasis(MacroNormal)) * V;
+    vec3 N      = normalize(MacroNormal);
+    vec3 tanV   = normalize(transpose(GetBasis(V, N)) * V);
     vec2 UV     = ParallaxMapping(uv, tanV, ParallaxScale);
 
     vec4 PHRM       = texture(MatTex, UV);
     float palette   = PHRM.x;
     float height    = PHRM.y;
-    float roughness = PHRM.z;
-    float metalness = PHRM.w;
+    float roughness = clamp(PHRM.z + RoughnessOffset, 0.0, 1.0);
+    float metalness = clamp(PHRM.w + MetalnessOffset, 0.0, 1.0);
     vec3 albedo     = texture(PalTex, vec2(palette, 0.0)).xyz;
-    vec3 N          = Height2N(P, height, BumpScale);
+    N               = Height2N(N, P, height, BumpScale);
 
     vec3 C          = PBRLighting(
         V,

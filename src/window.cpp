@@ -4,11 +4,14 @@
 #include <GLFW/glfw3.h>
 #include "glad.h"
 
+#include "imgui.h"
+
 #include "macro.h"
 #include "camera.h"
 
 static int32_t  ms_glfwRefs = 0;
 static bool     ms_gladInit = false;
+static bool     ms_cursorHidden = true;
 static Window*  ms_active = nullptr;
 static int32_t  ms_frame = 0;
 
@@ -68,6 +71,56 @@ void Window::Init(const char* title, bool fullscreen)
         ms_gladInit = true;
     }
 
+    glfwSetMouseButtonCallback(m_window, 
+        [](GLFWwindow* w, int32_t btn, int32_t action, int32_t mods)
+        {
+            if(btn >= 0 && btn < 3)
+            {
+                ImGui::GetIO().MouseDown[btn] = (action == GLFW_PRESS);
+            }
+        });
+    glfwSetCursorPosCallback(m_window, 
+        [](GLFWwindow* w, double x, double y)
+        {
+            ImGui::GetIO().MousePos.x = (float)x;
+            ImGui::GetIO().MousePos.y = (float)y;
+        });
+    glfwSetScrollCallback(m_window, 
+        [](GLFWwindow* w, double x, double y)
+        {
+            ImGui::GetIO().MouseWheel = (float)y;
+        });
+    glfwSetKeyCallback(m_window, 
+        [](GLFWwindow* w, int32_t key, int32_t scancode, int32_t action, int32_t mods)
+        {
+            ImGuiIO& io = ImGui::GetIO();
+            if(key >= 0 && key < 512)
+            {
+                io.KeysDown[key] = (action == GLFW_PRESS) || (action == GLFW_REPEAT);
+            }
+            io.KeyCtrl  = (0 != (mods & GLFW_MOD_CONTROL));
+            io.KeyAlt   = (0 != (mods & GLFW_MOD_ALT));
+            io.KeyShift = (0 != (mods & GLFW_MOD_SHIFT));
+
+            if(key == GLFW_KEY_LEFT_CONTROL && action == GLFW_RELEASE)
+            {
+                ms_cursorHidden = !ms_cursorHidden;
+                if(ms_cursorHidden)
+                {
+                    glfwSetInputMode(w, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                }
+                else
+                {
+                    glfwSetInputMode(w, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                }
+            }
+        });
+    glfwSetCharCallback(m_window, 
+        [](GLFWwindow* w, uint32_t codepoint)
+        {
+            ImGui::GetIO().AddInputCharacter((ImWchar)codepoint);
+        });
+
     glViewport(0, 0, m_width, m_height);
 }
 
@@ -105,6 +158,12 @@ void Window::Poll(Camera& cam)
         m_dt = (float)glfwGetTime();
         glfwSetTime(0.0);
         m_dt = glm::clamp(m_dt, 0.0f, 1.0f / 30.0f);
+    }
+
+    if(!ms_cursorHidden)
+    {
+        ms_frame = 0;
+        return;
     }
 
     {

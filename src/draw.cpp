@@ -12,12 +12,18 @@
 #include "shaders/textured.h"
 
 #include "sokol_gfx.h"
-
-#include <GLFW/glfw3.h>
+#include "uidraw.h"
+#include "imgui.h"
 
 sg_pass_action action = {0};
 
 vec3 ldir = glm::normalize(vec3(1.0f));
+vec3 lcol = vec3(1.0f);
+float lrad = 10.0f;
+float roughoffset = 0.0f;
+float metaloffset = 0.0f;
+float bumpScale = 0.066f;
+float paraScale = 0.026f;
 
 void Draw()
 {
@@ -37,16 +43,28 @@ void Draw()
     VSUniform vsuni;
     FSUniform fsuni;
 
-    if(glfwGetKey(window->m_window, GLFW_KEY_E))
+    if(ImGui::Begin("Controls"))
     {
-        ldir = cam->direction();
+        if(ImGui::Button("Sun Dir"))
+        {
+            ldir = cam->direction();
+        }
+        ImGui::SliderFloat3("Sun Color", &lcol.x, 0.0f, 1.0f);
+        ImGui::SliderFloat("Sun Radiance", &lrad, 0.0f, 1000.0f);
+        ImGui::SliderFloat("Roughness", &roughoffset, -1.0f, 1.0f);
+        ImGui::SliderFloat("Metalness", &metaloffset, -1.0f, 1.0f);
+        ImGui::SliderFloat("Bump Scale", &bumpScale, 0.0f, 0.25f);
+        ImGui::SliderFloat("Parallax Scale", &paraScale, 0.0f, 0.25f);
+        ImGui::End();
     }
 
     fsuni.Eye           = cam->m_eye;
     fsuni.LightDir      = ldir;
-    fsuni.LightRad      = vec3(10.0f);
-    fsuni.BumpScale     = 0.05f;
-    fsuni.ParallaxScale = 0.05f;
+    fsuni.LightRad      = lrad * lcol;
+    fsuni.BumpScale     = bumpScale;
+    fsuni.ParallaxScale = paraScale;
+    fsuni.RoughnessOffset = roughoffset;
+    fsuni.MetalnessOffset = metaloffset;
 
     for(const slot* s = Components::begin(); s != Components::end(); ++s)
     {
@@ -83,6 +101,8 @@ void Draw()
         sg_apply_uniform_block(SG_SHADERSTAGE_FS, 0, &fsuni, sizeof(FSUniform));
         sg_draw(0, buf->m_count, 1);
     }
+
+    UIEnd();
 
     sg_end_pass();
     sg_commit();

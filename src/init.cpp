@@ -16,6 +16,8 @@
 #include "task.h"
 #include "prng.h"
 
+#include "imguishim.h"
+
 #include "sokol_gfx.h"
 #include "sokol_time.h"
 
@@ -39,6 +41,8 @@ void Init()
     sg_setup(&desc);
     stm_setup();
 
+    ImGuiShim::Init(window.m_window);
+
     Components::Init();
     TaskManager::Init();
     Physics::Init();
@@ -57,6 +61,8 @@ void Init()
     shadesc.fs.uniform_blocks[0].uniforms[2] = { "LightRad",        SG_UNIFORMTYPE_FLOAT3 };
     shadesc.fs.uniform_blocks[0].uniforms[3] = { "BumpScale",       SG_UNIFORMTYPE_FLOAT  };
     shadesc.fs.uniform_blocks[0].uniforms[4] = { "ParallaxScale",   SG_UNIFORMTYPE_FLOAT  };
+    shadesc.fs.uniform_blocks[0].uniforms[5] = { "RoughnessOffset", SG_UNIFORMTYPE_FLOAT  };
+    shadesc.fs.uniform_blocks[0].uniforms[6] = { "MetalnessOffset", SG_UNIFORMTYPE_FLOAT  };
     shadesc.fs.images[0].name = "MatTex";
     shadesc.fs.images[0].type = SG_IMAGETYPE_2D;
     shadesc.fs.images[1].name = "PalTex";
@@ -110,7 +116,6 @@ void Init()
             }
         }
     }
-
     
     slot pipeslot       = Pipelines::Create("textured_static", pdesc);
     slot matSlot        = Images::Load("bumpy");
