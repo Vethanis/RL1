@@ -68,10 +68,11 @@ void Init()
     shadesc.fs.images[1].name = "PalTex";
     shadesc.fs.images[1].type = SG_IMAGETYPE_2D;
 
-    slot shaderSlot = Shaders::Create("textured_static", shadesc);
+    slot shaderSlot = Shaders::Create(shadesc);
 
     sg_pipeline_desc pdesc = {0};
     pdesc.shader = Shaders::Get(shaderSlot);
+    pdesc.index_type = SG_INDEXTYPE_UINT16;
     pdesc.layout.attrs[0].name = "position";
     pdesc.layout.attrs[0].format = SG_VERTEXFORMAT_FLOAT3;
     pdesc.layout.attrs[1].name = "normal";
@@ -79,57 +80,11 @@ void Init()
     pdesc.layout.attrs[2].name = "uv0";
     pdesc.layout.attrs[2].format = SG_VERTEXFORMAT_FLOAT2;
     pdesc.depth_stencil.depth_write_enabled = true;
-    pdesc.depth_stencil.depth_compare_func = SG_COMPAREFUNC_LESS_EQUAL;
+    pdesc.depth_stencil.depth_compare_func = SG_COMPAREFUNC_LESS;
     pdesc.rasterizer.cull_mode = SG_CULLMODE_BACK;
-
-    uint32_t palette[256];
-    vec4 colors[4];
-    memset(palette, 0, sizeof(palette));
-    for(vec4& c : colors)
-    {
-        c = vec4(Randf(), Randf(), Randf(), 1.0f) * 254.0f;
-    }
-    const int32_t palPerCol = NELEM(palette) / NELEM(colors);
-    for(int32_t pal = 0; pal < NELEM(palette); ++pal)
-    {
-        for(int32_t col = 0; col < NELEM(colors); ++col)
-        {
-            int32_t pt = col * palPerCol;
-            int32_t dis = (int32_t)sqrtf((pal - pt) * (pal - pt));
-            if(dis < palPerCol)
-            {
-                uint32_t& x = palette[pal];
-                const float alpha = 1.0f - (float)dis / (float)palPerCol;
-                vec4 c = colors[col] * alpha;
-                uint8_t r = x & 0xff;
-                uint8_t g = (x & 0xff00) >> 8;
-                uint8_t b = (x & 0xff0000) >> 16;
-                uint8_t a = (x & 0xff000000) >> 24;
-                r += (uint8_t)c.x;
-                g += (uint8_t)c.y;
-                b += (uint8_t)c.z;
-                a += (uint8_t)c.w;
-                x = a;
-                x = (x << 8) | b;
-                x = (x << 8) | g;
-                x = (x << 8) | r;
-            }
-        }
-    }
+    pdesc.rasterizer.face_winding = SG_FACEWINDING_CCW;
     
-    slot pipeslot       = Pipelines::Create("textured_static", pdesc);
-    slot matSlot        = Images::Load("bumpy");
-    slot paletteSlot    = Images::Create("rgb", palette, NELEM(palette), 1);
-
-    const float verts[] = 
-    {
-    //  position                  normal              uv
-        -0.5f, -0.5f,  0.0f,      0.0f, 0.0f, 1.0f,   0.0f, 0.0f,
-         0.0f,  0.5f,  0.0f,      0.0f, 0.0f, 1.0f,   0.0f, 1.0f,
-         0.5f, -0.5f,  0.0f,      0.0f, 0.0f, 1.0f,   1.0f, 0.0f,
-    };
-    //Buffers::Save("triangle", (const Vertex*)verts, 3);
-    slot terrainSlot = Buffers::Load("triangle");
+    slot pipeslot       = Pipelines::Create(pdesc);
 
     {
         slot ent = Components::Create();
@@ -139,9 +94,9 @@ void Init()
 
         pc->Init(0.0f, vec3(0.0f, 0.0f, 0.0f), vec3(10.0f, 0.33f, 10.0f));
         
-        rc->m_buf = terrainSlot;
-        rc->m_material = matSlot;
-        rc->m_palette = paletteSlot;
-        rc->m_pipeline = pipeslot;
+        rc->m_buffer    = Buffers::Load(BufferString("sphere"));
+        rc->m_material  = Images::Load(ImageString("bumpy_PHRM"));
+        rc->m_palette   = Images::Load(ImageString("palette_palette"));
+        rc->m_pipeline  = pipeslot;
     }
 }

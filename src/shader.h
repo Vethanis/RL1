@@ -5,10 +5,8 @@
 
 namespace Shaders
 {
-    slot Create(const char* name, const sg_shader_desc& desc);
+    slot Create(const sg_shader_desc& desc);
     void Destroy(slot s);
     sg_shader Get(slot s);
     bool Exists(slot s);
-    slot Find(const char* name);
-    slot Find(uint32_t hash);
 };

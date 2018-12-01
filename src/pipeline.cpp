@@ -1,15 +1,15 @@
 #include "pipeline.h"
 
 #include "macro.h"
-#include "store.h"
+#include "gen_array.h"
 
 namespace Pipelines
 {
-    Store<sg_pipeline, 8> ms_store;
+    gen_array<sg_pipeline> ms_store;
 
-    slot Create(const char* name, const sg_pipeline_desc& desc)
+    slot Create(const sg_pipeline_desc& desc)
     {
-        slot s = ms_store.Create(name);
+        slot s = ms_store.Create();
         sg_pipeline* p = ms_store.Get(s);
         *p = sg_make_pipeline(&desc);
         Assert(p->id != SG_INVALID_ID);
@@ -21,8 +21,8 @@ namespace Pipelines
         {
             return;
         }
-        sg_pipeline* p = ms_store.Get(s);
-        sg_destroy_pipeline(*p);
+        sg_pipeline& pipe = ms_store.GetUnchecked(s);
+        sg_destroy_pipeline(pipe);
         ms_store.DestroyUnchecked(s);
     }
     const sg_pipeline* Get(slot s)
@@ -32,17 +32,5 @@ namespace Pipelines
     bool Exists(slot s)
     {
         return ms_store.Exists(s);
-    }
-    bool Exists(const char* name)
-    {
-        return ms_store.Exists(name);
-    }
-    slot Find(const char* name)
-    {
-        return ms_store.Find(name);
-    }
-    slot Find(uint32_t hash)
-    {
-        return ms_store.Find(hash);
     }
 };

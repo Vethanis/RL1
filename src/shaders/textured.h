@@ -78,17 +78,7 @@ mat3 GetBasis(vec3 V, vec3 N)
 {
     vec3 T;
     vec3 B;
-    {
-        vec3 t1, t2;
-        t1 = cross(N, -V);
-        t2 = cross(N, vec3(0.0, 1.0, 0.0));
-        T = t1;
-        if(dot(t2, t2) > dot(t1, t1))
-        {
-            T = t2;
-        }
-    }
-    T = normalize(T);
+    T = normalize(cross(N, -V));
     B = normalize(cross(N, T));
     return mat3(T, B, N);
 }

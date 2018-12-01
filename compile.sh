@@ -26,14 +26,14 @@ if [[ $? > 0 ]]; then
     exit 1
 fi
 
-mkdir -p bin/Release/assets
-mkdir -p bin/Debug/assets
+mkdir -p bin/Release
+mkdir -p bin/Debug
 
 cp lib/*.dll bin/Release/
 cp lib/*.dll bin/Debug/
 
-cp assets/* bin/Release/assets/
-cp assets/* bin/Debug/assets/
+cp -r assets bin/Release/
+cp -r assets bin/Debug/
 
 if [ "$1" == "debug" ] || [ "$2" == "debug" ] ; then
     echo ""

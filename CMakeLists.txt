@@ -29,20 +29,16 @@ if(WIN32)
         BulletInverseDynamics_Debug.lib
         BulletInverseDynamicsUtils_Debug.lib
         LinearMath_Debug.lib)
-
-    set(ASSIMP_LIB
-        assimp-vc140-mt.lib
-        )
         
     set(CMAKE_CXX_FLAGS_DEBUG "/Od /MTd /Zi")
     set(CMAKE_CXX_FLAGS_RELEASE "/O2 /MT /arch:AVX2 /fp:fast")
     set(CMAKE_CXX_FLAGS "/W3 /MP /GR-")
     include_directories(${CMAKE_SOURCE_DIR}/include)
 
-    set(PROJECT_LINK_LIBS OpenGL32 glfw3dll ${BULLET_LIBS} ${ASSIMP_LIB} )
+    set(PROJECT_LINK_LIBS OpenGL32 glfw3dll ${BULLET_LIBS} )
 
     if(0)
-        set(PROJECT_LINK_LIBS OpenGL32 glfw3dll ${BULLET_DEBUG_LIBS})
+        set(PROJECT_LINK_LIBS OpenGL32 glfw3dll ${BULLET_DEBUG_LIBS} )
     endif()
 
     link_directories(${CMAKE_SOURCE_DIR}/lib )

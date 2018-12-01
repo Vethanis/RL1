@@ -4,26 +4,71 @@
 #include "gen_array.h"
 #include "dict.h"
 #include "fnv.h"
+#include "hashstring.h"
 
-template<typename T, uint32_t width>
+template<typename T, uint64_t width, void (*loadFn)(T*, Hash) = nullptr, void (*destroyFn)(T*) = nullptr>
 struct Store
 {
     struct Item
     {
         T t;
-        uint32_t hash;
+        Hash hash;
+        int32_t refcount;
     };
     gen_array<Item>     m_items;
     Dict<slot, width>   m_dict;
 
-    slot Create(const char* name)
+    inline slot Create(const char* name)
     {
-        uint32_t hash = Fnv32(name);
-        Assert(!Exists(hash));
-        slot s = m_items.Create();
-        m_items.GetUnchecked(s).hash = hash;
+        return Create(Hash(name));
+    }
+    inline slot Create(Hash hash)
+    {
+        slot s = Find(hash);
+        if(Exists(s))
+        {
+            Item& item = m_items.GetUnchecked(s);
+            item.refcount++;
+            return s;
+        }
+        s = m_items.Create();
+        Item& item = m_items.GetUnchecked(s);
+        if(loadFn)
+        {
+            loadFn(&item.t, hash);
+        }
+        item.hash = hash;
+        item.refcount = 1;
         m_dict.Insert(hash, s);
         return s;
+    }
+    inline void IncRef(slot s)
+    {
+        if(Exists(s))
+        {
+            m_items.GetUnchecked(s).refcount++;
+        }
+    }
+    inline void DecRef(slot s)
+    {
+        Destroy(s);
+    }
+    inline int32_t RefCount(slot s) const
+    {
+        if(Exists(s))
+        {
+            return m_items.GetUnchecked(s).refcount;
+        }
+        return 0;
+    }
+    inline void Destroy(const char* name)
+    {
+        Destroy(Hash(name));
+    }
+    inline void Destroy(Hash hash)
+    {
+        slot s = Find(hash);
+        Destroy(s);
     }
     inline void Destroy(slot s)
     {
@@ -31,11 +76,20 @@ struct Store
         {
             return;
         }
-        DestroyUnchecked(s);
+        Item& item = m_items.GetUnchecked(s);
+        item.refcount--;
+        if(item.refcount == 0)
+        {
+            DestroyUnchecked(s);
+        }
     }
     inline void DestroyUnchecked(slot s)
     {
         Item& item = m_items.GetUnchecked(s);
+        if(destroyFn)
+        {
+            destroyFn(&item.t);
+        }
         m_dict.Remove(item.hash);
         m_items.DestroyUnchecked(s);
     }
@@ -47,18 +101,18 @@ struct Store
     {
         return Exists(Find(name));
     }
-    inline bool Exists(uint32_t hash) const 
+    inline bool Exists(Hash hash) const 
     {
         return Exists(Find(hash));
     }
-    inline slot Find(uint32_t hash) const
+    inline slot Find(Hash hash) const
     {
         const slot* s = m_dict.Get(hash);
         return s ? *s : slot();
     }
     inline slot Find(const char* name) const 
     {
-        return Find(Fnv32(name));
+        return Find(Hash(name));
     }
     inline T* Get(slot s)
     {

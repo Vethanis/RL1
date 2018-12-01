@@ -4,14 +4,7 @@
 #include "macro.h"
 #include "strlcpy.h"
 #include "store.h"
-
-enum Namespace
-{
-    NS_Buffer = 0,
-    NS_Image,
-    NS_Entity,
-    NS_Count
-};
+#include "hashstring.h"
 
 struct Text
 {
@@ -20,24 +13,21 @@ struct Text
 
 struct Names
 {
-    Store<Text, 64> m_store;
+    Store<Text, 512> m_store;
 
     inline slot Create(const char* name)
     {
         slot s = m_store.Create(name);
-        Text* t = m_store.Get(s);
-        strlcpy(t->data, name, NELEM(t->data));
-    }
-    inline void Destroy(slot s)
-    {
-        m_store.Destroy(s);
+        Text& t = m_store.GetUnchecked(s);
+        strlcpy(t.data, name, NELEM(t.data));
+        return s;
     }
     inline const char* operator[](slot s) const
     {
         const Text* text = m_store.Get(s);
         return text ? text->data : nullptr;
     }
-    inline slot Find(uint32_t hash) const
+    inline slot Find(Hash hash) const
     {
         return m_store.Find(hash);
     }
@@ -45,8 +35,14 @@ struct Names
     {
         return m_store.Find(name);
     }
+    inline const char* Get(Hash hash) const
+    {
+        slot s = Find(hash);
+        const Text* text = m_store.Get(s);
+        return text ? text->data : nullptr;
+    }
 
-    static inline Names& Get(Namespace ns)
+    static inline Names& GetSpace(Namespace ns)
     {
         return ms_names[ns];
     }

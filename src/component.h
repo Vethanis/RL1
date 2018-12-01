@@ -86,9 +86,9 @@ namespace Components
 
 struct RenderComponent
 {
-    slot m_buf;
-    slot m_material;
+    slot m_buffer;
     slot m_palette;
+    slot m_material;
     slot m_pipeline;
 
     static const ComponentType ms_type = CT_Render;
