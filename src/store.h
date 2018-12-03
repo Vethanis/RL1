@@ -15,8 +15,8 @@ struct Store
         Hash hash;
         int32_t refcount;
     };
-    gen_array<Item>     m_items;
-    Dict<slot, width>   m_dict;
+    gen_array<Item>             m_items;
+    Dict<Hash, slot, width>     m_dict;
 
     inline slot Create(const char* name)
     {

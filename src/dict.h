@@ -1,40 +1,50 @@
 #pragma once
 
 #include "array.h"
-#include "hashstring.h"
 
-template<typename T, uint64_t width>
+template<typename K, typename V, uint64_t width>
 struct Dict
 {
-    Array<T>            m_data[width];
-    Array<Hash>         m_keys[width];
+    Array<K>            m_keys[width];
+    Array<V>            m_data[width];
+    uint32_t            m_count = 0u;
 
-    inline void Insert(Hash key, const T& item)
+    inline void Insert(K key, const V& item)
     {
         uint64_t slot = key % width;
-        m_data[slot].grow() = item;
-        m_keys[slot].grow() = key;
+        int32_t idx = m_keys[slot].find(key);
+        if(idx == -1)
+        {
+            m_data[slot].grow() = item;
+            m_keys[slot].grow() = key;
+            ++m_count;
+        }
     }
-    inline T* Get(Hash key)
+    inline V* Get(K key)
     {
         uint64_t slot = key % width;
-        uint16_t idx = m_keys[slot].find(key);
-        return idx == 0xFFFF ? nullptr : &(m_data[slot][idx]);
+        int32_t idx = m_keys[slot].find(key);
+        return idx == -1 ? nullptr : &(m_data[slot][idx]);
     }
-    inline const T* Get(Hash key) const
+    inline const V* Get(K key) const
     {
         uint64_t slot = key % width;
-        uint16_t idx = m_keys[slot].find(key);
-        return idx == 0xFFFF ? nullptr : &(m_data[slot][idx]);
+        int32_t idx = m_keys[slot].find(key);
+        return idx == -1 ? nullptr : &(m_data[slot][idx]);
     }
-    inline void Remove(Hash key)
+    inline void Remove(K key)
     {
         uint64_t slot = key % width;
-        uint16_t idx = m_keys[slot].find(key);
-        if(idx != 0xFFFF)
+        int32_t idx = m_keys[slot].find(key);
+        if(idx != -1)
         {
             m_data[slot].remove(idx);
             m_keys[slot].remove(idx);
+            --m_count;
         }
+    }
+    inline uint32_t Count() const 
+    {
+        return m_count;
     }
 };

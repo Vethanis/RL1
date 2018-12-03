@@ -72,7 +72,7 @@ void Init()
 
     sg_pipeline_desc pdesc = {0};
     pdesc.shader = Shaders::Get(shaderSlot);
-    pdesc.index_type = SG_INDEXTYPE_UINT16;
+    pdesc.index_type = SG_INDEXTYPE_UINT32;
     pdesc.layout.attrs[0].name = "position";
     pdesc.layout.attrs[0].format = SG_VERTEXFORMAT_FLOAT3;
     pdesc.layout.attrs[1].name = "normal";

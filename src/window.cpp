@@ -1,9 +1,10 @@
 #include "window.h"
 
+#include <stdio.h>
+
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include "glad.h"
-
 #include "imgui.h"
 
 #include "macro.h"

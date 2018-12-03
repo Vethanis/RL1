@@ -51,6 +51,6 @@ elseif(UNIX)
     set(PROJECT_LINK_LIBS GL glfw3)
 endif()
 
-file(GLOB SOURCES "src/*.cpp" "src/*.c" "src/*.cc")
+file(GLOB_RECURSE SOURCES "src/*.cpp" "src/*.c" "src/*.cc")
 add_executable(main ${SOURCES})
 target_link_libraries(main ${PROJECT_LINK_LIBS})

@@ -7,9 +7,15 @@ template<typename T>
 struct gen_array
 {
     Array<T>        m_data;
-    Array<uint16_t> m_gen;
-    Array<uint16_t> m_free;
+    Array<int32_t>  m_gen;
+    Array<int32_t>  m_free;
 
+    void Reset()
+    {
+        m_data.reset();
+        m_gen.reset();
+        m_free.reset();
+    }
     slot Create()
     {
         if(m_free.empty())
@@ -69,6 +75,6 @@ struct gen_array
     }
     inline bool Exists(slot s) const
     {
-        return s.id < m_data.count() && m_gen[s.id] == s.gen; 
+        return s.id < (uint32_t)m_data.count() && m_gen[s.id] == s.gen; 
     }
 };

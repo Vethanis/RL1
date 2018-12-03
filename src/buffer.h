@@ -37,7 +37,7 @@ struct Vertex
 struct BufferData
 {
     Vertex*     vertices;
-    uint16_t*   indices;
+    uint32_t*   indices;
     uint32_t    vertCount;
     uint32_t    indexCount;
 };

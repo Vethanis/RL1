@@ -6,14 +6,14 @@ union slot
 {
     struct
     {
-        uint16_t id;
-        uint16_t gen;
+        uint32_t id;
+        uint32_t gen;
     };
-    uint32_t value;
+    uint64_t value;
 
     inline slot()
     {
-        value = 0xFFFFFFFF;
+        value = 0xFFFFFFFFFFFFFFFF;
     }
     inline bool operator == (slot other) const 
     {

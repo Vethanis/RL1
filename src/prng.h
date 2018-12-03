@@ -51,7 +51,7 @@ inline uint32_t Rand(uint32_t tid = 0u)
 
 inline uint32_t Rand(uint32_t lo, uint32_t hi, uint32_t tid = 0u)
 {
-    return lo + Rand(tid) * (hi - lo);
+    return lo + (Rand(tid) % (hi - lo));
 }
 
 inline float Randf(uint32_t tid = 0u)

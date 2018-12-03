@@ -1,6 +1,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 
 #include "buffer.h"
+#include <stdio.h>
 
 #include "sokol_gfx.h"
 #include "macro.h"
@@ -144,23 +145,17 @@ namespace Buffers
             fclose(file);
 
             Array<Vertex> verts;
-            Array<uint16_t> inds;
+            Array<uint32_t> inds;
 
             for(const Face& f : faces)
             {
-                for(uint16_t i = 0; i < 3; ++i)
+                for(int32_t i = 0; i < 3; ++i)
                 {
                     Vertex v;
                     v.position = positions[f.p[i] - 1];
                     v.normal = normals[f.n[i] - 1];
                     v.uv = uvs[f.u[i] - 1];
-                    uint16_t idx = verts.find(v);
-                    if(idx == 0xffff)
-                    {
-                        idx = verts.count();
-                        verts.grow() = v;
-                    }
-                    inds.grow() = idx;
+                    inds.grow() = (uint32_t)verts.findOrPush(v);
                 }
             }
             BufferData bd;
@@ -194,10 +189,10 @@ namespace Buffers
         fread(&indexCount, sizeof(uint32_t), 1, file);        
         
         Vertex* verts = (Vertex*)malloc(sizeof(Vertex) * vertCount);
-        uint16_t* indices = (uint16_t*)malloc(sizeof(uint16_t) * indexCount);
+        uint32_t* indices = (uint32_t*)malloc(sizeof(uint32_t) * indexCount);
         
         fread(verts, sizeof(Vertex), vertCount, file);
-        fread(indices, sizeof(uint16_t), indexCount, file);
+        fread(indices, sizeof(uint32_t), indexCount, file);
         fclose(file);
 
         out.vertCount = vertCount;

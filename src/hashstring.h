@@ -21,18 +21,18 @@ struct Hash
 {
     uint64_t value;
 
-    Hash()
+    inline Hash()
     {
         value = 0;
     }
-    Hash(const char* x)
+    inline explicit Hash(uint64_t x)
+    {
+        value = x;
+    }
+    inline explicit Hash(const char* x)
     {
         value = Fnv64(x);
         value = value ? value : 1;
-    }
-    Hash(uint64_t x)
-    {
-        value = x;
     }
     inline bool IsNull() const 
     {
@@ -64,18 +64,18 @@ const char* SlotStringGetString(Namespace ns, slot s);
 template<Namespace space = NS_Default>
 struct SlotString
 {
-    slot     m_slot;
+    slot m_slot;
 
-    SlotString(){}
-    SlotString(slot x)
+    inline SlotString(){}
+    inline explicit SlotString(slot x)
     {
         m_slot = x;
     }
-    SlotString(Hash x)
+    inline explicit SlotString(Hash x)
     {
         m_slot = SlotStringLookup(space, x);
     }
-    SlotString(const char* x)
+    inline explicit SlotString(const char* x)
     {
         m_slot = SlotStringConstructor(space, x);
     }
