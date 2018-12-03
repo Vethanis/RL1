@@ -111,6 +111,7 @@ struct BspTree
         bool                inside, 
         bool                keepEdge, 
         Array<vec3>&        out) const;
+    
     BspTree()
     {
         m_root = nullptr;
@@ -155,25 +156,25 @@ struct BspTree
     {
         return IsInside(p, m_root);
     }
-    static inline BspTree Intersect(const BspTree& a, const BspTree& b)
+    inline BspTree Intersect(const BspTree& b) const
     {
         Array<vec3> result;
-        a.ClassifyTree(b.m_root, b.m_vertices.begin(), true, true, result);
-        b.ClassifyTree(a.m_root, a.m_vertices.begin(), true, false, result);
+        ClassifyTree(b.m_root, b.m_vertices.begin(), true, true, result);
+        b.ClassifyTree(m_root, m_vertices.begin(), true, false, result);
         return BspTree(result);
     }
-    static inline BspTree Add(const BspTree& a, const BspTree& b)
+    inline BspTree Add(const BspTree& b) const
     {
         Array<vec3> result;
-        a.ClassifyTree(b.m_root, b.m_vertices.begin(), false, true, result);
-        b.ClassifyTree(a.m_root, a.m_vertices.begin(), false, false, result);
+        ClassifyTree(b.m_root, b.m_vertices.begin(), false, true, result);
+        b.ClassifyTree(m_root, m_vertices.begin(), false, false, result);
         return BspTree(result);
     }
-    static inline BspTree Subtract(const BspTree& a, const BspTree& b)
+    inline BspTree Subtract(const BspTree& b) const
     {
         Array<vec3> result;
-        a.ClassifyTree(b.m_root, b.m_vertices.begin(), true, true, result);
-        b.ClassifyTree(a.m_root, a.m_vertices.begin(), false, false, result);
-        return result;
+        ClassifyTree(b.m_root, b.m_vertices.begin(), true, true, result);
+        b.ClassifyTree(m_root, m_vertices.begin(), false, false, result);
+        return BspTree(result);
     }
 };

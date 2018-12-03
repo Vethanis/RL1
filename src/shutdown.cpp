@@ -5,11 +5,13 @@
 #include "window.h"
 #include "physics.h"
 #include "task.h"
+#include "imguishim.h"
 
 void Shutdown()
 {
     TaskManager::Shutdown();
     Physics::Shutdown();
+    ImGuiShim::Shutdown();
 
     sg_shutdown();
     

@@ -180,8 +180,6 @@ namespace ImGuiShim
         pass_action.colors[0].val[1] = 0.5f;
         pass_action.colors[0].val[2] = 0.7f;
         pass_action.colors[0].val[3] = 1.0f;
-
-
     }
     void Begin(GLFWwindow* window)
     {        
@@ -200,5 +198,9 @@ namespace ImGuiShim
     void Shutdown()
     {
         ImGui::DestroyContext();
+        sg_destroy_buffer(draw_state.vertex_buffers[0]);
+        sg_destroy_buffer(draw_state.index_buffer);
+        sg_destroy_image(draw_state.fs_images[0]);
+        sg_destroy_pipeline(draw_state.pipeline);
     }
 };

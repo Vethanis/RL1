@@ -245,8 +245,8 @@ BspTree::Node* BspTree::MakeTree(const Array<int32_t>& indices)
     {
         return nullptr;
     }
+    
     int32_t best = 0;
-
     const bool search = false;
     if(search)
     {
