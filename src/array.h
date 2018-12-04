@@ -15,6 +15,12 @@ struct Array
 
     Array(){ memset(this, 0, sizeof(*this)); }
     ~Array() { reset(); }
+    Array(const T* x, int32_t ct)
+    {
+        memset(this, 0, sizeof(*this)); 
+        resize(ct);
+        memcpy(m_data, x, sizeof(T) * ct);
+    }
     Array(const Array& other)
     {
         memset(this, 0, sizeof(*this));

@@ -15,6 +15,7 @@
 #include "component.h"
 #include "task.h"
 #include "prng.h"
+#include "bsp.h"
 
 #include "imguishim.h"
 
@@ -25,7 +26,6 @@
 
 Window window;
 Camera camera;
-
 
 void Init()
 {
@@ -63,6 +63,7 @@ void Init()
     shadesc.fs.uniform_blocks[0].uniforms[4] = { "ParallaxScale",   SG_UNIFORMTYPE_FLOAT  };
     shadesc.fs.uniform_blocks[0].uniforms[5] = { "RoughnessOffset", SG_UNIFORMTYPE_FLOAT  };
     shadesc.fs.uniform_blocks[0].uniforms[6] = { "MetalnessOffset", SG_UNIFORMTYPE_FLOAT  };
+    shadesc.fs.uniform_blocks[0].uniforms[7] = { "Seed",            SG_UNIFORMTYPE_FLOAT  };
     shadesc.fs.images[0].name = "MatTex";
     shadesc.fs.images[0].type = SG_IMAGETYPE_2D;
     shadesc.fs.images[1].name = "PalTex";
@@ -81,10 +82,54 @@ void Init()
     pdesc.layout.attrs[2].format = SG_VERTEXFORMAT_FLOAT2;
     pdesc.depth_stencil.depth_write_enabled = true;
     pdesc.depth_stencil.depth_compare_func = SG_COMPAREFUNC_LESS;
-    pdesc.rasterizer.cull_mode = SG_CULLMODE_BACK;
+    //pdesc.rasterizer.cull_mode = SG_CULLMODE_BACK;
     pdesc.rasterizer.face_winding = SG_FACEWINDING_CCW;
     
     slot pipeslot       = Pipelines::Create(pdesc);
+
+    const float cubef[] = 
+    {
+        -1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+
+        -1.0f, -1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+         1.0f, -1.0f, -1.0f,
+         1.0f,  1.0f, -1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f, -1.0f,  1.0f,
+
+        -1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f, -1.0f,
+    };
+
+    const int32_t cubeindf[] = 
+    {
+        0,  1,  2,      0,  2,  3,
+        6,  5,  4,      7,  6,  4,
+        8,  9,  10,     8,  10, 11,
+        14, 13, 12,     15, 14, 12,
+        16, 17, 18,     16, 18, 19,
+        22, 21, 20,     23, 22, 20
+    };
+    const Array<vec3> cube((const vec3*)cubef, NELEM(cubef) / 3);
+    const Array<int32_t> ind(cubeindf, NELEM(cubeindf));
 
     {
         slot ent = Components::Create();
@@ -93,8 +138,23 @@ void Init()
         PhysicsComponent* pc = Components::GetAdd<PhysicsComponent>(ent);
 
         pc->Init(0.0f, vec3(0.0f, 0.0f, 0.0f), vec3(10.0f, 0.33f, 10.0f));
+
+        BspTree t3 = BspTree(cube, ind).Transform(glm::translate(mat4(1.0f), vec3(0.5f))).Subtract(BspTree(cube, ind));
+
+        Array<Vertex> verts;
+        Array<int32_t> inds;
+        t3.ToVertices(camera.m_eye, inds, verts);
+
+        BufferData bd;
+        bd.vertices     = verts.begin();
+        bd.vertCount    = verts.count();
+        bd.indices      = (uint32_t*)inds.begin();
+        bd.indexCount   = inds.count();
+
+        Buffer buf = Buffers::Create(bd);
+        slot bslot = Buffers::Create(BufferString("csg_test"), buf);
         
-        rc->m_buffer    = Buffers::Load(BufferString("sphere"));
+        rc->m_buffer    = bslot; //Buffers::Load(BufferString("sphere"));
         rc->m_material  = Images::Load(ImageString("bumpy_PHRM"));
         rc->m_palette   = Images::Load(ImageString("palette_palette"));
         rc->m_pipeline  = pipeslot;

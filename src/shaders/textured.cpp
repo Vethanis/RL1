@@ -49,6 +49,12 @@ uniform float   BumpScale;
 uniform float   ParallaxScale;
 uniform float   RoughnessOffset;
 uniform float   MetalnessOffset;
+uniform float   Seed;
+
+float rand(vec2 co)
+{
+    return fract(sin(dot(co.xy, vec2(12.9898,78.233))) * 43758.5453);
+}
 
 float GetHeight(vec2 uv)
 {
@@ -187,6 +193,7 @@ vec3 ToneMap(vec3 x)
 
 void main()
 {
+    vec2 s      = uv.xy + Seed;
     vec3 P      = Position;
     vec3 V      = normalize(Eye - P);
     vec3 N      = normalize(MacroNormal);
@@ -214,7 +221,7 @@ void main()
     C += albedo * 0.1;
     C = ToneMap(C);
 
-    //C = N;
+    C = N;
 
     frag_color = vec4(C.xyz, 1.0);
 }

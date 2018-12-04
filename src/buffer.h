@@ -6,32 +6,13 @@
 #include "sokol_id.h"
 #include "linmath.h"
 #include "hashstring.h"
+#include "vertex.h"
 
 struct Buffer
 {
     sg_buffer   m_vertices;
     sg_buffer   m_indices;
     int32_t     m_count;
-};
-
-struct Vertex
-{
-    vec3    position;
-    vec3    normal;
-    vec2    uv;
-
-    inline bool operator == (const Vertex& o) const 
-    {
-        constexpr uint32_t len = sizeof(*this) / sizeof(uint64_t);
-        const uint64_t* a = (const uint64_t*)this;
-        const uint64_t* b = (const uint64_t*)&o;
-        uint64_t d = 0;
-        for(uint32_t i = 0; i < len; ++i)
-        {
-            d += a[i] - b[i];
-        }
-        return d == 0u;
-    }
 };
 
 struct BufferData
@@ -45,6 +26,7 @@ struct BufferData
 namespace Buffers
 {
     slot Load(BufferString name);
+    slot Create(BufferString name, const Buffer& buf);
     void Destroy(slot s);
     void IncRef(slot s);
     void DecRef(slot s);

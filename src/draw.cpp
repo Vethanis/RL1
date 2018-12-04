@@ -8,12 +8,14 @@
 #include "pipeline.h"
 #include "window.h"
 #include "camera.h"
+#include "prng.h"
 
 #include "shaders/textured.h"
 
 #include "sokol_gfx.h"
 #include "uidraw.h"
 #include "imgui.h"
+
 
 sg_pass_action action = {0};
 
@@ -26,10 +28,11 @@ FSUniform fsuni =
     vec3(0.0f),
     glm::normalize(vec3(1.0f)),
     vec3(10.0f),
-    0.11f,
+    0.085f,
     0.026f,
     0.0f,
-    0.0f
+    0.0f,
+    1.0f
 };
 
 void Draw()
@@ -89,6 +92,7 @@ void Draw()
 
         vsuni.MVP   = VP * tc->m_matrix;
         vsuni.M     = tc->m_matrix;
+        fsuni.Seed  = Randf();
 
         sg_draw_state state     = { 0 };
         state.pipeline          = *pipe;

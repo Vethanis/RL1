@@ -30,6 +30,10 @@ namespace Buffers
     {
         return ms_store.Create(name.GetStr());
     }
+    slot Create(BufferString name, const Buffer& buf)
+    {
+        return ms_store.Create(name.GetStr(), buf);
+    }
     void Destroy(slot s)
     {
         ms_store.Destroy(s);

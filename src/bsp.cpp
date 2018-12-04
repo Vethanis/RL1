@@ -1,18 +1,15 @@
 #include "bsp.h"
 
-#include "blockalloc.h"
 #include "prng.h"
-
-TBlockAlloc<BspTree::Node> ms_nodes;
 
 void BspTree::ResetNode(Node* n)
 {
     if(n)
     {
         n->triangles.reset();
-        ms_nodes.Free(n);
         ResetNode(n->front);
         ResetNode(n->back);
+        m_nodes.Free(n);
     }
 }
 
@@ -28,10 +25,10 @@ vec4 BspTree::SeparateTriangles(
         indices[pivot + 1], 
         indices[pivot + 2]);
 
-    const vec3*     vecs     = m_vertices.begin();
+    const vec3*    vecs     = m_vertices.begin();
     const int32_t* inds     = indices.begin();
     const int32_t  indcount = indices.count();
-    for(int32_t i = 0; i < indcount; i += 3)
+    for(int32_t i = 0; i + 2 < indcount; i += 3)
     {
         vec3 dist = vec3(
             Distance(plane, vecs[inds[i + 0]]),
@@ -76,7 +73,7 @@ vec4 BspTree::SeparateTriangles(
             case SplitType( 0, -1, -1):
             case SplitType( 0, -1,  0):
             case SplitType( 0,  0, -1):
-            Append(back, inds[i], inds[i+1], inds[i+2]);
+            Append(back,    inds[i], inds[i+1], inds[i+2]);
             break;
 
             case SplitType( 0,  0,  1):
@@ -94,69 +91,69 @@ vec4 BspTree::SeparateTriangles(
             break;
 
             case SplitType( 1, -1,  0):
-            Append(back,  inds[i+1], inds[i+2],   A[0]);
+            Append(back,    inds[i+1], inds[i+2],   A[0]);
             Append(front,   inds[i+2], inds[i+0],   A[0]);
             break;
 
             case SplitType(-1,  0,  1):
-            Append(back,  inds[i+0], inds[i+1],   A[2]);
+            Append(back,    inds[i+0], inds[i+1],   A[2]);
             Append(front,   inds[i+1], inds[i+2],   A[2]);
             break;
 
             case SplitType( 0,  1, -1):
-            Append(back,  inds[i+2], inds[i+0],   A[1]);
+            Append(back,    inds[i+2], inds[i+0],   A[1]);
             Append(front,   inds[i+0], inds[i+1],   A[1]);
             break;
 
             case SplitType(-1,  1,  0):
-            Append(back,  inds[i+2], inds[i+0],   A[0]);
+            Append(back,    inds[i+2], inds[i+0],   A[0]);
             Append(front,   inds[i+1], inds[i+2],   A[0]);
             break;
 
             case SplitType( 1,  0, -1):
-            Append(back,  inds[i+1], inds[i+2],   A[2]);
-            Append(front, inds[i+0], inds[i+1],     A[2]);
+            Append(back,    inds[i+1], inds[i+2],   A[2]);
+            Append(front,   inds[i+0], inds[i+1],     A[2]);
             break;
 
             case SplitType( 0, -1,  1):
-            Append(back,  inds[i+0], inds[i+1],   A[1]);
+            Append(back,    inds[i+0], inds[i+1],   A[1]);
             Append(front,   inds[i+2], inds[i+0],   A[1]);
             break;
 
             case SplitType( 1, -1, -1):
             Append(front,   inds[i+0], A[0],        A[2]);
-            Append(back,  inds[i+1], A[2],        A[0]);
-            Append(back,  inds[i+1], inds[i+2],   A[2]);
+            Append(back,    inds[i+1], A[2],        A[0]);
+            Append(back,    inds[i+1], inds[i+2],   A[2]);
             break;
 
             case SplitType(-1,  1, -1):
             Append(front,   inds[i+1], A[1],        A[0]);
-            Append(back,  inds[i+2], A[0],        A[1]);
-            Append(back,  inds[i+2], inds[i+0],   A[0]);
+            Append(back,    inds[i+2], A[0],        A[1]);
+            Append(back,    inds[i+2], inds[i+0],   A[0]);
             break;
 
             case SplitType(-1, -1,  1):
             Append(front,   inds[i+2], A[2],        A[1]);
-            Append(back,  inds[i+0], A[1],        A[2]);
-            Append(back,  inds[i+0], inds[i+1],   A[1]);
+            Append(back,    inds[i+0], A[1],        A[2]);
+            Append(back,    inds[i+0], inds[i+1],   A[1]);
             break;
 
             case SplitType(-1,  1,  1):
-            Append(back,  inds[i+0], A[0],        A[2]);
+            Append(back,    inds[i+0], A[0],        A[2]);
             Append(front,   inds[i+1], A[2],        A[0]);
             Append(front,   inds[i+1], inds[i+2],   A[2]);
             break;
 
             case SplitType( 1, -1,  1):
-            Append(back,  inds[i+1], A[1],        A[0]);
+            Append(back,    inds[i+1], A[1],        A[0]);
             Append(front,   inds[i+0], A[0],        A[1]);
             Append(front,   inds[i+2], inds[i+0],   A[1]);
             break;
 
             case SplitType( 1,  1, -1):
-            Append(back, inds[i+2], A[2],         A[1]);
-            Append(front,  inds[i+0], A[1],         A[2]);
-            Append(front,  inds[i+0], inds[i+1],    A[1]);
+            Append(back,    inds[i+2], A[2],         A[1]);
+            Append(front,   inds[i+0], A[1],         A[2]);
+            Append(front,   inds[i+0], inds[i+1],    A[1]);
             break;
         }
     }
@@ -170,14 +167,14 @@ ivec2 BspTree::EvaluatePivot(
     int32_t back = 0;
     int32_t infront = 0;
 
-    const vec3*     vecs     = m_vertices.begin();
+    const vec3*    vecs     = m_vertices.begin();
     const int32_t* inds     = indices.begin();
     const int32_t  indcount = indices.count();
 
     vec4 plane = CalculatePlane(
         inds[pivot], inds[pivot+1], inds[pivot+2]);
 
-    for(int32_t i = 0; i < indcount; ++i)
+    for(int32_t i = 0; i + 2 < indcount; i += 3)
     {
         ivec3 side = Sign(vec3(
             Distance(plane, vecs[inds[i + 0]]),
@@ -247,7 +244,7 @@ BspTree::Node* BspTree::MakeTree(const Array<int32_t>& indices)
     }
     
     int32_t best = 0;
-    const bool search = false;
+    const bool search = true;
     if(search)
     {
         ivec2 pivot = EvaluatePivot(0, indices);
@@ -275,13 +272,12 @@ BspTree::Node* BspTree::MakeTree(const Array<int32_t>& indices)
     }
 
     Array<int32_t> back, front;
-    Node& node = *ms_nodes.Alloc();
-    node = Node();
-    node.plane = SeparateTriangles(best, indices, back, front, node.triangles);
-    node.back = MakeTree(back);
-    node.front = MakeTree(front);
+    Node* node  = m_nodes.Alloc();
+    node->plane = SeparateTriangles(best, indices, back, front, node->triangles);
+    node->back  = MakeTree(back);
+    node->front = MakeTree(front);
 
-    return &node;
+    return node;
 }
 
 void BspTree::SortBackToFront(
@@ -687,7 +683,60 @@ void BspTree::ClassifyTree(
         verts, inside, keepEdge, out);
 }
 
-void BspTree::Transform(const mat4& m)
+void BspTree::ToVertices(const vec3& p, Array<int32_t>& inds, Array<Vertex>& verts)
+{
+    inds.clear();
+    verts.clear();
+    verts.resize(m_vertices.count());
+    inds.reserve(m_vertices.count());
+
+    Sort(p, false, inds);
+
+    for(int32_t i = 0; i < m_vertices.count(); ++i)
+    {
+        verts[i].position = m_vertices[i];
+        verts[i].normal = vec3(0.0f);
+        verts[i].uv = vec2(0.0f);
+    }
+
+    for(int32_t i = 0; i + 2 < inds.count(); i += 3)
+    {
+        int32_t a = inds[i + 0];
+        int32_t b = inds[i + 1];
+        int32_t c = inds[i + 2];
+        vec3 e1 = m_vertices[b] - m_vertices[a];
+        vec3 e2 = m_vertices[c] - m_vertices[a];
+        vec3 N = glm::normalize(glm::cross(e1, e2));
+        verts[a].normal += N;
+        verts[b].normal += N;
+        verts[c].normal += N;
+    }
+
+    for(Vertex& v : verts)
+    {
+        v.normal = glm::normalize(v.normal);
+
+        vec3 n = glm::abs(v.normal);
+        float m = CMAX(n);
+        if(m == n.x)
+        {
+            v.uv.x = glm::fract(glm::sign(v.normal.x) * -v.position.z);
+            v.uv.y = glm::fract(v.position.y);
+        }
+        else if(m == n.y)
+        {
+            v.uv.x = glm::fract(v.position.x);
+            v.uv.y = glm::fract(glm::sign(v.normal.y) * -v.position.z);
+        }
+        else
+        {
+            v.uv.x = glm::fract(glm::sign(v.normal.z) * v.position.x);
+            v.uv.y = glm::fract(v.position.y);
+        }
+    }
+}
+
+BspTree& BspTree::Transform(const mat4& m)
 {
     for(vec3& v : m_vertices)
     {
@@ -696,4 +745,5 @@ void BspTree::Transform(const mat4& m)
         v = vec3(x.x, x.y, x.z);
     }
     RecalculatePlanes(m_root);
+    return *this;
 }

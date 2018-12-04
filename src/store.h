@@ -22,7 +22,7 @@ struct Store
     {
         return Create(Hash(name));
     }
-    inline slot Create(Hash hash)
+    slot Create(Hash hash)
     {
         slot s = Find(hash);
         if(Exists(s))
@@ -37,6 +37,25 @@ struct Store
         {
             loadFn(&item.t, hash);
         }
+        item.hash = hash;
+        item.refcount = 1;
+        m_dict.Insert(hash, s);
+        return s;
+    }
+    inline slot Create(const char* name, const T& t)
+    {
+        return Create(Hash(name), t);
+    }
+    slot Create(Hash hash, const T& t)
+    {
+        slot s = Find(hash);
+        if(Exists(s))
+        {
+            return slot();
+        }
+        s = m_items.Create();
+        Item& item = m_items.GetUnchecked(s);
+        item.t = t;
         item.hash = hash;
         item.refcount = 1;
         m_dict.Insert(hash, s);
