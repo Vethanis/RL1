@@ -16,7 +16,6 @@ struct FSUniform
     vec3        LightDir;
     vec3        LightRad;
     float       BumpScale;
-    float       ParallaxScale;
     float       RoughnessOffset;
     float       MetalnessOffset;
     float       Seed;

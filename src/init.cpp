@@ -60,10 +60,9 @@ void Init()
     shadesc.fs.uniform_blocks[0].uniforms[1] = { "LightDir",        SG_UNIFORMTYPE_FLOAT3 };
     shadesc.fs.uniform_blocks[0].uniforms[2] = { "LightRad",        SG_UNIFORMTYPE_FLOAT3 };
     shadesc.fs.uniform_blocks[0].uniforms[3] = { "BumpScale",       SG_UNIFORMTYPE_FLOAT  };
-    shadesc.fs.uniform_blocks[0].uniforms[4] = { "ParallaxScale",   SG_UNIFORMTYPE_FLOAT  };
-    shadesc.fs.uniform_blocks[0].uniforms[5] = { "RoughnessOffset", SG_UNIFORMTYPE_FLOAT  };
-    shadesc.fs.uniform_blocks[0].uniforms[6] = { "MetalnessOffset", SG_UNIFORMTYPE_FLOAT  };
-    shadesc.fs.uniform_blocks[0].uniforms[7] = { "Seed",            SG_UNIFORMTYPE_FLOAT  };
+    shadesc.fs.uniform_blocks[0].uniforms[4] = { "RoughnessOffset", SG_UNIFORMTYPE_FLOAT  };
+    shadesc.fs.uniform_blocks[0].uniforms[5] = { "MetalnessOffset", SG_UNIFORMTYPE_FLOAT  };
+    shadesc.fs.uniform_blocks[0].uniforms[6] = { "Seed",            SG_UNIFORMTYPE_FLOAT  };
     shadesc.fs.images[0].name = "MatTex";
     shadesc.fs.images[0].type = SG_IMAGETYPE_2D;
     shadesc.fs.images[1].name = "PalTex";
@@ -121,12 +120,12 @@ void Init()
 
     const int32_t cubeindf[] = 
     {
-        0,  1,  2,      0,  2,  3,
-        6,  5,  4,      7,  6,  4,
-        8,  9,  10,     8,  10, 11,
-        14, 13, 12,     15, 14, 12,
-        16, 17, 18,     16, 18, 19,
-        22, 21, 20,     23, 22, 20
+        0,  2,  1,      0,  3,  2,
+        6,  4,  5,      7,  4,  6,
+        8,  10, 9,      8,  11, 10,
+        14, 12, 13,     15, 12, 14,
+        16, 18, 17,     16, 19, 18,
+        22, 20, 21,     23, 20, 22
     };
     const Array<vec3> cube((const vec3*)cubef, NELEM(cubef) / 3);
     const Array<int32_t> ind(cubeindf, NELEM(cubeindf));

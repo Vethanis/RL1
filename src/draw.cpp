@@ -29,10 +29,9 @@ FSUniform fsuni =
     glm::normalize(vec3(1.0f)),
     vec3(10.0f),
     0.085f,
-    0.026f,
     0.0f,
     0.0f,
-    1.0f
+    0.0f,
 };
 
 void Draw()
@@ -62,7 +61,6 @@ void Draw()
         ImGui::SliderFloat("Roughness",         &fsuni.RoughnessOffset, -1.0f, 1.0f);
         ImGui::SliderFloat("Metalness",         &fsuni.MetalnessOffset, -1.0f, 1.0f);
         ImGui::SliderFloat("Bump Scale",        &fsuni.BumpScale, 0.0f, 0.25f);
-        ImGui::SliderFloat("Parallax Scale",    &fsuni.ParallaxScale, 0.0f, 0.25f);
         ImGui::End();
     }
 

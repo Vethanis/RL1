@@ -46,7 +46,6 @@ uniform vec3    Eye;
 uniform vec3    LightDir;
 uniform vec3    LightRad;
 uniform float   BumpScale;
-uniform float   ParallaxScale;
 uniform float   RoughnessOffset;
 uniform float   MetalnessOffset;
 uniform float   Seed;
@@ -197,15 +196,13 @@ void main()
     vec3 P      = Position;
     vec3 V      = normalize(Eye - P);
     vec3 N      = normalize(MacroNormal);
-    vec3 tanV   = normalize(transpose(GetBasis(V, N)) * V);
-    vec2 UV     = ParallaxMapping(uv, tanV, ParallaxScale);
 
-    vec4 PHRM       = texture(MatTex, UV);
+    vec4  PHRM      = texture(MatTex, uv);
     float palette   = PHRM.x;
     float height    = PHRM.y;
     float roughness = clamp(PHRM.z + RoughnessOffset, 0.0, 1.0);
     float metalness = clamp(PHRM.w + MetalnessOffset, 0.0, 1.0);
-    vec3 albedo     = texture(PalTex, vec2(palette, 0.0)).xyz;
+    vec3  albedo    = texture(PalTex, vec2(palette, 0.0)).xyz;
     N               = Height2N(N, P, height, BumpScale);
 
     vec3 C          = PBRLighting(
@@ -221,7 +218,7 @@ void main()
     C += albedo * 0.1;
     C = ToneMap(C);
 
-    C = N;
+    C = 0.5 * N + 0.5;
 
     frag_color = vec4(C.xyz, 1.0);
 }

@@ -165,7 +165,7 @@ ivec2 BspTree::EvaluatePivot(
     const Array<int32_t>&  indices)
 {
     int32_t back = 0;
-    int32_t infront = 0;
+    int32_t front = 0;
 
     const vec3*    vecs     = m_vertices.begin();
     const int32_t* inds     = indices.begin();
@@ -184,56 +184,56 @@ ivec2 BspTree::EvaluatePivot(
 
         switch(SplitType(side[0], side[1], side[2]))
         {
-            case SplitType(-1, -1, -1):
-            case SplitType(-1, -1,  0):
-            case SplitType(-1,  0, -1):
-            case SplitType(-1,  0,  0):
-            case SplitType( 0, -1, -1):
-            case SplitType( 0, -1,  0):
-            case SplitType( 0,  0, -1):
+          case SplitType(-1, -1, -1):
+          case SplitType(-1, -1,  0):
+          case SplitType(-1,  0, -1):
+          case SplitType(-1,  0,  0):
+          case SplitType( 0, -1, -1):
+          case SplitType( 0, -1,  0):
+          case SplitType( 0,  0, -1):
             back++;
             break;
 
-            case SplitType( 0,  0,  1):
-            case SplitType( 0,  1,  0):
-            case SplitType( 0,  1,  1):
-            case SplitType( 1,  0,  0):
-            case SplitType( 1,  0,  1):
-            case SplitType( 1,  1,  0):
-            case SplitType( 1,  1,  1):
-            infront++;
+          case SplitType( 0,  0,  1):
+          case SplitType( 0,  1,  0):
+          case SplitType( 0,  1,  1):
+          case SplitType( 1,  0,  0):
+          case SplitType( 1,  0,  1):
+          case SplitType( 1,  1,  0):
+          case SplitType( 1,  1,  1):
+            front++;
             break;
 
-            case SplitType( 0,  0,  0):
+          case SplitType( 0,  0,  0):
             break;
 
-            case SplitType( 0, -1,  1):
-            case SplitType( 1,  0, -1):
-            case SplitType(-1,  1,  0):
-            case SplitType( 0,  1, -1):
-            case SplitType(-1,  0,  1):
-            case SplitType( 1, -1,  0):
-            back++;
-            infront++;
-            break;
-
-            case SplitType(-1, -1,  1):
-            case SplitType(-1,  1, -1):
-            case SplitType( 1, -1, -1):
-            infront++;
+          case SplitType(-1, -1,  1):
+          case SplitType(-1,  1, -1):
+          case SplitType( 1, -1, -1):
             back += 2;
+            front++;
             break;
 
-            case SplitType( 1,  1, -1):
-            case SplitType( 1, -1,  1):
-            case SplitType(-1,  1,  1):
+          case SplitType(-1,  0,  1):
+          case SplitType( 1,  0, -1):
+          case SplitType(-1,  1,  0):
+          case SplitType( 1, -1,  0):
+          case SplitType( 0, -1,  1):
+          case SplitType( 0,  1, -1):
             back++;
-            infront += 2;
+            front++;
+            break;
+
+          case SplitType(-1,  1,  1):
+          case SplitType( 1, -1,  1):
+          case SplitType( 1,  1, -1):
+            back++;
+            front+=2;
             break;
         }
     }
 
-    return ivec2(back, infront);
+    return ivec2(back, front);
 }
 
 BspTree::Node* BspTree::MakeTree(const Array<int32_t>& indices)
@@ -468,7 +468,6 @@ bool BspTree::ClassifyTri(
         clipped = false;
         break;
 
-        // triangle on the dividing plane
         case SplitType( 0,  0,  0):
         if (keepEdge)
         {
@@ -480,7 +479,6 @@ bool BspTree::ClassifyTri(
         }
         break;
 
-        // and now all the ways that the triangle can be cut by the plane
         case SplitType( 1, -1,  0):
         complete &= ClassifyTri(
             n->back,  
@@ -683,14 +681,17 @@ void BspTree::ClassifyTree(
         verts, inside, keepEdge, out);
 }
 
-void BspTree::ToVertices(const vec3& p, Array<int32_t>& inds, Array<Vertex>& verts)
+void BspTree::ToVertices(
+    const vec3&     p, 
+    Array<int32_t>& inds, 
+    Array<Vertex>&  verts)
 {
     inds.clear();
     verts.clear();
     verts.resize(m_vertices.count());
     inds.reserve(m_vertices.count());
 
-    Sort(p, false, inds);
+    Sort(p, true, inds);
 
     for(int32_t i = 0; i < m_vertices.count(); ++i)
     {
@@ -720,18 +721,18 @@ void BspTree::ToVertices(const vec3& p, Array<int32_t>& inds, Array<Vertex>& ver
         float m = CMAX(n);
         if(m == n.x)
         {
-            v.uv.x = glm::fract(glm::sign(v.normal.x) * -v.position.z);
-            v.uv.y = glm::fract(v.position.y);
+            v.uv.x = glm::sign(v.normal.x) * -v.position.z;
+            v.uv.y = v.position.y;
         }
         else if(m == n.y)
         {
-            v.uv.x = glm::fract(v.position.x);
-            v.uv.y = glm::fract(glm::sign(v.normal.y) * -v.position.z);
+            v.uv.x = v.position.x;
+            v.uv.y = glm::sign(v.normal.y) * -v.position.z;
         }
         else
         {
-            v.uv.x = glm::fract(glm::sign(v.normal.z) * v.position.x);
-            v.uv.y = glm::fract(v.position.y);
+            v.uv.x = glm::sign(v.normal.z) * v.position.x;
+            v.uv.y = v.position.y;
         }
     }
 }

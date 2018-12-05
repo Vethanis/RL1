@@ -75,8 +75,9 @@ struct BspTree
     inline vec4 CalculatePlane(int32_t a, int32_t b, int32_t c) const
     {
         const vec3* verts = m_vertices.begin();
-        const vec3  norm = glm::normalize(glm::cross(verts[b] - verts[a], verts[c] - verts[a]));
-        const float p    = glm::dot(norm, verts[a]);
+        const vec3  norm  = glm::normalize(
+            glm::cross(verts[b] - verts[a], verts[c] - verts[a]));
+        const float p     = glm::dot(norm, verts[a]);
         return vec4(norm.x, norm.y, norm.z, p);
     }
     vec4 SeparateTriangles(
