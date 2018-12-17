@@ -218,7 +218,7 @@ void main()
     C += albedo * 0.1;
     C = ToneMap(C);
 
-    C = 0.5 * N + 0.5;
+    //C = 0.5 * N + 0.5;
 
     frag_color = vec4(C.xyz, 1.0);
 }

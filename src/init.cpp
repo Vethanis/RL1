@@ -15,6 +15,7 @@
 #include "component.h"
 #include "task.h"
 #include "prng.h"
+
 #include "bsp.h"
 
 #include "imguishim.h"
@@ -81,7 +82,7 @@ void Init()
     pdesc.layout.attrs[2].format = SG_VERTEXFORMAT_FLOAT2;
     pdesc.depth_stencil.depth_write_enabled = true;
     pdesc.depth_stencil.depth_compare_func = SG_COMPAREFUNC_LESS;
-    //pdesc.rasterizer.cull_mode = SG_CULLMODE_BACK;
+    pdesc.rasterizer.cull_mode = SG_CULLMODE_BACK;
     pdesc.rasterizer.face_winding = SG_FACEWINDING_CCW;
     
     slot pipeslot       = Pipelines::Create(pdesc);
@@ -138,11 +139,20 @@ void Init()
 
         pc->Init(0.0f, vec3(0.0f, 0.0f, 0.0f), vec3(10.0f, 0.33f, 10.0f));
 
-        BspTree t3 = BspTree(cube, ind).Transform(glm::translate(mat4(1.0f), vec3(0.5f))).Subtract(BspTree(cube, ind));
-
+        BspTree t3 = BspTree(cube, ind)
+            .Subtract(
+                BspTree(cube, ind).Transform(glm::translate(mat4(1.0f), vec3(0.5f))));
+        
         Array<Vertex> verts;
         Array<int32_t> inds;
         t3.ToVertices(camera.m_eye, inds, verts);
+
+        printf("%d; %d\n", verts.count(), inds.count());
+        for(int32_t x : inds)
+        {
+            printf("%d, ", x);
+        }
+        puts("");
 
         BufferData bd;
         bd.vertices     = verts.begin();

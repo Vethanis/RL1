@@ -38,7 +38,7 @@ struct BspTree
         inds.append() = b;
         inds.append() = c;
     }
-    static inline float Sign(float x)
+    static inline int32_t Sign(float x)
     {
         constexpr float e = 0.001f;
         if(x > e) return 1;
@@ -57,7 +57,7 @@ struct BspTree
         float               alpha)
     {
         x.grow() = glm::mix(a, b, alpha);
-        return x.count() - 1u;
+        return x.count() - 1;
     }
     inline const vec3& GetPosition(
         const int32_t* inds, 
@@ -190,21 +190,21 @@ struct BspTree
     {
         return IsInside(p, m_root);
     }
-    inline BspTree Intersect(const BspTree& b) const
+    inline BspTree Intersect(const BspTree& b) const noexcept
     {
         Array<vec3> result;
           ClassifyTree(b.m_root, b.m_vertices.begin(), true,  true, result);
         b.ClassifyTree(  m_root,   m_vertices.begin(), true, false, result);
         return BspTree(result);
     }
-    inline BspTree Add(const BspTree& b) const
+    inline BspTree Add(const BspTree& b) const noexcept
     {
         Array<vec3> result;
           ClassifyTree(b.m_root, b.m_vertices.begin(), false,  true, result);
         b.ClassifyTree(  m_root,   m_vertices.begin(), false, false, result);
         return BspTree(result);
     }
-    inline BspTree Subtract(const BspTree& b) const
+    inline BspTree Subtract(const BspTree& b) const noexcept
     {
         Array<vec3> result;
           ClassifyTree(b.m_root, b.m_vertices.begin(),  true,  true, result);

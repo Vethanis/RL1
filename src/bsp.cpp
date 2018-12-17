@@ -20,6 +20,10 @@ vec4 BspTree::SeparateTriangles(
     Array<int32_t>&         front,
     Array<int32_t>&         onPlane)
 {
+    back.clear();
+    front.clear();
+    onPlane.clear();
+    
     vec4 plane = CalculatePlane(
         indices[pivot], 
         indices[pivot + 1], 
@@ -686,64 +690,20 @@ void BspTree::ToVertices(
     Array<int32_t>& inds, 
     Array<Vertex>&  verts)
 {
-    inds.clear();
-    verts.clear();
-    verts.resize(m_vertices.count());
-    inds.reserve(m_vertices.count());
-
-    Sort(p, true, inds);
-
+    inds.resize(m_vertices.count());
     for(int32_t i = 0; i < m_vertices.count(); ++i)
     {
-        verts[i].position = m_vertices[i];
-        verts[i].normal = vec3(0.0f);
-        verts[i].uv = vec2(0.0f);
+        inds[i] = i;
     }
 
-    for(int32_t i = 0; i + 2 < inds.count(); i += 3)
-    {
-        int32_t a = inds[i + 0];
-        int32_t b = inds[i + 1];
-        int32_t c = inds[i + 2];
-        vec3 e1 = m_vertices[b] - m_vertices[a];
-        vec3 e2 = m_vertices[c] - m_vertices[a];
-        vec3 N = glm::normalize(glm::cross(e1, e2));
-        verts[a].normal += N;
-        verts[b].normal += N;
-        verts[c].normal += N;
-    }
-
-    for(Vertex& v : verts)
-    {
-        v.normal = glm::normalize(v.normal);
-
-        vec3 n = glm::abs(v.normal);
-        float m = CMAX(n);
-        if(m == n.x)
-        {
-            v.uv.x = glm::sign(v.normal.x) * -v.position.z;
-            v.uv.y = v.position.y;
-        }
-        else if(m == n.y)
-        {
-            v.uv.x = v.position.x;
-            v.uv.y = glm::sign(v.normal.y) * -v.position.z;
-        }
-        else
-        {
-            v.uv.x = glm::sign(v.normal.z) * v.position.x;
-            v.uv.y = v.position.y;
-        }
-    }
+    PositionsToVertices(m_vertices, inds, verts);
 }
 
 BspTree& BspTree::Transform(const mat4& m)
 {
     for(vec3& v : m_vertices)
     {
-        vec4 x = vec4(v.x, v.y, v.z, 1.0f);
-        x = m * x;
-        v = vec3(x.x, x.y, x.z);
+        v = vec3(m * vec4(v, 1.0f));
     }
     RecalculatePlanes(m_root);
     return *this;

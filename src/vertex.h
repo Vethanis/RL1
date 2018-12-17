@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include "linmath.h"
+#include "array.h"
 
 struct Vertex
 {
@@ -22,3 +23,8 @@ struct Vertex
         return d == 0u;
     }
 };
+
+void PositionsToVertices(
+    const Array<vec3>&      verts, 
+    const Array<int32_t>&   inds, 
+    Array<Vertex>&          out);
