@@ -40,12 +40,15 @@ in vec2 uv;
 out vec4 frag_color;
 
 uniform sampler2D MatTex;
-uniform sampler2D PalTex;
+uniform sampler2D NorTex;
 
 uniform vec3    Eye;
 uniform vec3    LightDir;
 uniform vec3    LightRad;
-uniform float   BumpScale;
+uniform vec3    Pal0;
+uniform vec3    Pal1;
+uniform vec3    Pal2;
+uniform float   PalCenter;
 uniform float   RoughnessOffset;
 uniform float   MetalnessOffset;
 uniform float   Seed;
@@ -55,11 +58,6 @@ float rand(vec2 co)
     return fract(sin(dot(co.xy, vec2(12.9898,78.233))) * 43758.5453);
 }
 
-float GetHeight(vec2 uv)
-{
-    return texture(MatTex, uv).y;
-}
-
 mat3 GetBasis(vec3 V, vec3 N)
 {
     vec3 T;
@@ -67,51 +65,6 @@ mat3 GetBasis(vec3 V, vec3 N)
     T = normalize(cross(N, -V));
     B = normalize(cross(N, T));
     return mat3(T, B, N);
-}
-
-vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir, float scale)
-{
-    const float numLayers = 10.0;
-    const float layerDepth = 1.0 / numLayers;
-    float currentLayerDepth = 0.0;
-    vec2 P = viewDir.xy / viewDir.z * scale; 
-    vec2 deltaTexCoords = P / numLayers;
-
-    vec2  currentTexCoords = texCoords;
-    float currentDepthMapValue = GetHeight(currentTexCoords);
-    
-    for(float i = 0; i < numLayers && currentLayerDepth < currentDepthMapValue; ++i)
-    {
-        currentTexCoords -= deltaTexCoords;
-        currentDepthMapValue = GetHeight(currentTexCoords);
-        currentLayerDepth += layerDepth;  
-    }
-    
-    vec2 prevTexCoords = currentTexCoords + deltaTexCoords;
-
-    float afterDepth  = currentDepthMapValue - currentLayerDepth;
-    float beforeDepth = GetHeight(prevTexCoords) - currentLayerDepth + layerDepth;
-
-    float weight = afterDepth / (afterDepth - beforeDepth);
-    vec2 finalTexCoords = prevTexCoords * weight + currentTexCoords * (1.0 - weight);
-
-    return finalTexCoords;
-}
-
-vec3 Height2N(vec3 N, vec3 P, float h, float scale)
-{
-    float dhdx = dFdx(h);
-    float dhdy = dFdy(h);
-
-    vec3 dpdx = dFdx(P);
-    vec3 dpdy = dFdy(P);
-
-    vec3 r1 = cross(dpdy, N);
-    vec3 r2 = cross(N, dpdx);
-
-    vec3 g = (r1 * dhdx + r2 * dhdy) / dot(dpdx, r1);
-
-    return normalize(N + -g * scale);
 }
 
 float DisGGX(vec3 N, vec3 H, float roughness)
@@ -183,6 +136,17 @@ vec3 PBRLighting(
     return (kD * albedo / 3.141592 + specular) * radiance * NdL;
 }
 
+vec3 PaletteToAlbedo(float palette)
+{
+    if(palette < PalCenter)
+    {
+        float alpha = palette / PalCenter;
+        return mix(Pal0, Pal1, alpha);
+    }
+    float alpha = (palette - PalCenter) / (1.0 - PalCenter);
+    return mix(Pal1, Pal2, alpha);
+}
+
 vec3 ToneMap(vec3 x)
 {
     x = x / (vec3(1.0) + x);
@@ -197,13 +161,13 @@ void main()
     vec3 V      = normalize(Eye - P);
     vec3 N      = normalize(MacroNormal);
 
-    vec4  PHRM      = texture(MatTex, uv);
-    float palette   = PHRM.x;
-    float height    = PHRM.y;
-    float roughness = clamp(PHRM.z + RoughnessOffset, 0.0, 1.0);
-    float metalness = clamp(PHRM.w + MetalnessOffset, 0.0, 1.0);
-    vec3  albedo    = texture(PalTex, vec2(palette, 0.0)).xyz;
-    N               = Height2N(N, P, height, BumpScale);
+    vec4  PRMA      = texture(MatTex, uv);
+    float palette   = PRMA.x;
+    float roughness = clamp(PRMA.y + RoughnessOffset, 0.0, 1.0);
+    float metalness = clamp(PRMA.z + MetalnessOffset, 0.0, 1.0);
+    vec3  albedo    = PaletteToAlbedo(palette);
+    vec3  Ntex      = normalize(texture(NorTex, uv).xyz * 2.0 - 1.0);
+    N               = GetBasis(V, N) * Ntex;
 
     vec3 C          = PBRLighting(
         V,
@@ -219,6 +183,7 @@ void main()
     C = ToneMap(C);
 
     //C = 0.5 * N + 0.5;
+    //C = N;
 
     frag_color = vec4(C.xyz, 1.0);
 }

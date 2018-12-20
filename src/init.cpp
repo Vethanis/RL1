@@ -55,18 +55,22 @@ void Init()
     shadesc.vs.uniform_blocks[0].uniforms[0] = { "MVP", SG_UNIFORMTYPE_MAT4 };
     shadesc.vs.uniform_blocks[0].uniforms[1] = { "M",   SG_UNIFORMTYPE_MAT4 };
 
+    int32_t u = 0;
     shadesc.fs.source = textured_fs;
     shadesc.fs.uniform_blocks[0].size = sizeof(FSUniform);
-    shadesc.fs.uniform_blocks[0].uniforms[0] = { "Eye",             SG_UNIFORMTYPE_FLOAT3 };
-    shadesc.fs.uniform_blocks[0].uniforms[1] = { "LightDir",        SG_UNIFORMTYPE_FLOAT3 };
-    shadesc.fs.uniform_blocks[0].uniforms[2] = { "LightRad",        SG_UNIFORMTYPE_FLOAT3 };
-    shadesc.fs.uniform_blocks[0].uniforms[3] = { "BumpScale",       SG_UNIFORMTYPE_FLOAT  };
-    shadesc.fs.uniform_blocks[0].uniforms[4] = { "RoughnessOffset", SG_UNIFORMTYPE_FLOAT  };
-    shadesc.fs.uniform_blocks[0].uniforms[5] = { "MetalnessOffset", SG_UNIFORMTYPE_FLOAT  };
-    shadesc.fs.uniform_blocks[0].uniforms[6] = { "Seed",            SG_UNIFORMTYPE_FLOAT  };
+    shadesc.fs.uniform_blocks[0].uniforms[u++] = { "Eye",             SG_UNIFORMTYPE_FLOAT3 };
+    shadesc.fs.uniform_blocks[0].uniforms[u++] = { "LightDir",        SG_UNIFORMTYPE_FLOAT3 };
+    shadesc.fs.uniform_blocks[0].uniforms[u++] = { "LightRad",        SG_UNIFORMTYPE_FLOAT3 };
+    shadesc.fs.uniform_blocks[0].uniforms[u++] = { "Pal0",            SG_UNIFORMTYPE_FLOAT3 };
+    shadesc.fs.uniform_blocks[0].uniforms[u++] = { "Pal1",            SG_UNIFORMTYPE_FLOAT3 };
+    shadesc.fs.uniform_blocks[0].uniforms[u++] = { "Pal2",            SG_UNIFORMTYPE_FLOAT3 };
+    shadesc.fs.uniform_blocks[0].uniforms[u++] = { "PalCenter",       SG_UNIFORMTYPE_FLOAT  };
+    shadesc.fs.uniform_blocks[0].uniforms[u++] = { "RoughnessOffset", SG_UNIFORMTYPE_FLOAT  };
+    shadesc.fs.uniform_blocks[0].uniforms[u++] = { "MetalnessOffset", SG_UNIFORMTYPE_FLOAT  };
+    shadesc.fs.uniform_blocks[0].uniforms[u++] = { "Seed",            SG_UNIFORMTYPE_FLOAT  };
     shadesc.fs.images[0].name = "MatTex";
     shadesc.fs.images[0].type = SG_IMAGETYPE_2D;
-    shadesc.fs.images[1].name = "PalTex";
+    shadesc.fs.images[1].name = "NorTex";
     shadesc.fs.images[1].type = SG_IMAGETYPE_2D;
 
     slot shaderSlot = Shaders::Create(shadesc);
@@ -164,8 +168,8 @@ void Init()
         slot bslot = Buffers::Create(BufferString("csg_test"), buf);
         
         rc->m_buffer    = bslot; //Buffers::Load(BufferString("sphere"));
-        rc->m_material  = Images::Load(ImageString("bumpy_PHRM"));
-        rc->m_palette   = Images::Load(ImageString("palette_palette"));
+        rc->m_material  = Images::Load(ImageString("bumpy_PRMA"));
+        rc->m_normal   = Images::Load(ImageString("bumpy_normal"));
         rc->m_pipeline  = pipeslot;
     }
 }

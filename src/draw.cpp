@@ -28,10 +28,12 @@ FSUniform fsuni =
     vec3(0.0f),
     glm::normalize(vec3(1.0f)),
     vec3(10.0f),
-    0.085f,
+    vec3(1.0f, 0.0f, 0.0f),
+    vec3(0.0f, 1.0f, 0.0f),
+    vec3(0.0f, 0.0f, 1.0f),
+    0.5f,
     0.0f,
-    0.0f,
-    0.0f,
+    0.0f
 };
 
 void Draw()
@@ -58,9 +60,12 @@ void Draw()
         }
         ImGui::SliderFloat3("Sun Color",        &lcol.x, 0.0f, 1.0f);
         ImGui::SliderFloat("Sun Radiance",      &lrad, 0.0f, 1000.0f);
+        ImGui::SliderFloat3("Pal0",             &fsuni.Pal0.x, 0.0f, 1.0f);
+        ImGui::SliderFloat3("Pal1",             &fsuni.Pal1.x, 0.0f, 1.0f);
+        ImGui::SliderFloat3("Pal2",             &fsuni.Pal2.x, 0.0f, 1.0f);
+        ImGui::SliderFloat("PalCenter",         &fsuni.PalCenter, 0.0f, 1.0f);
         ImGui::SliderFloat("Roughness",         &fsuni.RoughnessOffset, -1.0f, 1.0f);
         ImGui::SliderFloat("Metalness",         &fsuni.MetalnessOffset, -1.0f, 1.0f);
-        ImGui::SliderFloat("Bump Scale",        &fsuni.BumpScale, 0.0f, 0.25f);
         ImGui::End();
     }
 
@@ -80,10 +85,10 @@ void Draw()
 
         const Buffer*       buf         = Buffers::Get(rc->m_buffer);
         const sg_image*     material    = Images::Get(rc->m_material);
-        const sg_image*     palette     = Images::Get(rc->m_palette);
+        const sg_image*     normal     = Images::Get(rc->m_normal);
         const sg_pipeline*  pipe        = Pipelines::Get(rc->m_pipeline);
 
-        if(!buf || !material || !palette || !pipe)
+        if(!buf || !material || !normal || !pipe)
         {
             continue;
         }
@@ -97,7 +102,7 @@ void Draw()
         state.vertex_buffers[0] = buf->m_vertices;
         state.index_buffer      = buf->m_indices;
         state.fs_images[0]      = *material;
-        state.fs_images[1]      = *palette;
+        state.fs_images[1]      = *normal;
 
         sg_apply_draw_state(&state);
         sg_apply_uniform_block(SG_SHADERSTAGE_VS, 0, &vsuni, sizeof(VSUniform));

@@ -87,7 +87,7 @@ namespace Components
 struct RenderComponent
 {
     slot m_buffer;
-    slot m_palette;
+    slot m_normal;
     slot m_material;
     slot m_pipeline;
 
