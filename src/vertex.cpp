@@ -1,26 +1,35 @@
 
 #include "vertex.h"
 
-void PositionsToVertices(const Array<vec3>& verts, Array<Vertex>& out)
+void PositionsToVertices(
+    const Array<vec3>&  verts, 
+    Array<Vertex>&      out, 
+    Array<int32_t>&     indout)
 {
     out.clear();
-    out.resize(verts.count());
+    indout.clear();
 
-    for(int32_t i = 0; i < verts.count(); ++i)
+    for(const vec3& v : verts)
     {
-        out[i].position = verts[i];
-        out[i].normal = vec3(0.0f);
-        out[i].uv = vec2(0.0f);
+        Vertex vt;
+        vt.position = v;
+        vt.normal = vec3(0.0f);
+        vt.uv = vec2(0.0f);
+        out.grow() = vt;
+        indout.grow() = out.count() - 1;
     }
 
-    for(int32_t i = 0; i + 2 < verts.count(); i += 3)
+    for(int32_t i = 0; i + 2 < indout.count(); i += 3)
     {
-        vec3 e1 = verts[i + 1] - verts[i + 0];
-        vec3 e2 = verts[i + 2] - verts[i + 0];
+        int32_t a = indout[i + 0];
+        int32_t b = indout[i + 1];
+        int32_t c = indout[i + 2];
+        vec3 e1 = verts[b] - verts[a];
+        vec3 e2 = verts[c] - verts[a];
         vec3 N = glm::normalize(glm::cross(e1, e2));
-        out[i + 0].normal += N;
-        out[i + 1].normal += N;
-        out[i + 2].normal += N;
+        out[a].normal += N;
+        out[b].normal += N;
+        out[c].normal += N;
     }
 
     for(Vertex& v : out)

@@ -91,55 +91,25 @@ void Init()
     
     slot pipeslot       = Pipelines::Create(pdesc);
 
-    const float cubef[] = 
+    BufferData sbd = Buffers::Load("sphere");
+    BufferData cbd = Buffers::Load("cube");
+
+    Array<vec3> sphereraw;
+    sphereraw.expand(sbd.indexCount);
+    for(uint32_t i = 0; i < sbd.indexCount; ++i)
     {
-        -1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
-         1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
-
-        -1.0f, -1.0f,  1.0f,
-         1.0f, -1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-        -1.0f,  1.0f,  1.0f,
-
-        -1.0f, -1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f,  1.0f,
-        -1.0f, -1.0f,  1.0f,
-
-         1.0f, -1.0f, -1.0f,
-         1.0f,  1.0f, -1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f, -1.0f,  1.0f,
-
-        -1.0f, -1.0f, -1.0f,
-        -1.0f, -1.0f,  1.0f,
-         1.0f, -1.0f,  1.0f,
-         1.0f, -1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f, -1.0f,
-    };
-
-    const int32_t cubeindf[] = 
-    {
-        0,  2,  1,      0,  3,  2,
-        6,  4,  5,      7,  4,  6,
-        8,  10, 9,      8,  11, 10,
-        14, 12, 13,     15, 12, 14,
-        16, 18, 17,     16, 19, 18,
-        22, 20, 21,     23, 20, 22
-    };
-    const Array<vec3> cube((const vec3*)cubef, NELEM(cubef) / 3);
-    const Array<int32_t> ind(cubeindf, NELEM(cubeindf));
+        sphereraw.append() = sbd.vertices[sbd.indices[i]].position;
+    }
 
     Array<vec3> cuberaw;
-    for(int32_t x : ind)
+    cuberaw.expand(cbd.indexCount);
+    for(uint32_t i = 0; i < cbd.indexCount; ++i)
     {
-        cuberaw.grow() = cube[x];
+        cuberaw.append() = cbd.vertices[cbd.indices[i]].position;
     }
+
+    Buffers::Free(sbd);
+    Buffers::Free(cbd);
 
     {
         slot ent = Components::Create();
@@ -149,18 +119,11 @@ void Init()
 
         pc->Init(0.0f, vec3(0.0f, 0.0f, 0.0f), vec3(10.0f, 0.33f, 10.0f));
 
-        csgmodel model = csgdifference(csgmodel(cuberaw), csgmodel(cuberaw, vec3(0.5f)));
+        csgmodel model = csgdifference(csgmodel(cuberaw), csgmodel(sphereraw, vec3(0.5f)));
 
         Array<Vertex> verts;
         Array<int32_t> inds;
-        PositionsToVertices(model.vertices, verts);
-        inds.resize(verts.count());
-        for(int32_t i = 0; i < inds.count(); ++i)
-        {
-            inds[i] = i;
-        }
-
-        printf("%d; %d\n", verts.count(), inds.count());
+        PositionsToVertices(model.vertices, verts, inds);
 
         BufferData bd;
         bd.vertices     = verts.begin();
@@ -171,7 +134,7 @@ void Init()
         Buffer buf = Buffers::Create(bd);
         slot bslot = Buffers::Create(BufferString("csg_test"), buf);
         
-        rc->m_buffer    = bslot; //Buffers::Load(BufferString("sphere"));
+        rc->m_buffer    = bslot;
         rc->m_material  = Images::Load(ImageString("bumpy_PRMA"));
         rc->m_normal    = Images::Load(ImageString("bumpy_normal"));
         rc->m_pipeline  = pipeslot;
