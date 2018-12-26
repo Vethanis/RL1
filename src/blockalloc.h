@@ -2,6 +2,7 @@
 
 #include "array.h"
 #include <stdlib.h>
+#include <new>
 
 template<typename T, int32_t start_size = 8>
 struct TBlockAlloc
@@ -49,6 +50,27 @@ struct TBlockAlloc
     inline void Free(T* c)
     {
         m_free.grow() = c;
+    }
+};
+
+template<typename T, int32_t start_size = 8>
+struct TBlockAllocCD
+{
+    TBlockAlloc<T, start_size> m_block;
+
+    inline T* Alloc()
+    {
+        T* t = m_block.Alloc();
+        new (t) T();
+        return t;
+    }
+    inline void Free(T* c)
+    {
+        if(c)
+        {
+            c->~T();
+            m_block.Free(c);
+        }
     }
 };
 

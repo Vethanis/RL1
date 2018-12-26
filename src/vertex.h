@@ -26,5 +26,9 @@ struct Vertex
 
 void PositionsToVertices(
     const Array<vec3>&      verts, 
+    Array<Vertex>&          out);
+
+void PositionsToVertices(
+    const Array<vec3>&      verts, 
     const Array<int32_t>&   inds, 
     Array<Vertex>&          out);

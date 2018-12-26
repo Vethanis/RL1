@@ -26,7 +26,17 @@ struct Array
     {
         memset(this, 0, sizeof(*this));
         resize(other.count());
-        memcpy(begin(), other.begin(), bytes());
+        if(POD)
+        {
+            memcpy(begin(), other.begin(), bytes());
+        }
+        else
+        {
+            for(int32_t i = 0; i < count(); ++i)
+            {
+                m_data[i] = other[i];
+            }
+        }
     }
     Array(Array&& other) noexcept
     {
@@ -37,7 +47,17 @@ struct Array
     {
         reset();
         resize(other.count());
-        memcpy(begin(), other.begin(), bytes());
+        if(POD)
+        {
+            memcpy(begin(), other.begin(), bytes());
+        }
+        else
+        {
+            for(int32_t i = 0; i < count(); ++i)
+            {
+                m_data[i] = other[i];
+            }
+        }
         return *this;
     }
     Array& operator=(Array&& other) noexcept 

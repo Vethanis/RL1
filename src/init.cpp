@@ -16,7 +16,7 @@
 #include "task.h"
 #include "prng.h"
 
-#include "bsp.h"
+#include "bsp2.h"
 
 #include "imguishim.h"
 
@@ -135,6 +135,12 @@ void Init()
     const Array<vec3> cube((const vec3*)cubef, NELEM(cubef) / 3);
     const Array<int32_t> ind(cubeindf, NELEM(cubeindf));
 
+    Array<vec3> cuberaw;
+    for(int32_t x : ind)
+    {
+        cuberaw.grow() = cube[x];
+    }
+
     {
         slot ent = Components::Create();
         Components::Add<TransformComponent>(ent);
@@ -143,20 +149,18 @@ void Init()
 
         pc->Init(0.0f, vec3(0.0f, 0.0f, 0.0f), vec3(10.0f, 0.33f, 10.0f));
 
-        BspTree t3 = BspTree(cube, ind)
-            .Subtract(
-                BspTree(cube, ind).Transform(glm::translate(mat4(1.0f), vec3(0.5f))));
-        
+        csgmodel model = csgdifference(csgmodel(cuberaw), csgmodel(cuberaw, vec3(0.5f)));
+
         Array<Vertex> verts;
         Array<int32_t> inds;
-        t3.ToVertices(camera.m_eye, inds, verts);
+        PositionsToVertices(model.vertices, verts);
+        inds.resize(verts.count());
+        for(int32_t i = 0; i < inds.count(); ++i)
+        {
+            inds[i] = i;
+        }
 
         printf("%d; %d\n", verts.count(), inds.count());
-        for(int32_t x : inds)
-        {
-            printf("%d, ", x);
-        }
-        puts("");
 
         BufferData bd;
         bd.vertices     = verts.begin();
@@ -169,7 +173,7 @@ void Init()
         
         rc->m_buffer    = bslot; //Buffers::Load(BufferString("sphere"));
         rc->m_material  = Images::Load(ImageString("bumpy_PRMA"));
-        rc->m_normal   = Images::Load(ImageString("bumpy_normal"));
+        rc->m_normal    = Images::Load(ImageString("bumpy_normal"));
         rc->m_pipeline  = pipeslot;
     }
 }
