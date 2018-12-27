@@ -7,6 +7,7 @@ enum AllocBucket
 {
     AB_Default = 0,
     AB_Temp,
+    AB_Stack,
 };
 
 namespace Allocator
@@ -45,20 +46,32 @@ namespace Allocator
 // sets mem bucket for a scope
 struct BucketScope
 {
-    BucketScope(AllocBucket bucket)
+    inline BucketScope(AllocBucket bucket)
     {
         Allocator::PushBucket(bucket);
     }
-    ~BucketScope()
+    inline ~BucketScope()
     {
         Allocator::PopBucket();
     }
 };
 
-// sets temp mem bucket and frees all mem allocated in scope
-struct TempMemScope
+struct BucketScopeTemp
+{
+    inline BucketScopeTemp()
+    {
+        Allocator::PushBucket(AB_Temp);
+    }
+    inline ~BucketScopeTemp()
+    {
+        Allocator::PopBucket();
+    }
+};
+
+// stack scope memory
+struct BucketScopeStack
 {
     size_t m_head;
-    TempMemScope();
-    ~TempMemScope();
+    BucketScopeStack();
+    ~BucketScopeStack();
 };

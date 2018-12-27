@@ -7,6 +7,12 @@ set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/bin)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+
+add_subdirectory(glfw-master)
+
 if(WIN32)
     set(BULLET_LIBS 
         Bullet3Collision.lib
@@ -35,10 +41,10 @@ if(WIN32)
     set(CMAKE_CXX_FLAGS "/W3 /MP /GR-")
     include_directories(${CMAKE_SOURCE_DIR}/include)
 
-    set(PROJECT_LINK_LIBS OpenGL32 glfw3dll ${BULLET_LIBS} )
+    set(PROJECT_LINK_LIBS OpenGL32 glfw ${BULLET_LIBS} )
 
     if(0)
-        set(PROJECT_LINK_LIBS OpenGL32 glfw3dll ${BULLET_DEBUG_LIBS} )
+        set(PROJECT_LINK_LIBS OpenGL32 glfw ${BULLET_DEBUG_LIBS} )
     endif()
 
     link_directories(${CMAKE_SOURCE_DIR}/lib )
@@ -52,5 +58,5 @@ elseif(UNIX)
 endif()
 
 file(GLOB_RECURSE SOURCES "src/*.cpp" "src/*.c" "src/*.cc")
-add_executable(main ${SOURCES})
-target_link_libraries(main ${PROJECT_LINK_LIBS})
+add_executable(rl1 ${SOURCES})
+target_link_libraries(rl1 ${PROJECT_LINK_LIBS})

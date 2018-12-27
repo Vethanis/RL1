@@ -60,10 +60,12 @@ struct DefaultAllocator : public BaseAllocator
 
 DefaultAllocator    ms_default;
 LinearAllocator     ms_temp(1ul << 30ul);
+LinearAllocator     ms_stack(1ul << 30ul);
 BaseAllocator*      ms_allocators[] = 
 {
     &ms_default,
     &ms_temp,
+    &ms_stack,
 };
 FixedArray<AllocBucket, 256> ms_bucket;
 
@@ -96,13 +98,13 @@ namespace Allocator
     }
 };
 
-TempMemScope::TempMemScope()
+BucketScopeStack::BucketScopeStack()
 {
     m_head = ms_temp.m_head;
-    Allocator::PushBucket(AB_Temp);
+    Allocator::PushBucket(AB_Stack);
 }
 
-TempMemScope::~TempMemScope()
+BucketScopeStack::~BucketScopeStack()
 {
     ms_temp.m_head = m_head;
     Allocator::PopBucket();

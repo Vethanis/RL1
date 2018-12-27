@@ -453,13 +453,15 @@ typedef csgnode* (*csgfunc)(const csgnode*, const csgnode*);
 
 static inline csgmodel csgop(const csgmodel& a, const csgmodel& b, csgfunc fn)
 {
-    TempMemScope scope;
+    BucketScopeStack stackscope; // stack mem
     csgnode* A = Allocator::Alloc<csgnode>();
     csgnode* B = Allocator::Alloc<csgnode>();
     new (A) csgnode(modelToPolygon(a));
     new (B) csgnode(modelToPolygon(b));
     csgnode* AB = fn(A, B);
     polylist polygons = AB->allPolygons();
+    
+    BucketScopeTemp tempscope; // temp mem
     return modelFromPolygon(polygons);
 }
 

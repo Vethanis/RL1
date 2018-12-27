@@ -29,9 +29,6 @@ fi
 mkdir -p bin/Release
 mkdir -p bin/Debug
 
-cp lib/*.dll bin/Release/
-cp lib/*.dll bin/Debug/
-
 cp -r assets bin/Release/
 cp -r assets bin/Debug/
 
@@ -39,6 +36,6 @@ if [ "$1" == "debug" ] || [ "$2" == "debug" ] ; then
     echo ""
 else
     cd bin/Release
-    ./main.exe
+    ./rl1.exe
     cd ../..
 fi
