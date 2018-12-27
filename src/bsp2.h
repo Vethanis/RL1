@@ -35,6 +35,11 @@ struct csgmodel
         vertices = x;
         Translate(translation);
     }
+    ~csgmodel()
+    {
+        // always use temp mem for these
+        memset(&vertices, 0, sizeof(vertices));
+    }
     inline void Translate(const vec3& x)
     {
         mat4 m = glm::translate(mat4(1.0f), x);

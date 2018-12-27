@@ -1,11 +1,11 @@
 #pragma once
 
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 #include <new>
 
 #include "macro.h"
+#include "allocator.h"
 
 template<typename T, bool POD = true>
 struct Array
@@ -90,7 +90,10 @@ struct Array
     {
         if(new_cap > capacity())
         {
-            m_data = (T*)realloc(m_data, sizeof(T) * new_cap);
+            T* data = (T*)Allocator::Alloc(sizeof(T) * new_cap);
+            memcpy(data, m_data, sizeof(T) * count());
+            Allocator::Free(m_data);
+            m_data = data;
             m_capacity = new_cap;
         }
     }
@@ -177,7 +180,7 @@ struct Array
     inline void reset()
     {
         clear();
-        free(m_data);
+        Allocator::Free(m_data);
         memset(this, 0, sizeof(*this));
     }
     inline void remove(int32_t idx)

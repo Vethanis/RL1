@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include "macro.h"
+#include "allocator.h"
 #include "window.h"
 #include "camera.h"
 #include "pipeline.h"
@@ -30,6 +31,8 @@ Camera camera;
 
 void Init()
 {
+    Allocator::PushBucket(AB_Default);
+
     SRand(time(0) ^ (uint64_t)&puts);
 
     window.Init("RL1", false);

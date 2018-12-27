@@ -18,15 +18,13 @@
 
 #include "bsp2.h"
 #include "swap.h"
-#include "blockalloc.h"
+#include "allocator.h"
 
 struct csgplane;
 struct csgpolygon;
 struct csgnode;
 
 typedef Array<csgpolygon, false> polylist;
-
-static TBlockAllocCD<csgnode> ms_nodes;
 
 struct csgplane
 {
@@ -107,8 +105,8 @@ struct csgnode
     }
     ~csgnode()
     {
-        ms_nodes.Free(front);
-        ms_nodes.Free(back);
+        Allocator::Delete(front);
+        Allocator::Delete(back);
     }
     csgnode* clone() const;
     void clipTo(const csgnode* other);
@@ -219,10 +217,10 @@ static inline csgnode* csgunion(const csgnode* a1, const csgnode* b1)
     b->clipTo(a);
     b->invert();
     a->build(b->allPolygons());
-    csgnode* ret = ms_nodes.Alloc();
+    csgnode* ret = Allocator::New<csgnode>();
     new (ret) csgnode(a->allPolygons());
-    ms_nodes.Free(a);
-    ms_nodes.Free(b);
+    Allocator::Delete(a);
+    Allocator::Delete(b);
     return ret;
 }
 
@@ -238,10 +236,10 @@ static inline csgnode* csgdifference(const csgnode* a1, const csgnode* b1)
 	b->invert();
 	a->build(b->allPolygons());
 	a->invert();
-    csgnode* ret = ms_nodes.Alloc();
+    csgnode* ret = Allocator::New<csgnode>();
     new (ret) csgnode(a->allPolygons());
-    ms_nodes.Free(a);
-    ms_nodes.Free(b);
+    Allocator::Delete(a);
+    Allocator::Delete(b);
     return ret;
 }
 
@@ -256,10 +254,10 @@ static inline csgnode* csgintersect(const csgnode* a1, const csgnode* b1)
 	b->clipTo(a);
 	a->build(b->allPolygons());
 	a->invert();
-    csgnode* ret = ms_nodes.Alloc();
+    csgnode* ret = Allocator::New<csgnode>();
     new (ret) csgnode(a->allPolygons());
-    ms_nodes.Free(a);
-    ms_nodes.Free(b);
+    Allocator::Delete(a);
+    Allocator::Delete(b);
 	return ret;
 }
 
@@ -369,7 +367,7 @@ polylist csgnode::allPolygons() const
 
 csgnode* csgnode::clone() const 
 {
-    csgnode* node = ms_nodes.Alloc();
+    csgnode* node = Allocator::New<csgnode>();
     node->polygons = polygons;
     node->plane = plane;
     if(front)
@@ -403,7 +401,7 @@ void csgnode::build(const polylist& list)
     {
         if(!front)
         {
-            front = ms_nodes.Alloc();
+            front = Allocator::New<csgnode>();
         }
         front->build(lfront);
     }
@@ -411,7 +409,7 @@ void csgnode::build(const polylist& list)
     {
         if(!back)
         {
-            back = ms_nodes.Alloc();
+            back = Allocator::New<csgnode>();
         }
         back->build(lback);
     }
@@ -455,15 +453,13 @@ typedef csgnode* (*csgfunc)(const csgnode*, const csgnode*);
 
 static inline csgmodel csgop(const csgmodel& a, const csgmodel& b, csgfunc fn)
 {
-    csgnode* A = ms_nodes.Alloc();
-    csgnode* B = ms_nodes.Alloc();
+    TempMemScope scope;
+    csgnode* A = Allocator::Alloc<csgnode>();
+    csgnode* B = Allocator::Alloc<csgnode>();
     new (A) csgnode(modelToPolygon(a));
     new (B) csgnode(modelToPolygon(b));
     csgnode* AB = fn(A, B);
     polylist polygons = AB->allPolygons();
-    ms_nodes.Free(A);
-    ms_nodes.Free(B);
-    ms_nodes.Free(AB);
     return modelFromPolygon(polygons);
 }
 
