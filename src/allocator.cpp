@@ -67,7 +67,8 @@ BaseAllocator*      ms_allocators[] =
     &ms_temp,
     &ms_stack,
 };
-FixedArray<AllocBucket, 256> ms_bucket;
+AllocBucket defaultBucket[] = { AB_Default };
+FixedArray<AllocBucket, 256> ms_bucket(defaultBucket, NELEM(defaultBucket));
 
 namespace Allocator
 {
@@ -79,15 +80,17 @@ namespace Allocator
     {
         ms_bucket.pop();
     }
+    AllocBucket GetCurrent()
+    {
+        return ms_bucket.back();
+    }
     void* Alloc(size_t bytes)
     {
-        AllocBucket cur = ms_bucket.back();
-        return ms_allocators[cur]->Alloc(bytes);
+        return ms_allocators[GetCurrent()]->Alloc(bytes);
     }
     void Free(void* p)
     {
-        AllocBucket cur = ms_bucket.back();
-        return ms_allocators[cur]->Free(p);
+        return ms_allocators[GetCurrent()]->Free(p);
     }
     void Update()
     {

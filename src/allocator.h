@@ -14,6 +14,7 @@ namespace Allocator
 {
     void PushBucket(AllocBucket bucket);
     void PopBucket();
+    AllocBucket GetCurrent();
     void* Alloc(size_t bytes);
     void Free(void* p);
     void Update();

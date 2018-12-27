@@ -13,18 +13,25 @@ struct Array
     T*          m_data;
     int32_t     m_count;
     int32_t     m_capacity;
+    AllocBucket m_bucket;
 
-    Array(){ memset(this, 0, sizeof(*this)); }
+    Array()
+    { 
+        memset(this, 0, sizeof(*this)); 
+        m_bucket = Allocator::GetCurrent();
+    }
     ~Array() { reset(); }
     Array(const T* x, int32_t ct)
     {
         memset(this, 0, sizeof(*this)); 
+        m_bucket = Allocator::GetCurrent();
         resize(ct);
         memcpy(m_data, x, sizeof(T) * ct);
     }
     Array(const Array& other)
     {
         memset(this, 0, sizeof(*this));
+        m_bucket = Allocator::GetCurrent();
         resize(other.count());
         if(POD)
         {
@@ -90,6 +97,7 @@ struct Array
     {
         if(new_cap > capacity())
         {
+            BucketScope scope(m_bucket);
             T* data = (T*)Allocator::Alloc(sizeof(T) * new_cap);
             memcpy(data, m_data, sizeof(T) * count());
             Allocator::Free(m_data);
@@ -107,8 +115,7 @@ struct Array
             {
                 newCap += step;
             }
-            m_data = (T*)realloc(m_data, sizeof(T) * newCap);
-            m_capacity = newCap;
+            reserve(newCap);
         }
         // dont update count, let user append
     }
@@ -179,6 +186,7 @@ struct Array
     }
     inline void reset()
     {
+        BucketScope scope(m_bucket);
         clear();
         Allocator::Free(m_data);
         memset(this, 0, sizeof(*this));
@@ -237,6 +245,15 @@ struct FixedArray
     {
         memcpy(this, &other, sizeof(*this));
         memset(&other, 0, sizeof(*this));
+    }
+    FixedArray(const T* x, int32_t count)
+    {
+        Assert(count <= m_capacity);
+        for(int32_t i = 0; i < count; ++i)
+        {
+            m_data[i] = x[i];
+        }
+        m_count = count;
     }
     FixedArray& operator=(const FixedArray& other)
     {

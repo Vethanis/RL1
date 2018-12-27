@@ -31,8 +31,6 @@ Camera camera;
 
 void Init()
 {
-    Allocator::PushBucket(AB_Default);
-
     SRand(time(0) ^ (uint64_t)&puts);
 
     window.Init("RL1", false);

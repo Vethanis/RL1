@@ -41,11 +41,11 @@ if(WIN32)
     include_directories(${CMAKE_SOURCE_DIR}/include)
 
     set(PROJECT_LINK_LIBS OpenGL32 glfw ${BULLET_LIBS} )
-    link_directories(${CMAKE_SOURCE_DIR}/bin/Release/ )
+    link_directories(${CMAKE_SOURCE_DIR}/build/lib/Release/ )
 
     if(0)
         set(PROJECT_LINK_LIBS OpenGL32 glfw ${BULLET_DEBUG_LIBS} )
-        link_directories(${CMAKE_SOURCE_DIR}/bin/Debug/ )
+        link_directories(${CMAKE_SOURCE_DIR}/build/lib/Debug/ )
     endif()
 
 elseif(UNIX)
