@@ -12,6 +12,7 @@ set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
 add_subdirectory(glfw-master)
+add_subdirectory(bullet3-2.87)
 
 if(WIN32)
     set(BULLET_LIBS 
@@ -22,7 +23,6 @@ if(WIN32)
         BulletCollision.lib
         BulletDynamics.lib
         BulletInverseDynamics.lib
-        BulletInverseDynamicsUtils.lib
         LinearMath.lib)
 
     set(BULLET_DEBUG_LIBS
@@ -33,7 +33,6 @@ if(WIN32)
         BulletCollision_Debug.lib
         BulletDynamics_Debug.lib
         BulletInverseDynamics_Debug.lib
-        BulletInverseDynamicsUtils_Debug.lib
         LinearMath_Debug.lib)
         
     set(CMAKE_CXX_FLAGS_DEBUG "/Od /MTd /Zi")
@@ -42,12 +41,13 @@ if(WIN32)
     include_directories(${CMAKE_SOURCE_DIR}/include)
 
     set(PROJECT_LINK_LIBS OpenGL32 glfw ${BULLET_LIBS} )
+    link_directories(${CMAKE_SOURCE_DIR}/bin/Release/ )
 
     if(0)
         set(PROJECT_LINK_LIBS OpenGL32 glfw ${BULLET_DEBUG_LIBS} )
+        link_directories(${CMAKE_SOURCE_DIR}/bin/Debug/ )
     endif()
 
-    link_directories(${CMAKE_SOURCE_DIR}/lib )
 elseif(UNIX)
     set(CMAKE_CXX_FLAGS_RELEASE "-O3")
     set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
