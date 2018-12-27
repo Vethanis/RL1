@@ -17,6 +17,93 @@
 // Edited again by Kara Hughes, under MIT license.
 
 #include "bsp2.h"
+#include "swap.h"
+#include "allocator.h"
+
+typedef Array<csgpolygon, false> polylist;
+
+struct csgplane
+{
+    vec3 normal;
+    float w;
+
+    csgplane() {}
+    csgplane(const vec3& a, const vec3& b, const vec3& c)
+    {
+        normal = glm::normalize(glm::cross(b - a, c - a));
+        w = glm::dot(normal, a);
+    }
+    inline bool ok() const 
+    {
+        return glm::length(normal) > 0.0f;
+    }
+    inline void flip()
+    {
+        normal *= -1.0f;
+        w *= -1.0f;
+    }
+    inline float distance(const vec3& x) const 
+    {
+        return glm::dot(normal, x) - w;
+    }
+    void splitPolygon(
+        const csgpolygon& polygon, 
+        polylist& cofront,
+        polylist& coback,
+        polylist& front,
+        polylist& back) const;
+};
+
+struct csgpolygon
+{
+    Array<vec3> vertices;
+    csgplane plane;
+
+    csgpolygon() {}
+    csgpolygon(const Array<vec3>& list)
+    {
+        plane = csgplane(list[0], list[1], list[2]);
+        vertices = list;
+    }
+    inline void flip()
+    {
+        plane.flip();
+        for(int32_t i = 0; i < vertices.count() / 2; ++i)
+        {
+            Swap(vertices[i], vertices[vertices.count() - i - 1]);
+        }
+    }
+};
+
+struct csgnode
+{
+    polylist polygons;
+    csgnode* front;
+    csgnode* back;
+    csgplane plane;
+
+    csgnode()
+    {
+        memset(this, 0, sizeof(*this));
+    }
+    csgnode(const polylist& list)
+    {
+        memset(this, 0, sizeof(*this));
+        build(list);
+    }
+    ~csgnode()
+    {
+        Allocator::Delete(front);
+        Allocator::Delete(back);
+    }
+    csgnode* clone() const;
+    void clipTo(const csgnode* other);
+    void invert();
+    void build(const polylist& list);
+    polylist clipPolygons(const polylist& list) const;
+    polylist allPolygons() const;
+};
+
 
 void csgplane::splitPolygon(
     const csgpolygon& polygon, 
