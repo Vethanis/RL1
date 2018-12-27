@@ -24,30 +24,11 @@
 struct csgplane;
 struct csgpolygon;
 struct csgnode;
+struct csgmodel;
 
-struct csgmodel
-{
-    Array<vec3> vertices;
-
-    csgmodel() {}
-    csgmodel(const Array<vec3>& x)
-    {
-        vertices = x;
-    }
-    csgmodel(const Array<vec3>& x, const vec3& translation)
-    {
-        vertices = x;
-        Translate(translation);
-    }
-    inline void Translate(const vec3& x)
-    {
-        mat4 m = glm::translate(mat4(1.0f), x);
-        for(vec3& v : vertices)
-        {
-            v = vec3(m * vec4(v, 1.0f));
-        }
-    }
-};
+// default mem
+csgnode* modelToNode(const csgmodel& a);
+csgmodel nodeToModel(const csgnode* a);
 
 // temp mem
 csgmodel csgunion(const csgmodel& a, const csgmodel& b);
@@ -67,12 +48,66 @@ enum csgop
     CSGOP_COUNT,
 };
 
-struct csg
+enum csgprim
 {
-    csgnode* m_node;
-    csgop    m_type;
+    Box = 0,
+    Sphere,
+    CSGPRIM_COUNT,
 };
 
-// default mem
-csgnode* modelToNode(const csgmodel& a);
-csgmodel nodeToModel(const csgnode* a);
+struct csg
+{
+    csgop       m_op;
+    csgprim     m_prim;
+    // a translation for each control point on a csg mesh
+    Array<vec3> m_translations;
+    // transform for the primitive mesh
+    mat4        m_matrix;
+};
+
+struct csgmodel
+{
+    Array<vec3> vertices;
+
+    csgmodel() {}
+    csgmodel(const Array<vec3>& x)
+    {
+        vertices = x;
+    }
+    inline csgmodel& Translate(const vec3& x)
+    {
+        return Transform(glm::translate(mat4(1.0f), x));
+    }
+    inline csgmodel& Scale(const vec3& x)
+    {
+        return Transform(glm::scale(mat4(1.0f), x));
+    }
+    inline csgmodel& Rotate(const vec3& pyr)
+    {
+        return Transform(glm::eulerAngleYXZ(pyr.y, pyr.x, pyr.z));
+    }
+    inline csgmodel& Transform(const mat4& m)
+    {
+        for(vec3& v : vertices)
+        {
+            v = vec3(m * vec4(v, 1.0f));
+        }
+        return *this;
+    }
+    inline csgmodel Union(const csgmodel& b) const
+    {
+        return csgunion(*this, b);
+    }
+    inline csgmodel Difference(const csgmodel& b) const
+    {
+        return csgdifference(*this, b);
+    }
+    inline csgmodel Intersection(const csgmodel& b) const 
+    {
+        return csgintersection(*this, b);
+    }
+    inline csgnode* toNode()
+    {
+        return modelToNode(*this);
+    }
+};

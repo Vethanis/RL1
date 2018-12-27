@@ -120,7 +120,7 @@ void Init()
 
         pc->Init(0.0f, vec3(0.0f, 0.0f, 0.0f), vec3(10.0f, 0.33f, 10.0f));
 
-        csgmodel model = csgdifference(csgmodel(cuberaw), csgmodel(sphereraw, vec3(0.5f)));
+        csgmodel model = csgmodel(cuberaw).Difference(csgmodel(sphereraw).Translate(vec3(0.5f)));
 
         Array<Vertex> verts;
         Array<int32_t> inds;
