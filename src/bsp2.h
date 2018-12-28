@@ -21,25 +21,6 @@
 #include "linmath.h"
 #include "array.h"
 
-struct csgplane;
-struct csgpolygon;
-struct csgnode;
-struct csgmodel;
-
-// default mem
-csgnode* modelToNode(const csgmodel& a);
-csgmodel nodeToModel(const csgnode* a);
-
-// temp mem
-csgmodel csgunion(const csgmodel& a, const csgmodel& b);
-csgmodel csgintersection(const csgmodel& a, const csgmodel& b);
-csgmodel csgdifference(const csgmodel& a, const csgmodel& b);
-
-// temp mem
-csgnode* csgunion(const csgnode* a1, const csgnode* b1);
-csgnode* csgdifference(const csgnode* a1, const csgnode* b1);
-csgnode* csgintersect(const csgnode* a1, const csgnode* b1);
-
 enum csgop
 {
     Union = 0,
@@ -67,57 +48,5 @@ struct csg
 
 typedef Array<csg, false> csglist;
 
-struct csgmodel
-{
-    Array<vec3> vertices;
-
-    csgmodel() {}
-    csgmodel(const Array<vec3>& x)
-    {
-        vertices = x;
-    }
-    csgmodel(const csgnode* node)
-    {
-        *this = nodeToModel(node);
-    }
-    inline csgmodel& Translate(const vec3& x)
-    {
-        return Transform(glm::translate(mat4(1.0f), x));
-    }
-    inline csgmodel& Scale(const vec3& x)
-    {
-        return Transform(glm::scale(mat4(1.0f), x));
-    }
-    inline csgmodel& Rotate(const vec3& pyr)
-    {
-        return Transform(glm::eulerAngleYXZ(pyr.y, pyr.x, pyr.z));
-    }
-    inline csgmodel& Transform(const mat4& m)
-    {
-        for(vec3& v : vertices)
-        {
-            v = vec3(m * vec4(v, 1.0f));
-        }
-        return *this;
-    }
-    inline csgmodel Union(const csgmodel& b) const
-    {
-        return csgunion(*this, b);
-    }
-    inline csgmodel Difference(const csgmodel& b) const
-    {
-        return csgdifference(*this, b);
-    }
-    inline csgmodel Intersection(const csgmodel& b) const 
-    {
-        return csgintersection(*this, b);
-    }
-    inline csgnode* toNode()
-    {
-        return modelToNode(*this);
-    }
-};
-
 void SetCSGPrim(csgprim type, const Array<vec3>& vertices);
-const csgmodel& GetCSGPrim(csgprim type);
 void Evaluate(const csglist& list, Array<vec3>& out);
