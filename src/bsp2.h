@@ -60,10 +60,12 @@ struct csg
     csgop       m_op;
     csgprim     m_prim;
     // a translation for each control point on a csg mesh
-    Array<vec3> m_translations;
+    // Array<vec3> m_translations;
     // transform for the primitive mesh
     mat4        m_matrix;
 };
+
+typedef Array<csg, false> csglist;
 
 struct csgmodel
 {
@@ -115,3 +117,7 @@ struct csgmodel
         return modelToNode(*this);
     }
 };
+
+void SetCSGPrim(csgprim type, const Array<vec3>& vertices);
+const csgmodel& GetCSGPrim(csgprim type);
+void Evaluate(const csglist& list, Array<vec3>& out);

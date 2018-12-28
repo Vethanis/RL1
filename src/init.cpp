@@ -94,11 +94,11 @@ void Init()
 
     BucketScopeStack stackscope;
 
-    Array<vec3> sphereraw;
-    Array<vec3> cuberaw;
     {
         BucketScopeStack stackscope;
-        
+        Array<vec3> sphereraw;
+        Array<vec3> cuberaw;
+
         BufferData sbd = Buffers::Load("sphere");
         BufferData cbd = Buffers::Load("cube");
         sphereraw.expand(sbd.indexCount);
@@ -115,6 +115,9 @@ void Init()
 
         Buffers::Free(sbd);
         Buffers::Free(cbd);
+
+        SetCSGPrim(Box, cuberaw);
+        SetCSGPrim(Sphere, sphereraw);
     }
 
     {
@@ -124,11 +127,25 @@ void Init()
 
         pc->Init(0.0f, vec3(0.0f, 0.0f, 0.0f), vec3(10.0f, 0.33f, 10.0f));
 
-        csgmodel model = csgmodel(cuberaw).Difference(csgmodel(sphereraw).Translate(vec3(0.5f)));
+        Array<vec3> pts;
+        csglist csgs;
+        csgs.grow() = 
+        {
+            Union,
+            Box,
+            mat4(1.0f),
+        };
+        csgs.grow() = 
+        {
+            Difference,
+            Sphere,
+            glm::translate(mat4(1.0f), vec3(0.5f))
+        };
+        Evaluate(csgs, pts);
 
         Array<Vertex> verts;
         Array<int32_t> inds;
-        PositionsToVertices(model.vertices, verts, inds);
+        PositionsToVertices(pts, verts, inds);
 
         BufferData bd;
         bd.vertices     = verts.begin();
