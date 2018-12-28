@@ -1,36 +1,17 @@
 #include "pipeline.h"
-
 #include "macro.h"
-#include "gen_array.h"
 
 namespace Pipelines
 {
-    gen_array<sg_pipeline> ms_store;
+    sg_pipeline pipelines[PT_Count];
 
-    slot Create(const sg_pipeline_desc& desc)
+    void Create(PipelineType type, const sg_pipeline_desc& desc)
     {
-        slot s = ms_store.Create();
-        sg_pipeline* p = ms_store.Get(s);
-        *p = sg_make_pipeline(&desc);
-        Assert(p->id != SG_INVALID_ID);
-        return s;
+        pipelines[type] = sg_make_pipeline(&desc);
+        Assert(pipelines[type].id != SG_INVALID_ID);
     }
-    void Destroy(slot s)
+    sg_pipeline Get(PipelineType type)
     {
-        if(!Exists(s))
-        {
-            return;
-        }
-        sg_pipeline& pipe = ms_store.GetUnchecked(s);
-        sg_destroy_pipeline(pipe);
-        ms_store.DestroyUnchecked(s);
-    }
-    const sg_pipeline* Get(slot s)
-    {
-        return ms_store.Get(s);
-    }
-    bool Exists(slot s)
-    {
-        return ms_store.Exists(s);
+        return pipelines[type];
     }
 };

@@ -3,7 +3,7 @@
 #include "macro.h"
 #include "gen_array.h"
 #include "blockalloc.h"
-#include "transform.h"
+#include "rendercomponent.h"
 
 btDefaultCollisionConfiguration     ms_collisionConfig;
 btCollisionDispatcher               ms_dispatcher = btCollisionDispatcher(
@@ -33,13 +33,13 @@ namespace Physics
         for(const slot* s = Components::begin(); s != Components::end(); ++s)
         {
             PhysicsComponent* pc = Components::Get<PhysicsComponent>(*s);
-            TransformComponent* tc = Components::Get<TransformComponent>(*s);
-            if(!pc | !tc)
+            RenderComponent* rc = Components::Get<RenderComponent>(*s);
+            if(!pc | !rc)
             {
                 continue;
             }
 
-            tc->m_matrix = pc->GetTransform();
+            rc->m_matrix = pc->GetTransform();
         }
     }
     void Shutdown()

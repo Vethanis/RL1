@@ -5,6 +5,7 @@
 #include "dict.h"
 #include "fnv.h"
 #include "hashstring.h"
+#include "allocator.h"
 
 template<typename T, uint64_t width, void (*loadFn)(T*, Hash) = nullptr, void (*destroyFn)(T*) = nullptr>
 struct Store
@@ -31,6 +32,7 @@ struct Store
             item.refcount++;
             return s;
         }
+        BucketScope scope(AB_Default);
         s = m_items.Create();
         Item& item = m_items.GetUnchecked(s);
         if(loadFn)
@@ -53,6 +55,7 @@ struct Store
         {
             return slot();
         }
+        BucketScope scope(AB_Default);
         s = m_items.Create();
         Item& item = m_items.GetUnchecked(s);
         item.t = t;
@@ -104,6 +107,7 @@ struct Store
     }
     inline void DestroyUnchecked(slot s)
     {
+        BucketScope scope(AB_Default);
         Item& item = m_items.GetUnchecked(s);
         if(destroyFn)
         {

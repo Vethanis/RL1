@@ -1,12 +1,10 @@
 #pragma once
 
 #include "slot.h"
-#include "linmath.h"
 
 enum ComponentType
 {
-    CT_Transform = 0,
-    CT_Render,
+    CT_Render = 0,
     CT_Physics,
     CT_Children,
     CT_Pathfind,
@@ -18,29 +16,11 @@ enum ComponentType
     CT_Count  
 };
 
-struct Row
-{
-    void* m_components[CT_Count];
-
-    template<typename T>
-    inline const T* Get() const
-    {
-        return static_cast<const T*>(m_components[T::ms_type]);
-    }
-    template<typename T>
-    inline T* Get()
-    {
-        return static_cast<T*>(m_components[T::ms_type]);
-    }
-};
-
 namespace Components
 {
     void Init();
     slot Create();
     void Destroy(slot s);
-    const Row* Get(slot s);
-    const Row& GetUnchecked(slot s);
     void* Get(ComponentType type, slot s);
     const void* GetConst(ComponentType type, slot s);
     void Add(ComponentType type, slot s);
@@ -84,12 +64,3 @@ namespace Components
     }
 };
 
-struct RenderComponent
-{
-    slot m_buffer;
-    slot m_normal;
-    slot m_material;
-    slot m_pipeline;
-
-    static const ComponentType ms_type = CT_Render;
-};

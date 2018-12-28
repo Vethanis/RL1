@@ -4,8 +4,24 @@
 #include "macro.h"
 #include "blockalloc.h"
 
-#include "transform.h"
+#include "rendercomponent.h"
 #include "physics.h"
+
+struct Row
+{
+    void* m_components[CT_Count];
+
+    template<typename T>
+    inline const T* Get() const
+    {
+        return static_cast<const T*>(m_components[T::ms_type]);
+    }
+    template<typename T>
+    inline T* Get()
+    {
+        return static_cast<T*>(m_components[T::ms_type]);
+    }
+};
 
 namespace Components
 {
@@ -21,12 +37,13 @@ namespace Components
             return;
         }
         ms_hasInit = true;
-        ms_allocs[CT_Transform].Init<TransformComponent>();
+        BucketScope scope(AB_Default);
         ms_allocs[CT_Render].Init<RenderComponent>();
         ms_allocs[CT_Physics].Init<PhysicsComponent>();
     }
     slot Create()
     {
+        BucketScope scope(AB_Default);
         slot s = ms_rows.Create();
         ms_alive.grow() = s;
         return s;
@@ -43,6 +60,8 @@ namespace Components
     {
         if(ms_rows.Exists(s))
         {
+            BucketScope scope(AB_Default);
+
             Row& row = ms_rows.GetUnchecked(s);
 
             CleanupPhysics(row);
@@ -59,14 +78,6 @@ namespace Components
             ms_rows.DestroyUnchecked(s);
             ms_alive.findRemove(s);
         }
-    }
-    const Row* Get(slot s)
-    {
-        return ms_rows.Get(s);
-    }
-    const Row& GetUnchecked(slot s)
-    {
-        return ms_rows.GetUnchecked(s);
     }
     void* Get(ComponentType type, slot s)
     {
@@ -92,6 +103,7 @@ namespace Components
         {
             return;
         }
+        BucketScope scope(AB_Default);
         Row& row = ms_rows.GetUnchecked(s);
         void* c = row.m_components[type];
         if(!c)
@@ -105,6 +117,7 @@ namespace Components
         {
             return;
         }
+        BucketScope scope(AB_Default);
         Row& row = ms_rows.GetUnchecked(s);
 
         if(type == CT_Physics)
@@ -129,6 +142,7 @@ namespace Components
         {
             return nullptr;
         }
+        BucketScope scope(AB_Default);
         Row& row = ms_rows.GetUnchecked(s);
         void* c = row.m_components[type];
         if(!c)

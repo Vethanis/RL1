@@ -2,7 +2,7 @@
 
 #include "macro.h"
 #include "component.h"
-#include "transform.h"
+#include "rendercomponent.h"
 #include "buffer.h"
 #include "image.h"
 #include "pipeline.h"
@@ -44,7 +44,7 @@ void Draw()
     Camera* cam = Camera::GetActive();
     
     window->Poll(*cam);
-    Transform VP = cam->update();
+    mat4 VP = cam->update();
 
     sg_begin_default_pass(
         &action, 
@@ -74,31 +74,28 @@ void Draw()
 
     for(const slot* s = Components::begin(); s != Components::end(); ++s)
     {
-        const Row&                  row     = Components::GetUnchecked(*s);
-        const RenderComponent*      rc      = row.Get<RenderComponent>();
-        const TransformComponent*   tc      = row.Get<TransformComponent>();
+        const RenderComponent* rc = Components::Get<RenderComponent>(*s);
         
-        if(!rc || !tc)
+        if(!rc)
         {
             continue;
         }
 
         const Buffer*       buf         = Buffers::Get(rc->m_buffer);
         const sg_image*     material    = Images::Get(rc->m_material);
-        const sg_image*     normal     = Images::Get(rc->m_normal);
-        const sg_pipeline*  pipe        = Pipelines::Get(rc->m_pipeline);
+        const sg_image*     normal      = Images::Get(rc->m_normal);
 
-        if(!buf || !material || !normal || !pipe)
+        if(!buf || !material || !normal)
         {
             continue;
         }
 
-        vsuni.MVP   = VP * tc->m_matrix;
-        vsuni.M     = tc->m_matrix;
+        vsuni.MVP   = VP * rc->m_matrix;
+        vsuni.M     = rc->m_matrix;
         fsuni.Seed  = Randf();
 
         sg_draw_state state     = { 0 };
-        state.pipeline          = *pipe;
+        state.pipeline          = Pipelines::Get(rc->m_pipeline);
         state.vertex_buffers[0] = buf->m_vertices;
         state.index_buffer      = buf->m_indices;
         state.fs_images[0]      = *material;

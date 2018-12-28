@@ -60,7 +60,7 @@ struct DefaultAllocator : public BaseAllocator
 
 DefaultAllocator    ms_default;
 LinearAllocator     ms_temp(1ul << 30ul);
-LinearAllocator     ms_stack(1ul << 30ul);
+LinearAllocator     ms_stack(1ul << 27ul);
 BaseAllocator*      ms_allocators[] = 
 {
     &ms_default,

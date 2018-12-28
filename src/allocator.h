@@ -36,8 +36,9 @@ namespace Allocator
     template<typename T>
     inline void Delete(T* t)
     {
-        if(t)
+        if(t && GetCurrent() < AB_Temp)
         {
+            // dont call destructors on temp mem, its a waste of cache
             t->~T();
             Free((void*)t);
         }

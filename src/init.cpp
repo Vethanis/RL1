@@ -9,11 +9,11 @@
 #include "camera.h"
 #include "pipeline.h"
 #include "shader.h"
-#include "transform.h"
 #include "physics.h"
 #include "buffer.h"
 #include "image.h"
 #include "component.h"
+#include "rendercomponent.h"
 #include "task.h"
 #include "prng.h"
 
@@ -74,10 +74,10 @@ void Init()
     shadesc.fs.images[1].name = "NorTex";
     shadesc.fs.images[1].type = SG_IMAGETYPE_2D;
 
-    slot shaderSlot = Shaders::Create(shadesc);
+    Shaders::Create(ST_Textured, shadesc);
 
     sg_pipeline_desc pdesc = {0};
-    pdesc.shader = Shaders::Get(shaderSlot);
+    pdesc.shader = Shaders::Get(ST_Textured);
     pdesc.index_type = SG_INDEXTYPE_UINT32;
     pdesc.layout.attrs[0].name = "position";
     pdesc.layout.attrs[0].format = SG_VERTEXFORMAT_FLOAT3;
@@ -90,31 +90,35 @@ void Init()
     pdesc.rasterizer.cull_mode = SG_CULLMODE_BACK;
     pdesc.rasterizer.face_winding = SG_FACEWINDING_CCW;
     
-    slot pipeslot       = Pipelines::Create(pdesc);
+    Pipelines::Create(PT_Textured, pdesc);
 
-    BufferData sbd = Buffers::Load("sphere");
-    BufferData cbd = Buffers::Load("cube");
+    BucketScopeStack stackscope;
 
     Array<vec3> sphereraw;
-    sphereraw.expand(sbd.indexCount);
-    for(uint32_t i = 0; i < sbd.indexCount; ++i)
-    {
-        sphereraw.append() = sbd.vertices[sbd.indices[i]].position;
-    }
-
     Array<vec3> cuberaw;
-    cuberaw.expand(cbd.indexCount);
-    for(uint32_t i = 0; i < cbd.indexCount; ++i)
     {
-        cuberaw.append() = cbd.vertices[cbd.indices[i]].position;
-    }
+        BucketScopeStack stackscope;
+        
+        BufferData sbd = Buffers::Load("sphere");
+        BufferData cbd = Buffers::Load("cube");
+        sphereraw.expand(sbd.indexCount);
+        for(uint32_t i = 0; i < sbd.indexCount; ++i)
+        {
+            sphereraw.append() = sbd.vertices[sbd.indices[i]].position;
+        }
 
-    Buffers::Free(sbd);
-    Buffers::Free(cbd);
+        cuberaw.expand(cbd.indexCount);
+        for(uint32_t i = 0; i < cbd.indexCount; ++i)
+        {
+            cuberaw.append() = cbd.vertices[cbd.indices[i]].position;
+        }
+
+        Buffers::Free(sbd);
+        Buffers::Free(cbd);
+    }
 
     {
         slot ent = Components::Create();
-        Components::Add<TransformComponent>(ent);
         RenderComponent* rc = Components::GetAdd<RenderComponent>(ent);
         PhysicsComponent* pc = Components::GetAdd<PhysicsComponent>(ent);
 
@@ -138,6 +142,6 @@ void Init()
         rc->m_buffer    = bslot;
         rc->m_material  = Images::Load(ImageString("bumpy_PRMA"));
         rc->m_normal    = Images::Load(ImageString("bumpy_normal"));
-        rc->m_pipeline  = pipeslot;
+        rc->m_pipeline  = PT_Textured;
     }
 }

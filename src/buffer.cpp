@@ -3,6 +3,7 @@
 #include "buffer.h"
 #include <stdio.h>
 
+#include "allocator.h"
 #include "sokol_gfx.h"
 #include "macro.h"
 #include "store.h"
@@ -10,6 +11,7 @@
 
 static void loadFn(Buffer* p, Hash hash)
 {
+    BucketScopeStack stackscope;
     const char* name = BufferString(hash).GetStr();
     Assert(name);
     BufferData data = Buffers::Load(name);
@@ -65,6 +67,8 @@ namespace Buffers
 
     bool CreateVB(const char* name)
     {
+        BucketScopeStack stackscope;
+
         // create a .vb file from a .obj
         char path[256] = {0};
         sprintf(path, "assets/models/%s.obj", name);
@@ -192,8 +196,8 @@ namespace Buffers
         fread(&vertCount, sizeof(uint32_t), 1, file);
         fread(&indexCount, sizeof(uint32_t), 1, file);        
         
-        Vertex* verts = (Vertex*)malloc(sizeof(Vertex) * vertCount);
-        uint32_t* indices = (uint32_t*)malloc(sizeof(uint32_t) * indexCount);
+        Vertex* verts = (Vertex*)Allocator::Alloc(sizeof(Vertex) * vertCount);
+        uint32_t* indices = (uint32_t*)Allocator::Alloc(sizeof(uint32_t) * indexCount);
         
         fread(verts, sizeof(Vertex), vertCount, file);
         fread(indices, sizeof(uint32_t), indexCount, file);
@@ -208,8 +212,8 @@ namespace Buffers
     }
     void Free(BufferData& data)
     {
-        free(data.vertices);
-        free(data.indices);
+        Allocator::Free(data.vertices);
+        Allocator::Free(data.indices);
         memset(&data, 0, sizeof(BufferData));
     }
     void Save(const char* name, const BufferData& data)

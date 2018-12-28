@@ -5,6 +5,7 @@
 #include "strlcpy.h"
 #include "store.h"
 #include "hashstring.h"
+#include "allocator.h"
 
 struct Text
 {
@@ -17,6 +18,7 @@ struct Names
 
     inline slot Create(const char* name)
     {
+        BucketScope scope(AB_Default);
         slot s = m_store.Create(name);
         Text& t = m_store.GetUnchecked(s);
         strlcpy(t.data, name, NELEM(t.data));
