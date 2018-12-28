@@ -74,6 +74,10 @@ struct csgmodel
     {
         vertices = x;
     }
+    csgmodel(const csgnode* node)
+    {
+        *this = nodeToModel(node);
+    }
     inline csgmodel& Translate(const vec3& x)
     {
         return Transform(glm::translate(mat4(1.0f), x));

@@ -11,3 +11,10 @@ implement thread and semaphores
 names.h/cpp are weird. archetype system instead? need a spot to declare some sort of plato apple so that resources can try to create a shadow of one
 needs to be compatible with procedural generation and world tiles
 
+coalesce transform component into render component
+build control point for each unique vertex in mesh
+draw instanced gizmos for each control point
+each control point has multiple indices into original mesh
+apply translation in world space before transform
+move temp memory bucket scopes into csg operation evaluator
+only call destructors if non temp memory

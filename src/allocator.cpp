@@ -103,12 +103,12 @@ namespace Allocator
 
 BucketScopeStack::BucketScopeStack()
 {
-    m_head = ms_temp.m_head;
+    m_head = ms_stack.m_head;
     Allocator::PushBucket(AB_Stack);
 }
 
 BucketScopeStack::~BucketScopeStack()
 {
-    ms_temp.m_head = m_head;
+    ms_stack.m_head = m_head;
     Allocator::PopBucket();
 }
