@@ -58,6 +58,18 @@ struct BucketScope
     }
 };
 
+struct BucketScopeDefault
+{
+    inline BucketScopeDefault()
+    {
+        Allocator::PushBucket(AB_Default);
+    }
+    inline ~BucketScopeDefault()
+    {
+        Allocator::PopBucket();
+    }
+};
+
 struct BucketScopeTemp
 {
     inline BucketScopeTemp()

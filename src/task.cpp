@@ -5,16 +5,21 @@
 #include <thread>
 #include "sema.h"
 
-std::thread     ms_threads[16];
+constexpr int32_t NumThreads = 16;
+
+std::thread     ms_threads[NumThreads];
+Array<Task>     ms_queues[NumThreads];
 std::mutex      ms_lock;
 Semaphore       ms_startBarrier;
 Semaphore       ms_finishBarrier;
 Array<Task>     ms_tasks[TT_Count];
 TaskType        ms_curtype;
-volatile bool   ms_running;
+volatile bool   ms_running = false;
+bool            ms_working = false;
+int32_t         ms_granularity = 4;
 
 // internal
-void Run(void*)
+void Run(int32_t tid)
 {
     while(true)
     {
@@ -25,19 +30,30 @@ void Run(void*)
         }
 
         Array<Task>& queue = ms_tasks[ms_curtype];
+        Array<Task>& local = ms_queues[tid];
         while(true)
         {
-            Task t;
             {
                 LockGuard guard(ms_lock);
-                if(queue.empty())
+                for(int32_t i = 0; i < ms_granularity; ++i)
                 {
-                    break;
+                    if(queue.empty())
+                    {
+                        break;
+                    }
+                    memcpy(&local.grow(), &queue.back(), sizeof(Task));
+                    queue.pop();
                 }
-                t = queue.back();
-                queue.pop();
             }
-            t.fn(&t);
+            if(local.empty())
+            {
+                break;
+            }
+            for(Task& t : local)
+            {
+                t.fn(&t);
+            }
+            local.clear();
         }
 
         ms_finishBarrier.Signal();
@@ -48,10 +64,14 @@ namespace TaskManager
 {
     void Init()
     {
-        ms_running = true;
-        for(std::thread& t : ms_threads)
+        for(int32_t i = 0; i < TT_Count; ++i)
         {
-            t = std::thread(Run, nullptr);
+            ms_tasks[i].m_bucket = AB_Default;
+        }
+        ms_running = true;
+        for(int32_t tid = 0; tid < NumThreads; ++tid)
+        {
+            ms_threads[tid] = std::thread(Run, tid);
         }
     }
     void Shutdown()
@@ -66,9 +86,11 @@ namespace TaskManager
             t.join();
         }
     }
-    void Start(TaskType space)
+    void Start(TaskType space, int32_t granularity)
     {
         ms_curtype = space;
+        ms_working = true;
+        ms_granularity = granularity;
         for(const std::thread& t : ms_threads)
         {
             ms_startBarrier.Signal();
@@ -77,10 +99,11 @@ namespace TaskManager
         {
             ms_finishBarrier.Wait();
         }
+        ms_working = false;
     }
     void Add(TaskType space, const Task& task)
     {
-        LockGuard guard(ms_lock);
+        Assert(!ms_working);
         ms_tasks[space].grow() = task;
     }
 };

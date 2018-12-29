@@ -7,11 +7,11 @@ struct LockGuard
 {
     std::mutex& m_mutex;
 
-    LockGuard(std::mutex& x) : m_mutex(x)
+    inline LockGuard(std::mutex& x) : m_mutex(x)
     {
         m_mutex.lock();
     }
-    ~LockGuard()
+    inline ~LockGuard()
     {
         m_mutex.unlock();
     }
@@ -24,13 +24,13 @@ struct Semaphore
     std::condition_variable m_cvar;
     uint64_t                m_count = 0;
 
-    void Signal() 
+    inline void Signal() 
     {
         LockGuard lock(m_mutex);
         ++m_count;
         m_cvar.notify_one();
     }
-    void Wait() 
+    inline void Wait() 
     {
         std::unique_lock<std::mutex> lock(m_mutex);
         while(!m_count)
@@ -39,7 +39,7 @@ struct Semaphore
         }
         --m_count;
     }
-    bool TryWait() 
+    inline bool TryWait() 
     {
         LockGuard lock(m_mutex);
         if(m_count) 

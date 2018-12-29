@@ -19,9 +19,6 @@ namespace TaskManager
 {
     void Init();
     void Shutdown();
-    // will use up to ms milliseconds to do parallel updates; can early out
-    // begins multithreaded phase of engine frame; blocking
-    void Start(TaskType type);
-    // add task to task stack (not a queue!)
+    void Start(TaskType type, int32_t granularity = 8);
     void Add(TaskType type, const Task& task);
 };

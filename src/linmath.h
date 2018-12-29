@@ -265,6 +265,13 @@ inline T CMAX(const glm::vec<dim, T>& x)
     return y;
 }
 
+template<int32_t dim, typename T>
+inline T DISTSQ(const glm::vec<dim, T>& a, const glm::vec<dim, T>& b)
+{
+    const glm::vec<dim, T> c = b - a;
+    return glm::dot(c, c);
+}
+
 namespace AABB
 {
     inline bool Intersects(

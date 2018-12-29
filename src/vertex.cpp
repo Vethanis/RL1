@@ -6,26 +6,51 @@ void PositionsToVertices(
     Array<Vertex>&      out, 
     Array<int32_t>&     indout)
 {
+    BucketScopeStack scope;
+
     out.clear();
     indout.clear();
 
+    Array<vec3> uniques;
+    uniques.reserve(verts.count());
     for(const vec3& v : verts)
     {
-        Vertex vt;
-        vt.position = v;
-        vt.normal = vec3(0.0f);
+        int32_t idx = -1;
+        if(false)
+        {
+            for(int32_t i = 0; i < uniques.count(); ++i)
+            {
+                if(DISTSQ(v, uniques[i]) < 0.00001f)
+                {
+                    idx = i;
+                    break;
+                }
+            }
+        }
+        if(idx == -1)
+        {
+            idx = uniques.count();
+            uniques.append() = v;
+        }
+        indout.grow() = idx;
+    }
+
+    out.resize(uniques.count());
+    for(int32_t i = 0; i < uniques.count(); ++i)
+    {
+        Vertex& vt = out[i];
+        vt.position = uniques[i];
+        vt.normal = vec3(0.00001f);
         vt.uv = vec2(0.0f);
-        out.grow() = vt;
-        indout.grow() = out.count() - 1;
     }
 
     for(int32_t i = 0; i + 2 < indout.count(); i += 3)
     {
-        int32_t a = indout[i + 0];
-        int32_t b = indout[i + 1];
-        int32_t c = indout[i + 2];
-        vec3 e1 = verts[b] - verts[a];
-        vec3 e2 = verts[c] - verts[a];
+        const int32_t a = indout[i + 0];
+        const int32_t b = indout[i + 1];
+        const int32_t c = indout[i + 2];
+        const vec3 e1 = verts[b] - verts[a];
+        const vec3 e2 = verts[c] - verts[a];
         vec3 N = glm::normalize(glm::cross(e1, e2));
         out[a].normal += N;
         out[b].normal += N;

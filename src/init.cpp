@@ -17,7 +17,7 @@
 #include "task.h"
 #include "prng.h"
 
-#include "bsp2.h"
+#include "csg.h"
 
 #include "imguishim.h"
 
@@ -95,32 +95,6 @@ void Init()
     BucketScopeStack stackscope;
 
     {
-        BucketScopeStack stackscope;
-        Array<vec3> sphereraw;
-        Array<vec3> cuberaw;
-
-        BufferData sbd = Buffers::Load("sphere");
-        BufferData cbd = Buffers::Load("cube");
-        sphereraw.expand(sbd.indexCount);
-        for(uint32_t i = 0; i < sbd.indexCount; ++i)
-        {
-            sphereraw.append() = sbd.vertices[sbd.indices[i]].position;
-        }
-
-        cuberaw.expand(cbd.indexCount);
-        for(uint32_t i = 0; i < cbd.indexCount; ++i)
-        {
-            cuberaw.append() = cbd.vertices[cbd.indices[i]].position;
-        }
-
-        Buffers::Free(sbd);
-        Buffers::Free(cbd);
-
-        SetCSGPrim(Box, cuberaw);
-        SetCSGPrim(Sphere, sphereraw);
-    }
-
-    {
         slot ent = Components::Create();
         RenderComponent* rc = Components::GetAdd<RenderComponent>(ent);
         PhysicsComponent* pc = Components::GetAdd<PhysicsComponent>(ent);
@@ -128,20 +102,18 @@ void Init()
         pc->Init(0.0f, vec3(0.0f, 0.0f, 0.0f), vec3(10.0f, 0.33f, 10.0f));
 
         Array<vec3> pts;
-        csglist csgs;
-        csgs.grow() = 
+        CSG csgs[] = 
         {
-            Union,
-            Box,
-            mat4(1.0f),
+            {
+                vec3(0.0f),
+                vec3(1.0f),
+                0.1f,
+                Sphere,
+                Add,
+            }
         };
-        csgs.grow() = 
-        {
-            Difference,
-            Sphere,
-            glm::translate(mat4(1.0f), vec3(0.5f))
-        };
-        Evaluate(csgs, pts);
+
+        CSGUtil::Evaluate(csgs, NELEM(csgs), pts, vec3(0.0f), 3.0f, 128);
 
         Array<Vertex> verts;
         Array<int32_t> inds;
