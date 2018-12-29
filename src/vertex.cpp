@@ -16,7 +16,7 @@ void PositionsToVertices(
     for(const vec3& v : verts)
     {
         int32_t idx = -1;
-        for(int32_t i = 0; i < uniques.count(); ++i)
+        for(int32_t i = uniques.count() - 1; i >= 0; --i)
         {
             if(DISTSQ(v, uniques[i]) == 0.0f)
             {

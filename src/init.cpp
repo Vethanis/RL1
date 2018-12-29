@@ -108,8 +108,15 @@ void Init()
                 vec3(0.0f),
                 vec3(1.0f),
                 0.1f,
-                Sphere,
+                Box,
                 Add,
+            },
+            {
+                vec3(0.5f),
+                vec3(1.0f),
+                0.1f,
+                Sphere,
+                Sub
             }
         };
 
