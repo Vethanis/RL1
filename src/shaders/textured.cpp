@@ -154,19 +154,45 @@ vec3 ToneMap(vec3 x)
     return x;
 }
 
+vec4 MatTriplane(vec3 blending, vec3 P)
+{
+    vec4 x = texture2D(MatTex, P.yz);
+    vec4 y = texture2D(MatTex, P.xz);
+    vec4 z = texture2D(MatTex, P.xy);
+    return x * blending.x + y * blending.y + z * blending.z;
+}
+
+vec4 NorTriplane(vec3 blending, vec3 P)
+{
+    vec4 x = texture2D(NorTex, P.yz);
+    vec4 y = texture2D(NorTex, P.xz);
+    vec4 z = texture2D(NorTex, P.xy);
+    return x * blending.x + y * blending.y + z * blending.z;
+}
+
+vec3 TriplaneBlending(vec3 N)
+{
+    vec3 blending = abs(N);
+    blending = normalize(max(blending, 0.00001));
+    float b = (blending.x + blending.y + blending.z);
+    blending /= vec3(b, b, b);
+    return blending;
+}
+
 void main()
 {
     vec2 s      = uv.xy + Seed;
     vec3 P      = Position;
     vec3 V      = normalize(Eye - P);
     vec3 N      = normalize(MacroNormal);
+    vec3 blending = TriplaneBlending(N);
 
-    vec4  PRMA      = texture(MatTex, uv);
+    vec4  PRMA      = MatTriplane(blending, P);
     float palette   = PRMA.x;
     float roughness = clamp(PRMA.y + RoughnessOffset, 0.0, 1.0);
     float metalness = clamp(PRMA.z + MetalnessOffset, 0.0, 1.0);
     vec3  albedo    = PaletteToAlbedo(palette);
-    vec3  Ntex      = normalize(texture(NorTex, uv).xyz * 2.0 - 1.0);
+    vec3  Ntex      = normalize(NorTriplane(blending, P).xyz * 2.0 - 1.0);
     N               = GetBasis(V, N) * Ntex;
 
     vec3 C          = PBRLighting(
