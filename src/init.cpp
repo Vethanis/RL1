@@ -83,8 +83,6 @@ void Init()
     pdesc.layout.attrs[0].format = SG_VERTEXFORMAT_FLOAT3;
     pdesc.layout.attrs[1].name = "normal";
     pdesc.layout.attrs[1].format = SG_VERTEXFORMAT_FLOAT3;
-    pdesc.layout.attrs[2].name = "uv0";
-    pdesc.layout.attrs[2].format = SG_VERTEXFORMAT_FLOAT2;
     pdesc.depth_stencil.depth_write_enabled = true;
     pdesc.depth_stencil.depth_compare_func = SG_COMPAREFUNC_LESS;
     pdesc.rasterizer.cull_mode = SG_CULLMODE_BACK;

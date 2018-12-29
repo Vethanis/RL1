@@ -8,19 +8,17 @@ struct Vertex
 {
     vec3    position;
     vec3    normal;
-    vec2    uv;
 
-    inline bool operator == (const Vertex& o) const 
+    inline bool operator==(const Vertex& other) const 
     {
-        constexpr uint32_t len = sizeof(*this) / sizeof(uint64_t);
         const uint64_t* a = (const uint64_t*)this;
-        const uint64_t* b = (const uint64_t*)&o;
+        const uint64_t* b = (const uint64_t*)&other;
         uint64_t d = 0;
-        for(uint32_t i = 0; i < len; ++i)
+        for(uint32_t i = 0; i < 3; ++i)
         {
             d += a[i] - b[i];
         }
-        return d == 0u;
+        return d == 0;
     }
 };
 

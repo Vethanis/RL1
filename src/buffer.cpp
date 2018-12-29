@@ -162,7 +162,7 @@ namespace Buffers
                     Vertex v;
                     v.position = positions[f.p[i] - 1];
                     v.normal = normals[f.n[i] - 1];
-                    v.uv = uvs[f.u[i] - 1];
+                    //v.uv = uvs[f.u[i] - 1];
                     inds.grow() = (uint32_t)verts.findOrPush(v);
                 }
             }

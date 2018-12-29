@@ -38,7 +38,6 @@ void PositionsToVertices(
         Vertex& vt = out[i];
         vt.position = uniques[i];
         vt.normal = vec3(0.00001f);
-        vt.uv = vec2(0.0f);
     }
 
     for(int32_t i = 0; i + 2 < indout.count(); i += 3)
@@ -52,29 +51,6 @@ void PositionsToVertices(
         out[a].normal += N;
         out[b].normal += N;
         out[c].normal += N;
-    }
-
-    for(Vertex& v : out)
-    {
-        v.normal = glm::normalize(v.normal);
-
-        vec3 n = glm::abs(v.normal);
-        float m = CMAX(n);
-        if(m == n.x)
-        {
-            v.uv.x = glm::sign(v.normal.x) * -v.position.z;
-            v.uv.y = v.position.y;
-        }
-        else if(m == n.y)
-        {
-            v.uv.x = v.position.x;
-            v.uv.y = glm::sign(v.normal.y) * -v.position.z;
-        }
-        else
-        {
-            v.uv.x = glm::sign(v.normal.z) * v.position.x;
-            v.uv.y = v.position.y;
-        }
     }
 }
 
@@ -90,7 +66,6 @@ void PositionsToVertices(
     {
         out[i].position = verts[i];
         out[i].normal = vec3(0.0f);
-        out[i].uv = vec2(0.0f);
     }
 
     for(int32_t i = 0; i + 2 < inds.count(); i += 3)
@@ -104,28 +79,5 @@ void PositionsToVertices(
         out[a].normal += N;
         out[b].normal += N;
         out[c].normal += N;
-    }
-
-    for(Vertex& v : out)
-    {
-        v.normal = glm::normalize(v.normal);
-
-        vec3 n = glm::abs(v.normal);
-        float m = CMAX(n);
-        if(m == n.x)
-        {
-            v.uv.x = glm::sign(v.normal.x) * -v.position.z;
-            v.uv.y = v.position.y;
-        }
-        else if(m == n.y)
-        {
-            v.uv.x = v.position.x;
-            v.uv.y = glm::sign(v.normal.y) * -v.position.z;
-        }
-        else
-        {
-            v.uv.x = glm::sign(v.normal.z) * v.position.x;
-            v.uv.y = v.position.y;
-        }
     }
 }

@@ -7,11 +7,9 @@ R"(
 
 in vec3 position;
 in vec3 normal;
-in vec2 uv0;
 
 out vec3 Position;
 out vec3 MacroNormal;
-out vec2 uv;
 
 uniform mat4 MVP;
 uniform mat4 M;
@@ -23,7 +21,6 @@ void main()
     gl_Position = MVP * vec4(position.xyz, 1.0);
     MacroNormal = normalize(normal * IM);
     Position    = vec3(M * vec4(position.xyz, 1.0));
-    uv          = uv0;
 }
 
 )";
@@ -35,7 +32,6 @@ R"(
 
 in vec3 Position;
 in vec3 MacroNormal;
-in vec2 uv;
 
 out vec4 frag_color;
 
@@ -181,7 +177,6 @@ vec3 TriplaneBlending(vec3 N)
 
 void main()
 {
-    vec2 s      = uv.xy + Seed;
     vec3 P      = Position;
     vec3 V      = normalize(Eye - P);
     vec3 N      = normalize(MacroNormal);
