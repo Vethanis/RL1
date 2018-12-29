@@ -16,15 +16,12 @@ void PositionsToVertices(
     for(const vec3& v : verts)
     {
         int32_t idx = -1;
-        if(false)
+        for(int32_t i = 0; i < uniques.count(); ++i)
         {
-            for(int32_t i = 0; i < uniques.count(); ++i)
+            if(DISTSQ(v, uniques[i]) == 0.0f)
             {
-                if(DISTSQ(v, uniques[i]) < 0.00001f)
-                {
-                    idx = i;
-                    break;
-                }
+                idx = i;
+                break;
             }
         }
         if(idx == -1)
@@ -49,8 +46,8 @@ void PositionsToVertices(
         const int32_t a = indout[i + 0];
         const int32_t b = indout[i + 1];
         const int32_t c = indout[i + 2];
-        const vec3 e1 = verts[b] - verts[a];
-        const vec3 e2 = verts[c] - verts[a];
+        const vec3 e1 = uniques[b] - uniques[a];
+        const vec3 e2 = uniques[c] - uniques[a];
         vec3 N = glm::normalize(glm::cross(e1, e2));
         out[a].normal += N;
         out[b].normal += N;

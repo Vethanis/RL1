@@ -167,7 +167,7 @@ void main()
     float metalness = clamp(PRMA.z + MetalnessOffset, 0.0, 1.0);
     vec3  albedo    = PaletteToAlbedo(palette);
     vec3  Ntex      = normalize(texture(NorTex, uv).xyz * 2.0 - 1.0);
-    //N               = GetBasis(V, N) * Ntex;
+    N               = GetBasis(V, N) * Ntex;
 
     vec3 C          = PBRLighting(
         V,
@@ -182,7 +182,7 @@ void main()
     C += albedo * 0.1;
     C = ToneMap(C);
 
-    C = 0.5 * N + 0.5;
+    //C = 0.5 * N + 0.5;
     //C = N;
 
     frag_color = vec4(C.xyz, 1.0);
