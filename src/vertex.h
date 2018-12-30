@@ -23,11 +23,11 @@ struct Vertex
 };
 
 void PositionsToVertices(
-    const Array<vec3>&      verts, 
-    Array<Vertex>&          out, 
-    Array<int32_t>&         indout);
+    const TempArray<vec3>&      verts, 
+    TempArray<Vertex>&          out, 
+    TempArray<int32_t>&         indout);
 
 void PositionsToVertices(
-    const Array<vec3>&      verts, 
-    const Array<int32_t>&   inds, 
-    Array<Vertex>&          out);
+    const TempArray<vec3>&      verts, 
+    const TempArray<int32_t>&   inds, 
+    TempArray<Vertex>&          out);

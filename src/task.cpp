@@ -64,10 +64,6 @@ namespace TaskManager
 {
     void Init()
     {
-        for(int32_t i = 0; i < TT_Count; ++i)
-        {
-            ms_tasks[i].m_bucket = AB_Default;
-        }
         ms_running = true;
         for(int32_t tid = 0; tid < NumThreads; ++tid)
         {

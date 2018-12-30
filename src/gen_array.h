@@ -3,12 +3,12 @@
 #include "slot.h"
 #include "array.h"
 
-template<typename T>
+template<typename T, bool POD = true, AllocBucket t_bucket = AB_Default>
 struct gen_array
 {
-    Array<T>        m_data;
-    Array<int32_t>  m_gen;
-    Array<int32_t>  m_free;
+    Array<T, POD, t_bucket> m_data;
+    Array<int32_t>          m_gen;
+    Array<int32_t>          m_free;
 
     void Reset()
     {

@@ -25,30 +25,32 @@ struct csgpolygon;
 struct csgnode;
 struct csgmodel;
 
-const csgmodel& GetCSGPrim(csgprim type);
+const Array<vec3>& GetCSGPrim(csgprim type);
 
-// default mem
 csgnode* modelToNode(const csgmodel& a);
 csgmodel nodeToModel(const csgnode* a);
 
-// temp mem
 csgmodel csgunion(const csgmodel& a, const csgmodel& b);
 csgmodel csgintersection(const csgmodel& a, const csgmodel& b);
 csgmodel csgdifference(const csgmodel& a, const csgmodel& b);
 
-// temp mem
 csgnode* csgunion(const csgnode* a1, const csgnode* b1);
 csgnode* csgdifference(const csgnode* a1, const csgnode* b1);
 csgnode* csgintersect(const csgnode* a1, const csgnode* b1);
 
 struct csgmodel
 {
-    Array<vec3> vertices;
+    TempArray<vec3> vertices;
 
     csgmodel() {}
-    csgmodel(const Array<vec3>& x)
+    csgmodel(const TempArray<vec3>& x)
     {
         vertices = x;
+    }
+    csgmodel(const Array<vec3>& x)
+    {
+        vertices.resize(x.count());
+        memcpy(vertices.begin(), x.begin(), x.bytes());
     }
     csgmodel(const csgnode* node)
     {
@@ -92,7 +94,7 @@ struct csgmodel
     }
 };
 
-typedef Array<csgpolygon, false> polylist;
+typedef TempArray<csgpolygon, false> polylist;
 
 struct csgplane
 {
@@ -128,11 +130,11 @@ struct csgplane
 
 struct csgpolygon
 {
-    Array<vec3> vertices;
+    TempArray<vec3> vertices;
     csgplane plane;
 
     csgpolygon() {}
-    csgpolygon(const Array<vec3>& list)
+    csgpolygon(const TempArray<vec3>& list)
     {
         plane = csgplane(list[0], list[1], list[2]);
         vertices = list;
@@ -165,8 +167,8 @@ struct csgnode
     }
     ~csgnode()
     {
-        Allocator::Delete(front);
-        Allocator::Delete(back);
+        Allocator::Delete(AB_Temp, front);
+        Allocator::Delete(AB_Temp, back);
     }
     csgnode* clone() const;
     void clipTo(const csgnode* other);
@@ -192,7 +194,7 @@ void csgplane::splitPolygon(
     };
 
     uint32_t polygonType = 0u;
-    Array<uint32_t> types;
+    TempArray<uint32_t> types;
 
     types.expand(polygon.vertices.count());
     for(const auto& x : polygon.vertices)
@@ -230,7 +232,7 @@ void csgplane::splitPolygon(
         break;
         case Spanning:
         {
-            Array<vec3> f, b;
+            TempArray<vec3> f, b;
             for(int32_t i = 0; i < polygon.vertices.count(); ++i)
             {
                 int32_t j = (i + 1) % polygon.vertices.count();
@@ -277,7 +279,7 @@ csgnode* csgunion(const csgnode* a1, const csgnode* b1)
     b->clipTo(a);
     b->invert();
     a->build(b->allPolygons());
-    csgnode* ret = Allocator::New<csgnode>();
+    csgnode* ret = Allocator::New<csgnode>(AB_Temp);
     new (ret) csgnode(a->allPolygons());
     return ret;
 }
@@ -294,7 +296,7 @@ csgnode* csgdifference(const csgnode* a1, const csgnode* b1)
 	b->invert();
 	a->build(b->allPolygons());
 	a->invert();
-    csgnode* ret = Allocator::New<csgnode>();
+    csgnode* ret = Allocator::New<csgnode>(AB_Temp);
     new (ret) csgnode(a->allPolygons());
     return ret;
 }
@@ -310,7 +312,7 @@ csgnode* csgintersect(const csgnode* a1, const csgnode* b1)
 	b->clipTo(a);
 	a->build(b->allPolygons());
 	a->invert();
-    csgnode* ret = Allocator::New<csgnode>();
+    csgnode* ret = Allocator::New<csgnode>(AB_Temp);
     new (ret) csgnode(a->allPolygons());
 	return ret;
 }
@@ -421,7 +423,7 @@ polylist csgnode::allPolygons() const
 
 csgnode* csgnode::clone() const 
 {
-    csgnode* node = Allocator::New<csgnode>();
+    csgnode* node = Allocator::New<csgnode>(AB_Temp);
     node->polygons = polygons;
     node->plane = plane;
     if(front)
@@ -455,7 +457,7 @@ void csgnode::build(const polylist& list)
     {
         if(!front)
         {
-            front = Allocator::New<csgnode>();
+            front = Allocator::New<csgnode>(AB_Temp);
         }
         front->build(lfront);
     }
@@ -463,7 +465,7 @@ void csgnode::build(const polylist& list)
     {
         if(!back)
         {
-            back = Allocator::New<csgnode>();
+            back = Allocator::New<csgnode>(AB_Temp);
         }
         back->build(lback);
     }
@@ -475,7 +477,7 @@ polylist modelToPolygon(const csgmodel& model)
     list.expand(model.vertices.count() / 3);
     for(int32_t i = 0; i + 2 < model.vertices.count(); i += 3)
     {
-        Array<vec3> tri;
+        TempArray<vec3> tri;
         tri.resize(3);
         for(int32_t j = 0; j < 3; ++j)
         {
@@ -507,14 +509,12 @@ typedef csgnode* (*csgfunc)(const csgnode*, const csgnode*);
 
 static inline csgmodel csgop(const csgmodel& a, const csgmodel& b, csgfunc fn)
 {
-    BucketScopeStack stackscope;
-    csgnode* A = Allocator::Alloc<csgnode>();
-    csgnode* B = Allocator::Alloc<csgnode>();
+    csgnode* A = Allocator::Alloc<csgnode>(AB_Temp);
+    csgnode* B = Allocator::Alloc<csgnode>(AB_Temp);
     new (A) csgnode(modelToPolygon(a));
     new (B) csgnode(modelToPolygon(b));
     csgnode* AB = fn(A, B);
     polylist polygons = AB->allPolygons();
-    BucketScopeTemp tempscope;
     return modelFromPolygon(polygons);
 }
 
@@ -535,7 +535,7 @@ csgmodel csgdifference(const csgmodel& a, const csgmodel& b)
 
 csgnode* modelToNode(const csgmodel& a)
 {
-    csgnode* A = Allocator::Alloc<csgnode>();
+    csgnode* A = Allocator::Alloc<csgnode>(AB_Temp);
     new (A) csgnode(modelToPolygon(a));
     return A;
 }
@@ -545,32 +545,31 @@ csgmodel nodeToModel(const csgnode* a)
     return modelFromPolygon(a->allPolygons());
 }
 
-csgmodel ms_prims[CSGPRIM_COUNT];
+Array<vec3> ms_prims[CSGPRIM_COUNT];
 
-void SetCSGPrim(csgprim type, const Array<vec3>& vertices)
+void SetCSGPrim(csgprim type, const TempArray<vec3>& vertices)
 {
-    BucketScope scope(AB_Default);
-    ms_prims[type] = csgmodel(vertices);
+    ms_prims[type].resize(vertices.count());
+    memcpy(ms_prims[type].begin(), vertices.begin(), vertices.bytes());
 }
 
-const csgmodel& GetCSGPrim(csgprim type)
+const Array<vec3>& GetCSGPrim(csgprim type)
 {
     return ms_prims[type];
 }
 
-void Evaluate(const csglist& list, Array<vec3>& out)
+void Evaluate(const csglist& list, TempArray<vec3>& out)
 {
     out.clear();
     if(list.empty())
     {
         return;
     }
-    BucketScopeTemp tempscope;
-    csgmodel A = GetCSGPrim(list[0].m_prim);
+    csgmodel A = csgmodel(GetCSGPrim(list[0].m_prim));
     A.Transform(list[0].m_matrix);
     for(int32_t i = 1; i < list.count(); ++i)
     {
-        csgmodel B = GetCSGPrim(list[i].m_prim);
+        csgmodel B = csgmodel(GetCSGPrim(list[i].m_prim));
         B.Transform(list[i].m_matrix);
         switch(list[i].m_op)
         {

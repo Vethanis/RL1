@@ -1,5 +1,7 @@
 #define SOKOL_IMPL
 
+#define SOKOL_DEBUG 1
+
 #define SOKOL_GLCORE33
 #include "glad.h"
 

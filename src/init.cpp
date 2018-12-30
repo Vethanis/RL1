@@ -25,6 +25,7 @@
 #include "sokol_time.h"
 
 #include "shaders/textured.h"
+#include "shaders/sky.h"
 
 Window window;
 Camera camera;
@@ -49,48 +50,11 @@ void Init()
     TaskManager::Init();
     Physics::Init();
     
-    sg_shader_desc shadesc = {0};
+    Shaders::Create(ST_Textured, Textured::GetShaderDesc());
+    Shaders::Create(ST_Sky, Sky::GetShaderDesc());
 
-    shadesc.vs.source = textured_vs;
-    shadesc.vs.uniform_blocks[0].size = sizeof(VSUniform);
-    shadesc.vs.uniform_blocks[0].uniforms[0] = { "MVP", SG_UNIFORMTYPE_MAT4 };
-    shadesc.vs.uniform_blocks[0].uniforms[1] = { "M",   SG_UNIFORMTYPE_MAT4 };
-
-    int32_t u = 0;
-    shadesc.fs.source = textured_fs;
-    shadesc.fs.uniform_blocks[0].size = sizeof(FSUniform);
-    shadesc.fs.uniform_blocks[0].uniforms[u++] = { "Eye",             SG_UNIFORMTYPE_FLOAT3 };
-    shadesc.fs.uniform_blocks[0].uniforms[u++] = { "LightDir",        SG_UNIFORMTYPE_FLOAT3 };
-    shadesc.fs.uniform_blocks[0].uniforms[u++] = { "LightRad",        SG_UNIFORMTYPE_FLOAT3 };
-    shadesc.fs.uniform_blocks[0].uniforms[u++] = { "Pal0",            SG_UNIFORMTYPE_FLOAT3 };
-    shadesc.fs.uniform_blocks[0].uniforms[u++] = { "Pal1",            SG_UNIFORMTYPE_FLOAT3 };
-    shadesc.fs.uniform_blocks[0].uniforms[u++] = { "Pal2",            SG_UNIFORMTYPE_FLOAT3 };
-    shadesc.fs.uniform_blocks[0].uniforms[u++] = { "PalCenter",       SG_UNIFORMTYPE_FLOAT  };
-    shadesc.fs.uniform_blocks[0].uniforms[u++] = { "RoughnessOffset", SG_UNIFORMTYPE_FLOAT  };
-    shadesc.fs.uniform_blocks[0].uniforms[u++] = { "MetalnessOffset", SG_UNIFORMTYPE_FLOAT  };
-    shadesc.fs.uniform_blocks[0].uniforms[u++] = { "Seed",            SG_UNIFORMTYPE_FLOAT  };
-    shadesc.fs.images[0].name = "MatTex";
-    shadesc.fs.images[0].type = SG_IMAGETYPE_2D;
-    shadesc.fs.images[1].name = "NorTex";
-    shadesc.fs.images[1].type = SG_IMAGETYPE_2D;
-
-    Shaders::Create(ST_Textured, shadesc);
-
-    sg_pipeline_desc pdesc = {0};
-    pdesc.shader = Shaders::Get(ST_Textured);
-    pdesc.index_type = SG_INDEXTYPE_UINT32;
-    pdesc.layout.attrs[0].name = "position";
-    pdesc.layout.attrs[0].format = SG_VERTEXFORMAT_FLOAT3;
-    pdesc.layout.attrs[1].name = "normal";
-    pdesc.layout.attrs[1].format = SG_VERTEXFORMAT_FLOAT3;
-    pdesc.depth_stencil.depth_write_enabled = true;
-    pdesc.depth_stencil.depth_compare_func = SG_COMPAREFUNC_LESS;
-    pdesc.rasterizer.cull_mode = SG_CULLMODE_BACK;
-    pdesc.rasterizer.face_winding = SG_FACEWINDING_CCW;
-    
-    Pipelines::Create(PT_Textured, pdesc);
-
-    BucketScopeStack stackscope;
+    Pipelines::Create(PT_Textured, Textured::GetPipelineDesc());
+    Pipelines::Create(PT_Sky, Sky::GetPipelineDesc());
 
     {
         slot ent = Components::Create();
@@ -99,7 +63,7 @@ void Init()
 
         pc->Init(0.0f, vec3(0.0f, 0.0f, 0.0f), vec3(10.0f, 0.33f, 10.0f));
 
-        Array<vec3> pts;
+        TempArray<vec3> pts;
         CSG csgs[] = 
         {
             {
@@ -110,18 +74,25 @@ void Init()
                 Add,
             },
             {
+                vec3(-0.5f),
+                vec3(1.0f),
+                0.5f,
+                Sphere,
+                SmoothAdd,
+            },
+            {
                 vec3(0.5f),
                 vec3(1.0f),
                 0.1f,
                 Sphere,
-                Sub
+                Sub,
             }
         };
 
-        CSGUtil::Evaluate(csgs, NELEM(csgs), pts, vec3(0.0f), 3.0f, 128);
+        CSGUtil::Evaluate(csgs, NELEM(csgs), pts, vec3(0.0f), 3.0f, 64);
 
-        Array<Vertex> verts;
-        Array<int32_t> inds;
+        TempArray<Vertex> verts;
+        TempArray<int32_t> inds;
         PositionsToVertices(pts, verts, inds);
 
         BufferData bd;
@@ -129,13 +100,31 @@ void Init()
         bd.vertCount    = verts.count();
         bd.indices      = (uint32_t*)inds.begin();
         bd.indexCount   = inds.count();
+        bd.size         = sizeof(verts[0]);
 
-        Buffer buf = Buffers::Create(bd);
-        slot bslot = Buffers::Create(BufferString("csg_test"), buf);
-        
-        rc->m_buffer    = bslot;
-        rc->m_material  = Images::Load(ImageString("bumpy_PRMA"));
-        rc->m_normal    = Images::Load(ImageString("bumpy_normal"));
+        rc->m_buffer    = Buffers::Create(bd);
+        rc->m_material  = Images::Create("bumpy_PRMA");
+        rc->m_normal    = Images::Create("bumpy_normal");
         rc->m_pipeline  = PT_Textured;
+    }
+
+    {
+        slot ent = Components::Create();
+        RenderComponent* rc = Components::GetAdd<RenderComponent>(ent);
+        rc->m_matrix = mat4(1.0f);
+        rc->m_pipeline = PT_Sky;
+
+        vec2 verts[] = 
+        {
+            vec2(-1.0f, 3.0f),
+            vec2(-1.0f, -1.0f),
+            vec2(3.0f, -1.0f),
+        };
+        BufferData bd;
+        memset(&bd, 0, sizeof(bd));
+        bd.vertCount = NELEM(verts);
+        bd.vertices = (void*)verts;
+        bd.size = sizeof(verts[0]);
+        rc->m_buffer = Buffers::Create(bd);
     }
 }

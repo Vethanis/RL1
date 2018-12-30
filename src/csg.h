@@ -149,7 +149,7 @@ namespace CSGUtil
     void Evaluate(
         const CSG*      csgs, 
         int32_t         count, 
-        Array<vec3>&    out, 
+        TempArray<vec3>& out, 
         const vec3&     center, 
         float           radius, 
         int32_t         dimension);

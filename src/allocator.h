@@ -7,85 +7,33 @@ enum AllocBucket
 {
     AB_Default = 0,
     AB_Temp,
-    AB_Stack,
 };
 
 namespace Allocator
 {
-    void PushBucket(AllocBucket bucket);
-    void PopBucket();
-    AllocBucket GetCurrent();
-    void* Alloc(size_t bytes);
-    void Free(void* p);
+    void* Alloc(AllocBucket bucket, size_t bytes);
+    void Free(AllocBucket bucket, void* p);
     void Update();
 
     template<typename T>
-    T* Alloc()
+    T* Alloc(AllocBucket bucket)
     {
-        return (T*)Alloc(sizeof(T));
+        return (T*)Alloc(bucket, sizeof(T));
     }
-
     template<typename T>
-    inline T* New()
+    inline T* New(AllocBucket bucket)
     {
-        T* t = (T*)Alloc(sizeof(T));
+        T* t = (T*)Alloc(bucket, sizeof(T));
         new (t) T();
         return t;
     }
-
     template<typename T>
-    inline void Delete(T* t)
+    inline void Delete(AllocBucket bucket, T* t)
     {
-        if(t && GetCurrent() < AB_Temp)
+        if(t)
         {
-            // dont call destructors on temp mem, its a waste of cache
             t->~T();
-            Free((void*)t);
+            Free(bucket, (void*)t);
         }
     }
-};
-
-// sets mem bucket for a scope
-struct BucketScope
-{
-    inline BucketScope(AllocBucket bucket)
-    {
-        Allocator::PushBucket(bucket);
-    }
-    inline ~BucketScope()
-    {
-        Allocator::PopBucket();
-    }
-};
-
-struct BucketScopeDefault
-{
-    inline BucketScopeDefault()
-    {
-        Allocator::PushBucket(AB_Default);
-    }
-    inline ~BucketScopeDefault()
-    {
-        Allocator::PopBucket();
-    }
-};
-
-struct BucketScopeTemp
-{
-    inline BucketScopeTemp()
-    {
-        Allocator::PushBucket(AB_Temp);
-    }
-    inline ~BucketScopeTemp()
-    {
-        Allocator::PopBucket();
-    }
-};
-
-// stack scope memory
-struct BucketScopeStack
-{
-    size_t m_head;
-    BucketScopeStack();
-    ~BucketScopeStack();
 };

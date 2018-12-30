@@ -6,11 +6,12 @@
 enum PipelineType
 {
     PT_Textured = 0,
+    PT_Sky,
     PT_Count,
 };
 
 namespace Pipelines
 {
-    void Create(PipelineType type, const sg_pipeline_desc& desc);
+    void Create(PipelineType type, const void* desc);
     sg_pipeline Get(PipelineType type);
 };

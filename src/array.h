@@ -7,31 +7,27 @@
 #include "macro.h"
 #include "allocator.h"
 
-template<typename T, bool POD = true>
+template<typename T, bool POD = true, AllocBucket t_bucket = AB_Default>
 struct Array
 {
     T*          m_data;
     int32_t     m_count;
     int32_t     m_capacity;
-    AllocBucket m_bucket;
 
     Array()
     { 
         memset(this, 0, sizeof(*this)); 
-        m_bucket = Allocator::GetCurrent();
     }
     ~Array() { reset(); }
     Array(const T* x, int32_t ct)
     {
         memset(this, 0, sizeof(*this)); 
-        m_bucket = Allocator::GetCurrent();
         resize(ct);
         memcpy(m_data, x, sizeof(T) * ct);
     }
     Array(const Array& other)
     {
         memset(this, 0, sizeof(*this));
-        m_bucket = Allocator::GetCurrent();
         resize(other.count());
         if(POD)
         {
@@ -97,10 +93,9 @@ struct Array
     {
         if(new_cap > capacity())
         {
-            BucketScope scope(m_bucket);
-            T* data = (T*)Allocator::Alloc(sizeof(T) * new_cap);
+            T* data = (T*)Allocator::Alloc(t_bucket, sizeof(T) * new_cap);
             memcpy(data, m_data, sizeof(T) * count());
-            Allocator::Free(m_data);
+            Allocator::Free(t_bucket, m_data);
             m_data = data;
             m_capacity = new_cap;
         }
@@ -186,9 +181,8 @@ struct Array
     }
     inline void reset()
     {
-        BucketScope scope(m_bucket);
         clear();
-        Allocator::Free(m_data);
+        Allocator::Free(t_bucket, m_data);
         memset(this, 0, sizeof(*this));
     }
     inline void remove(int32_t idx)
@@ -226,6 +220,9 @@ struct Array
         return false;
     }
 };
+
+template<typename T, bool POD = true>
+using TempArray = Array<T, POD, AB_Temp>;
 
 template<typename T, int32_t m_capacity>
 struct FixedArray

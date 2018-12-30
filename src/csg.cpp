@@ -425,7 +425,7 @@ namespace CSGUtil
     {
         const CSG*      csgs;
         int32_t         count;
-        Array<vec3>*    pOut;
+        TempArray<vec3>*    pOut;
         std::mutex      outLock;
     };
 
@@ -443,7 +443,7 @@ namespace CSGUtil
 
         const CSG*      csgs    = inst.shared->csgs;
         const int32_t   count   = inst.shared->count;
-        Array<vec3>&    out     = *(inst.shared->pOut);
+        TempArray<vec3>& out     = *(inst.shared->pOut);
         std::mutex&     lock    = inst.shared->outLock;
         const float     radius  = inst.radius;
 
@@ -489,7 +489,7 @@ namespace CSGUtil
     void Evaluate(
         const CSG*      csgs, 
         int32_t         count, 
-        Array<vec3>&    out, 
+        TempArray<vec3>& out, 
         const vec3&     center, 
         float           radius, 
         int32_t         dimension)

@@ -28,7 +28,7 @@ struct csg
     mat4        m_matrix;
 };
 
-typedef Array<csg, false> csglist;
+typedef TempArray<csg, false> csglist;
 
-void SetCSGPrim(csgprim type, const Array<vec3>& vertices);
-void Evaluate(const csglist& list, Array<vec3>& out);
+void SetCSGPrim(csgprim type, const TempArray<vec3>& vertices);
+void Evaluate(const csglist& list, TempArray<vec3>& out);

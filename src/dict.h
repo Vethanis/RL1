@@ -2,12 +2,12 @@
 
 #include "array.h"
 
-template<typename K, typename V, uint64_t width, bool POD = true>
+template<typename K, typename V, uint64_t width, bool POD = true, AllocBucket t_bucket = AB_Default>
 struct Dict
 {
-    Array<K>            m_keys[width];
-    Array<V, POD>       m_data[width];
-    uint32_t            m_count = 0u;
+    Array<K, true, t_bucket>    m_keys[width];
+    Array<V, POD, t_bucket>     m_data[width];
+    uint32_t                    m_count = 0u;
 
     inline void Insert(K key, const V& item)
     {
@@ -49,16 +49,19 @@ struct Dict
     }
 };
 
-template<typename K, typename V, bool POD = true>
+template<typename K, typename V, uint64_t width, bool POD = true>
+using TempDict = Dict<K, V, width, POD, AB_Temp>;
+
+template<typename K, typename V, bool POD = true, AllocBucket t_bucket = AB_Default>
 struct Dict2
 {
     struct Lane
     {
-        Array<K>            m_keys;
-        Array<V, POD>       m_data;
+        Array<K, true, t_bucket> m_keys;
+        Array<V, POD,  t_bucket> m_data;
     };
-    Array<Lane, false>  m_lanes;
-    uint32_t            m_count = 0u;
+    Array<Lane, false, t_bucket> m_lanes;
+    uint32_t                     m_count = 0u;
 
     inline bool NeedRehash() const 
     {
@@ -75,7 +78,7 @@ struct Dict2
     }
     void Rehash(int32_t size)
     {
-        Array<Lane, false> newLanes;
+        Array<Lane, false, t_bucket> newLanes;
         newLanes.resize(size);
         for(Lane& lane : m_lanes)
         {
@@ -86,7 +89,7 @@ struct Dict2
         }
         m_lanes.assume(newLanes);
     }
-    static inline void Insert(Array<Lane, false>& lanes, K key, V& item)
+    static inline void Insert(Array<Lane, false, t_bucket>& lanes, K key, V& item)
     {
         uint64_t slot = key % (uint64_t)lanes.count();
         Lane& lane = lanes[(int32_t)slot];
@@ -146,3 +149,6 @@ struct Dict2
         return m_count;
     }
 };
+
+template<typename K, typename V, bool POD = true>
+using TempDict2 = Dict2<K, V, POD, AB_Temp>;

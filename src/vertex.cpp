@@ -2,16 +2,14 @@
 #include "vertex.h"
 
 void PositionsToVertices(
-    const Array<vec3>&  verts, 
-    Array<Vertex>&      out, 
-    Array<int32_t>&     indout)
+    const TempArray<vec3>&  verts, 
+    TempArray<Vertex>&      out, 
+    TempArray<int32_t>&     indout)
 {
-    BucketScopeStack scope;
-
     out.clear();
     indout.clear();
 
-    Array<vec3> uniques;
+    TempArray<vec3> uniques;
     uniques.reserve(verts.count());
     for(const vec3& v : verts)
     {
@@ -55,9 +53,9 @@ void PositionsToVertices(
 }
 
 void PositionsToVertices(
-    const Array<vec3>&      verts, 
-    const Array<int32_t>&   inds, 
-    Array<Vertex>&          out)
+    const TempArray<vec3>&      verts, 
+    const TempArray<int32_t>&   inds, 
+    TempArray<Vertex>&          out)
 {
     out.clear();
     out.resize(verts.count());

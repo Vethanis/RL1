@@ -9,7 +9,6 @@ struct BaseAllocator
     virtual ~BaseAllocator() {};
     virtual void* Alloc(size_t bytes) = 0;
     virtual void Free(void* p) = 0;
-    virtual void Update() {};
 };
 
 struct LinearAllocator : public BaseAllocator
@@ -40,7 +39,7 @@ struct LinearAllocator : public BaseAllocator
     {
 
     }
-    inline void Update() final 
+    inline void Update() 
     {
         m_head = 0;
     }
@@ -60,55 +59,24 @@ struct DefaultAllocator : public BaseAllocator
 
 DefaultAllocator    ms_default;
 LinearAllocator     ms_temp(1ul << 30ul);
-LinearAllocator     ms_stack(1ul << 27ul);
 BaseAllocator*      ms_allocators[] = 
 {
     &ms_default,
     &ms_temp,
-    &ms_stack,
 };
-AllocBucket defaultBucket[] = { AB_Default };
-FixedArray<AllocBucket, 256> ms_bucket(defaultBucket, NELEM(defaultBucket));
 
 namespace Allocator
 {
-    void PushBucket(AllocBucket bucket)
+    void* Alloc(AllocBucket bucket, size_t bytes)
     {
-        ms_bucket.append() = bucket;
+        return ms_allocators[bucket]->Alloc(bytes);
     }
-    void PopBucket()
+    void Free(AllocBucket bucket, void* p)
     {
-        ms_bucket.pop();
-    }
-    AllocBucket GetCurrent()
-    {
-        return ms_bucket.back();
-    }
-    void* Alloc(size_t bytes)
-    {
-        return ms_allocators[GetCurrent()]->Alloc(bytes);
-    }
-    void Free(void* p)
-    {
-        return ms_allocators[GetCurrent()]->Free(p);
+        return ms_allocators[bucket]->Free(p);
     }
     void Update()
     {
-        for(BaseAllocator* p : ms_allocators)
-        {
-            p->Update();
-        }
+        ms_temp.Update();
     }
 };
-
-BucketScopeStack::BucketScopeStack()
-{
-    m_head = ms_stack.m_head;
-    Allocator::PushBucket(AB_Stack);
-}
-
-BucketScopeStack::~BucketScopeStack()
-{
-    ms_stack.m_head = m_head;
-    Allocator::PopBucket();
-}

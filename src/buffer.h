@@ -5,7 +5,6 @@
 #include "slot.h"
 #include "sokol_id.h"
 #include "linmath.h"
-#include "hashstring.h"
 #include "vertex.h"
 
 struct Buffer
@@ -17,27 +16,16 @@ struct Buffer
 
 struct BufferData
 {
-    Vertex*     vertices;
+    void*       vertices;
     uint32_t*   indices;
     uint32_t    vertCount;
     uint32_t    indexCount;
+    uint32_t    size;   // size of each vertex
 };
 
 namespace Buffers
 {
-    slot Load(BufferString name);
-    slot Create(BufferString name, const Buffer& buf);
+    slot Create(const BufferData& data);
     void Destroy(slot s);
-    void IncRef(slot s);
-    void DecRef(slot s);
     const Buffer* Get(slot s);
-    bool Exists(slot s);
-    slot Find(const char* name);
-    slot Find(Hash hash);
-
-    BufferData Load(const char* name);
-    void Free(BufferData& data);
-    void Save(const char* name, const BufferData& data);
-    Buffer Create(const BufferData& data);
-    void Destroy(Buffer& buf);
 };

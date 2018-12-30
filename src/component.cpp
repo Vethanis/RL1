@@ -37,13 +37,11 @@ namespace Components
             return;
         }
         ms_hasInit = true;
-        BucketScope scope(AB_Default);
         ms_allocs[CT_Render].Init<RenderComponent>();
         ms_allocs[CT_Physics].Init<PhysicsComponent>();
     }
     slot Create()
     {
-        BucketScope scope(AB_Default);
         slot s = ms_rows.Create();
         ms_alive.grow() = s;
         return s;
@@ -60,8 +58,6 @@ namespace Components
     {
         if(ms_rows.Exists(s))
         {
-            BucketScope scope(AB_Default);
-
             Row& row = ms_rows.GetUnchecked(s);
 
             CleanupPhysics(row);
@@ -103,7 +99,6 @@ namespace Components
         {
             return;
         }
-        BucketScope scope(AB_Default);
         Row& row = ms_rows.GetUnchecked(s);
         void* c = row.m_components[type];
         if(!c)
@@ -117,7 +112,6 @@ namespace Components
         {
             return;
         }
-        BucketScope scope(AB_Default);
         Row& row = ms_rows.GetUnchecked(s);
 
         if(type == CT_Physics)
@@ -142,7 +136,6 @@ namespace Components
         {
             return nullptr;
         }
-        BucketScope scope(AB_Default);
         Row& row = ms_rows.GetUnchecked(s);
         void* c = row.m_components[type];
         if(!c)
