@@ -45,6 +45,7 @@ namespace Renderer
     struct Buffer
     {
         uint32_t id;
+        uint32_t count;
     };
     struct Texture
     {
@@ -52,10 +53,11 @@ namespace Renderer
     };
     struct BufferDesc
     {
-        void*           data;
-        uint32_t        count; 
-        uint32_t        elementSize; 
-        BufferType      type;
+        void*           vertexData;
+        void*           indexData;
+        uint32_t        vertexBytes;
+        uint32_t        indexBytes;
+        uint32_t        elementCount;
     };
     struct TextureDesc
     {
@@ -74,9 +76,7 @@ namespace Renderer
     void Shutdown();
     void Begin();
     void DrawTextured(
-        Buffer      mesh,
-        Buffer      indices,
-        uint32_t    count,
+        Buffer      buffer,
         Texture     mat,
         Texture     norm,
         const Textured::VSUniform& vsuni,

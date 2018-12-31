@@ -64,7 +64,6 @@ void Renderer::Init()
     glDepthFunc(GL_LEQUAL);
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
-    DebugGL();
     // setup shaders
     texturedShader.Init(textured_vs, textured_fs);
     rect2CMShader.Init(cubemap_vs, rect2CM_fs);
@@ -249,9 +248,6 @@ void Renderer::Init()
     RenderQuad();
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    // ready to rock!
-    glGenVertexArrays(1, &DefaultVAO);
-    glBindVertexArray(DefaultVAO);
 }
 
 uint32_t cubeVAO = 0;
@@ -368,7 +364,6 @@ void Renderer::Begin()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, winWidth, winHeight);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glBindVertexArray(DefaultVAO);
     glEnable(GL_CULL_FACE);
     DrawIdx = 0;
     texturedShader.Use();
@@ -399,9 +394,7 @@ void Renderer::End()
 }
 
 void Renderer::DrawTextured(
-    Renderer::Buffer            mesh,
-    Renderer::Buffer            indices,
-    uint32_t                    count,
+    Renderer::Buffer            buffer,
     Renderer::Texture           mat,
     Renderer::Texture           norm,
     const Textured::VSUniform&  vsuni,
@@ -431,45 +424,47 @@ void Renderer::DrawTextured(
     glBindTexture(GL_TEXTURE_2D, norm.id);
 
     // draw
-    glBindBuffer(GL_ARRAY_BUFFER, mesh.id);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indices.id);
-    glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, 0);
+    glBindVertexArray(buffer.id);
+    glDrawElements(GL_TRIANGLES, buffer.count, GL_UNSIGNED_INT, 0);
     ++DrawIdx;
 }
 
 Renderer::Buffer Renderer::CreateBuffer(const Renderer::BufferDesc& desc)
 {
     Buffer buffer;
-    glGenBuffers(1, &buffer.id);
-    DebugGL();
-    switch(desc.type)
+    buffer.count = desc.elementCount;
+    glGenVertexArrays(1, &buffer.id);
+    glBindVertexArray(buffer.id);
+
+    uint32_t vbo;
+    if(desc.vertexData)
     {
-        case Vertices:
-        glBindBuffer(GL_ARRAY_BUFFER, buffer.id);
-        DebugGL();
-        glBufferData(GL_ARRAY_BUFFER, desc.count * desc.elementSize, desc.data, GL_STATIC_DRAW);
-        DebugGL();
+        glGenBuffers(1, &vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, desc.vertexBytes, desc.vertexData, GL_STATIC_DRAW);
         glEnableVertexAttribArray(0);
-        DebugGL();
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
-        DebugGL();
         glEnableVertexAttribArray(1);
-        DebugGL();
         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)sizeof(vec3));
-        DebugGL();
-        break;
-        case Indices:
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.id);
-        DebugGL();
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, desc.count * desc.elementSize, desc.data, GL_STATIC_DRAW);
-        DebugGL();
-        break;
     }
+    
+    uint32_t ebo;
+    if(desc.indexData)
+    {
+        glGenBuffers(1, &ebo);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, desc.indexBytes, desc.indexData, GL_STATIC_DRAW);
+    }
+
+    glBindVertexArray(0);
+    glDeleteBuffers(1, &ebo);
+    glDeleteBuffers(1, &vbo);
+
     return buffer;
 }
 void Renderer::DestroyBuffer(Renderer::Buffer buffer)
 {
-    glDeleteBuffers(1, &buffer.id);
+    glDeleteVertexArrays(1, &buffer.id);
 }
 Renderer::Texture Renderer::CreateTexture(const Renderer::TextureDesc& desc)
 {

@@ -39,6 +39,10 @@ void Init()
     Physics::Init();
     Renderer::Init();
 
+
+    slot material = Images::Create("bumpy_PRMA");
+    slot normal = Images::Create("bumpy_normal");
+
     {
         slot ent = Components::Create();
         RenderComponent* rc = Components::GetAdd<RenderComponent>(ent);
@@ -78,15 +82,57 @@ void Init()
         TempArray<int32_t> inds;
         PositionsToVertices(pts, verts, inds);
 
-        BufferData bd;
-        bd.vertices     = verts.begin();
-        bd.vertCount    = verts.count();
-        bd.indices      = (uint32_t*)inds.begin();
-        bd.indexCount   = inds.count();
-        bd.size         = sizeof(verts[0]);
+        Renderer::BufferDesc desc;
+        desc.vertexData     = verts.begin();
+        desc.vertexBytes    = verts.bytes();
+        desc.indexData      = inds.begin();
+        desc.indexBytes     = inds.bytes();
+        desc.elementCount   = inds.count();
 
-        rc->m_buffer    = Buffers::Create(bd);
-        rc->m_material  = Images::Create("bumpy_PRMA");
-        rc->m_normal    = Images::Create("bumpy_normal");
+        rc->m_buffer    = Buffers::Create(desc);
+        rc->m_material  = material;
+        rc->m_normal    = normal;
+    }
+    
+    {
+        slot ent = Components::Create();
+        RenderComponent* rc = Components::GetAdd<RenderComponent>(ent);
+
+        TempArray<vec3> pts;
+        CSG csgs[] = 
+        {
+            {
+                vec3(0.5f, 0.0f, 0.0f),
+                vec3(2.0f),
+                0.5f,
+                Sphere,
+                Add,
+            },
+            {
+                vec3(0.5f, 0.0f, 0.0f),
+                vec3(1.5f),
+                0.5f,
+                Box,
+                Sub,
+            },
+        };
+
+        CSGUtil::Evaluate(csgs, NELEM(csgs), pts, vec3(0.0f), 3.0f, 128);
+
+        TempArray<Vertex> verts;
+        TempArray<int32_t> inds;
+        PositionsToVertices(pts, verts, inds);
+
+        Renderer::BufferDesc desc;
+        desc.vertexData     = verts.begin();
+        desc.vertexBytes    = verts.bytes();
+        desc.indexData      = inds.begin();
+        desc.indexBytes     = inds.bytes();
+        desc.elementCount   = inds.count();
+
+        rc->m_buffer    = Buffers::Create(desc);
+        rc->m_material  = material;
+        rc->m_normal    = normal;
+        rc->m_matrix    = glm::translate(mat4(1.0f), vec3(5.0f, 0.0f, 0.0f));
     }
 }

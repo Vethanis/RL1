@@ -21,16 +21,16 @@ Textured::FSUniform fsuni =
     vec3(0.0f, 1.0f, 0.0f),
     vec3(0.0f, 0.0f, 1.0f),
     0.5f,
-    65.0f,
+    1.0f,
     0.0f,
     0.0f
 };
 
 inline void DrawTextured(const RenderComponent* rc)
 {
-    const Buffer* buf = Buffers::Get(rc->m_buffer);
-    const Renderer::Texture* material = Images::Get(rc->m_material);
-    const Renderer::Texture* normal   = Images::Get(rc->m_normal);
+    const Renderer::Buffer*     buf         = Buffers::Get(rc->m_buffer);
+    const Renderer::Texture*    material    = Images::Get(rc->m_material);
+    const Renderer::Texture*    normal      = Images::Get(rc->m_normal);
 
     if(!buf || !material || !normal)
     {
@@ -42,9 +42,7 @@ inline void DrawTextured(const RenderComponent* rc)
     fsuni.Seed  = Randf();
 
     Renderer::DrawTextured(
-        buf->m_vertices, 
-        buf->m_indices, 
-        buf->m_count, 
+        *buf, 
         *material, 
         *normal, 
         vsuni, 
