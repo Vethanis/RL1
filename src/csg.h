@@ -5,6 +5,7 @@
 #include "buffer.h"
 #include "stb_perlin.h"
 #include "prng.h"
+#include "vertex.h"
 
 enum Shape : uint8_t
 {
@@ -149,7 +150,7 @@ namespace CSGUtil
     void Evaluate(
         const CSG*      csgs, 
         int32_t         count, 
-        TempArray<vec3>& out, 
+        TempArray<Vertex>& out, 
         const vec3&     center, 
         float           radius, 
         int32_t         dimension);

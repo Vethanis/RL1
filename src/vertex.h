@@ -22,8 +22,8 @@ struct Vertex
     }
 };
 
-void PositionsToVertices(
-    const TempArray<vec3>&      verts, 
+void IndexVertices(
+    const TempArray<Vertex>&    verts, 
     TempArray<Vertex>&          out, 
     TempArray<int32_t>&         indout);
 

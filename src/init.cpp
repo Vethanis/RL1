@@ -50,8 +50,7 @@ void Init()
 
         pc->Init(0.0f, vec3(0.0f, 0.0f, 0.0f), vec3(10.0f, 0.33f, 10.0f));
 
-        TempArray<vec3> pts;
-        CSG csgs[] = 
+        const CSG csgs[] = 
         {
             {
                 vec3(0.0f),
@@ -76,11 +75,12 @@ void Init()
             }
         };
 
+        TempArray<Vertex> pts;
         CSGUtil::Evaluate(csgs, NELEM(csgs), pts, vec3(0.0f), 3.0f, 128);
 
         TempArray<Vertex> verts;
         TempArray<int32_t> inds;
-        PositionsToVertices(pts, verts, inds);
+        IndexVertices(pts, verts, inds);
 
         Renderer::BufferDesc desc;
         desc.vertexData     = verts.begin();
@@ -98,8 +98,7 @@ void Init()
         slot ent = Components::Create();
         RenderComponent* rc = Components::GetAdd<RenderComponent>(ent);
 
-        TempArray<vec3> pts;
-        CSG csgs[] = 
+        const CSG csgs[] = 
         {
             {
                 vec3(0.5f, 0.0f, 0.0f),
@@ -117,11 +116,12 @@ void Init()
             },
         };
 
+        TempArray<Vertex> pts;
         CSGUtil::Evaluate(csgs, NELEM(csgs), pts, vec3(0.0f), 3.0f, 128);
 
         TempArray<Vertex> verts;
         TempArray<int32_t> inds;
-        PositionsToVertices(pts, verts, inds);
+        IndexVertices(pts, verts, inds);
 
         Renderer::BufferDesc desc;
         desc.vertexData     = verts.begin();

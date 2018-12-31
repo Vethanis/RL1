@@ -1,22 +1,21 @@
 
 #include "vertex.h"
 
-void PositionsToVertices(
-    const TempArray<vec3>&  verts, 
-    TempArray<Vertex>&      out, 
-    TempArray<int32_t>&     indout)
+void IndexVertices(
+    const TempArray<Vertex>&    verts, 
+    TempArray<Vertex>&          out, 
+    TempArray<int32_t>&         indout)
 {
     out.clear();
     indout.clear();
-
-    TempArray<vec3> uniques;
-    uniques.reserve(verts.count());
-    for(const vec3& v : verts)
+    indout.reserve(verts.count());
+    out.reserve(verts.count() / 6);
+    for(const Vertex& v : verts)
     {
         int32_t idx = -1;
-        for(int32_t i = uniques.count() - 1; i >= 0; --i)
+        for(int32_t i = out.count() - 1; i >= 0; --i)
         {
-            if(DISTSQ(v, uniques[i]) == 0.0f)
+            if(DISTSQ(v.position, out[i].position) == 0.0f)
             {
                 idx = i;
                 break;
@@ -24,31 +23,10 @@ void PositionsToVertices(
         }
         if(idx == -1)
         {
-            idx = uniques.count();
-            uniques.append() = v;
+            idx = out.count();
+            out.grow() = v;
         }
-        indout.grow() = idx;
-    }
-
-    out.resize(uniques.count());
-    for(int32_t i = 0; i < uniques.count(); ++i)
-    {
-        Vertex& vt = out[i];
-        vt.position = uniques[i];
-        vt.normal = vec3(0.00001f);
-    }
-
-    for(int32_t i = 0; i + 2 < indout.count(); i += 3)
-    {
-        const int32_t a = indout[i + 0];
-        const int32_t b = indout[i + 1];
-        const int32_t c = indout[i + 2];
-        const vec3 e1 = uniques[b] - uniques[a];
-        const vec3 e2 = uniques[c] - uniques[a];
-        vec3 N = glm::normalize(glm::cross(e1, e2));
-        out[a].normal += N;
-        out[b].normal += N;
-        out[c].normal += N;
+        indout.append() = idx;
     }
 }
 
