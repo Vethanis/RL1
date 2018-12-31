@@ -354,18 +354,14 @@ void RenderQuad()
     glBindVertexArray(0);
 }
 
-int32_t DrawIdx = 0;
 void Renderer::Begin()
 {
-    glClearColor(0.5f, 0.25f, 0.25f, 0.0f);
-
     int32_t winWidth, winHeight;
     glfwGetWindowSize(Window::GetActive()->m_window, &winWidth, &winHeight);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, winWidth, winHeight);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_CULL_FACE);
-    DrawIdx = 0;
     texturedShader.Use();
     glActiveTexture(GL_TEXTURE0 + 0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceMap);
@@ -377,8 +373,8 @@ void Renderer::Begin()
 
 void Renderer::End()
 {
-    const Camera* cam = Camera::GetActive();
     // draw cubemap background
+    const Camera* cam = Camera::GetActive();
     backgroundShader.Use();
     backgroundShader.SetMat4("projection", cam->P);
     backgroundShader.SetMat4("view", cam->V);
@@ -388,6 +384,7 @@ void Renderer::End()
     //glBindTexture(GL_TEXTURE_CUBE_MAP, prefilterMap); // display prefilter map
     glDisable(GL_CULL_FACE);
     RenderCube();
+
     // draw UI
     UI::End();
     Window::GetActive()->Swap();
@@ -400,14 +397,9 @@ void Renderer::DrawTextured(
     const Textured::VSUniform&  vsuni,
     const Textured::FSUniform&  fsuni)
 {
-    if(DrawIdx == 0)
-    {
-        // set per frame uniforms
-        texturedShader.SetVec3("Eye", fsuni.Eye);
-        texturedShader.SetVec3("LightDir", fsuni.LightDir);
-        texturedShader.SetFloat("LightRad", fsuni.LightRad);
-    }
-    // set varying uniforms
+    texturedShader.SetVec3("Eye", fsuni.Eye);
+    texturedShader.SetVec3("LightDir", fsuni.LightDir);
+    texturedShader.SetFloat("LightRad", fsuni.LightRad);
     texturedShader.SetMat4("MVP", vsuni.MVP);
     texturedShader.SetMat4("M", vsuni.M);
     texturedShader.SetVec3("Pal0", fsuni.Pal0);
@@ -417,16 +409,13 @@ void Renderer::DrawTextured(
     texturedShader.SetFloat("RoughnessOffset", fsuni.RoughnessOffset);
     texturedShader.SetFloat("MetalnessOffset", fsuni.MetalnessOffset);
 
-    // set texture slots
     glActiveTexture(GL_TEXTURE0 + 3);
     glBindTexture(GL_TEXTURE_2D, mat.id);
     glActiveTexture(GL_TEXTURE0 + 4);
     glBindTexture(GL_TEXTURE_2D, norm.id);
 
-    // draw
     glBindVertexArray(buffer.id);
     glDrawElements(GL_TRIANGLES, buffer.count, GL_UNSIGNED_INT, 0);
-    ++DrawIdx;
 }
 
 Renderer::Buffer Renderer::CreateBuffer(const Renderer::BufferDesc& desc)
@@ -447,7 +436,7 @@ Renderer::Buffer Renderer::CreateBuffer(const Renderer::BufferDesc& desc)
         glEnableVertexAttribArray(1);
         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)sizeof(vec3));
     }
-    
+
     uint32_t ebo;
     if(desc.indexData)
     {
