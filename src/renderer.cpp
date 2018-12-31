@@ -47,6 +47,7 @@ uint32_t irradianceMap = 0;
 uint32_t prefilterMap = 0;
 uint32_t brdfLUTTexture = 0;
 uint32_t DefaultVAO = 0;
+GLShader flatShader;
 GLShader texturedShader;
 GLShader rect2CMShader;
 GLShader irradianceShader;
@@ -65,12 +66,18 @@ void Renderer::Init()
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
     // setup shaders
+    flatShader.Init(flat_vs, flat_fs);
     texturedShader.Init(textured_vs, textured_fs);
     rect2CMShader.Init(cubemap_vs, rect2CM_fs);
     irradianceShader.Init(cubemap_vs, irradiance_convolution_fs);
     prefilterShader.Init(cubemap_vs, prefilter_fs);
     brdfShader.Init(brdf_vs, brdf_fs);
     backgroundShader.Init(background_vs, background_fs);
+
+    flatShader.Use();
+    flatShader.SetInt("irradianceMap", 0);
+    flatShader.SetInt("prefilterMap", 1);
+    flatShader.SetInt("brdfLUT", 2);
 
     texturedShader.Use();
     texturedShader.SetInt("irradianceMap", 0);
@@ -362,7 +369,7 @@ void Renderer::Begin()
     glViewport(0, 0, winWidth, winHeight);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_CULL_FACE);
-    texturedShader.Use();
+
     glActiveTexture(GL_TEXTURE0 + 0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceMap);
     glActiveTexture(GL_TEXTURE0 + 1);
@@ -397,11 +404,12 @@ void Renderer::DrawTextured(
     const Textured::VSUniform&  vsuni,
     const Textured::FSUniform&  fsuni)
 {
+    texturedShader.Use();
+    texturedShader.SetMat4("MVP", vsuni.MVP);
+    texturedShader.SetMat4("M", vsuni.M);
     texturedShader.SetVec3("Eye", fsuni.Eye);
     texturedShader.SetVec3("LightDir", fsuni.LightDir);
     texturedShader.SetFloat("LightRad", fsuni.LightRad);
-    texturedShader.SetMat4("MVP", vsuni.MVP);
-    texturedShader.SetMat4("M", vsuni.M);
     texturedShader.SetVec3("Pal0", fsuni.Pal0);
     texturedShader.SetVec3("Pal1", fsuni.Pal1);
     texturedShader.SetVec3("Pal2", fsuni.Pal2);
@@ -414,6 +422,25 @@ void Renderer::DrawTextured(
     glActiveTexture(GL_TEXTURE0 + 4);
     glBindTexture(GL_TEXTURE_2D, norm.id);
 
+    glBindVertexArray(buffer.id);
+    glDrawElements(GL_TRIANGLES, buffer.count, GL_UNSIGNED_INT, 0);
+}
+
+void Renderer::DrawFlat(
+    Buffer buffer,
+    const Flat::VSUniform& vsuni,
+    const Flat::FSUniform& fsuni)
+{
+    flatShader.Use();
+    flatShader.SetMat4("MVP", vsuni.MVP);
+    flatShader.SetMat4("M", vsuni.M);
+    flatShader.SetVec3("Eye", fsuni.Eye);
+    flatShader.SetVec3("LightDir", fsuni.LightDir);
+    flatShader.SetVec3("Albedo", fsuni.Albedo);
+    flatShader.SetFloat("LightRad", fsuni.LightRad);
+    flatShader.SetFloat("Roughness", fsuni.Roughness);
+    flatShader.SetFloat("Metalness", fsuni.Metalness);
+    
     glBindVertexArray(buffer.id);
     glDrawElements(GL_TRIANGLES, buffer.count, GL_UNSIGNED_INT, 0);
 }

@@ -3,6 +3,7 @@
 #include <stdint.h>
 
 #include "shaders/textured.h"
+#include "shaders/flat.h"
 
 namespace Renderer
 {
@@ -81,6 +82,10 @@ namespace Renderer
         Texture     norm,
         const Textured::VSUniform& vsuni,
         const Textured::FSUniform& fsuni);
+    void DrawFlat(
+        Buffer buffer,
+        const Flat::VSUniform& vsuni,
+        const Flat::FSUniform& fsuni);
     void End();
     Buffer CreateBuffer(const BufferDesc& desc);
     void DestroyBuffer(Buffer buffer);

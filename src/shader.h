@@ -30,4 +30,6 @@ struct GLShader
     void SetMat3(const char* name, const mat3& value);
     void SetMat4(const char* name, const mat4& value);
     int32_t GetUniformLocation(const char* name);
+
+    static GLShader* ms_current;
 };

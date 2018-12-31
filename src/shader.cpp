@@ -11,6 +11,8 @@ enum ErrorCheckType
     Program,
 };
 
+GLShader* GLShader::ms_current = nullptr;
+
 void CheckCompileErrors(uint32_t id, ErrorCheckType type)
 {
     int32_t success = 0;
@@ -79,8 +81,12 @@ void GLShader::Shutdown()
 }
 void GLShader::Use()
 {
-    glUseProgram(m_id);
-    DebugGL();
+    if(this != ms_current)
+    {
+        ms_current = this;
+        glUseProgram(m_id);
+        DebugGL();
+    }
 }
 void GLShader::SetInt(const char* name, int32_t value)
 {

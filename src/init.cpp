@@ -89,9 +89,11 @@ void Init()
         desc.indexBytes     = inds.bytes();
         desc.elementCount   = inds.count();
 
+        rc->m_type      = PT_Textured;
         rc->m_buffer    = Buffers::Create(desc);
         rc->m_material  = material;
         rc->m_normal    = normal;
+        rc->m_matrix    = mat4(1.0f);
     }
     
     {
@@ -130,9 +132,10 @@ void Init()
         desc.indexBytes     = inds.bytes();
         desc.elementCount   = inds.count();
 
+        rc->m_type      = PT_Flat;
         rc->m_buffer    = Buffers::Create(desc);
-        rc->m_material  = material;
-        rc->m_normal    = normal;
+        //rc->m_material  = material;
+        //rc->m_normal    = normal;
         rc->m_matrix    = glm::translate(mat4(1.0f), vec3(5.0f, 0.0f, 0.0f));
     }
 }

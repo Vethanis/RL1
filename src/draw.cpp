@@ -25,6 +25,8 @@ Textured::FSUniform fsuni =
     0.0f,
     0.0f
 };
+Flat::VSUniform flatvsuni;
+Flat::FSUniform flatfsuni;
 
 inline void DrawTextured(const RenderComponent* rc)
 {
@@ -47,6 +49,24 @@ inline void DrawTextured(const RenderComponent* rc)
         *normal, 
         vsuni, 
         fsuni);
+}
+
+inline void DrawFlat(const RenderComponent* rc)
+{
+    const Renderer::Buffer*     buf         = Buffers::Get(rc->m_buffer);
+    if(!buf)
+    {
+        return;
+    }
+
+    flatvsuni.MVP   = VP * rc->m_matrix;
+    flatvsuni.M     = rc->m_matrix;
+    flatfsuni.Seed  = Randf();
+
+    Renderer::DrawFlat(
+        *buf,
+        flatvsuni, 
+        flatfsuni);
 }
 
 void Draw()
@@ -75,6 +95,13 @@ void Draw()
         ImGui::End();
     }
 
+    flatfsuni.Albedo = fsuni.Pal0;
+    flatfsuni.Eye = fsuni.Eye;
+    flatfsuni.LightDir = fsuni.LightDir;
+    flatfsuni.LightRad = fsuni.LightRad;
+    flatfsuni.Metalness = fsuni.MetalnessOffset;
+    flatfsuni.Roughness = fsuni.RoughnessOffset;
+
     for(const slot* s = Components::begin(); s != Components::end(); ++s)
     {
         const RenderComponent* rc = Components::Get<RenderComponent>(*s);
@@ -82,7 +109,15 @@ void Draw()
         {
             continue;
         }
-        DrawTextured(rc);
+        switch(rc->m_type)
+        {
+            case PT_Textured:
+                DrawTextured(rc);
+            break;
+            case PT_Flat:
+                DrawFlat(rc);
+            break;
+        }
     }
 
     Renderer::End();
