@@ -23,7 +23,7 @@ namespace Textured
         float       MetalnessOffset;
         float       Seed;
     };
-
-    const void* GetShaderDesc();
-    const void* GetPipelineDesc();
 };
+
+extern const char* textured_vs;
+extern const char* textured_fs;

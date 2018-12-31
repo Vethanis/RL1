@@ -23,6 +23,66 @@ static void error_callback(
     fprintf(stderr, "%s\n", desc);
 }
 
+#if DEBUG_GL
+
+/*
+    typedef void (APIENTRY *GLDEBUGPROC)(
+        GLenum source,
+        GLenum type,
+        GLuint id,
+        GLenum severity,
+        GLsizei length,
+        const GLchar *message,
+        const void *userParam);
+*/
+
+    void APIENTRY glDebugOutput(
+        GLenum source, 
+        GLenum type, 
+        GLuint id, 
+        GLenum severity, 
+        GLsizei length, 
+        const GLchar *message, 
+        const void *userParam)
+    {
+        if(id == 131169 || id == 131185 || id == 131218 || id == 131204) return; 
+
+        puts("-----------------------------");
+        printf("Debug message (%d): %s\n", id, message);
+        switch (source)
+        {
+            case GL_DEBUG_SOURCE_API:             puts("Source: API"); break;
+            case GL_DEBUG_SOURCE_WINDOW_SYSTEM:   puts("Source: Window System"); break;
+            case GL_DEBUG_SOURCE_SHADER_COMPILER: puts("Source: Shader Compiler"); break;
+            case GL_DEBUG_SOURCE_THIRD_PARTY:     puts("Source: Third Party"); break;
+            case GL_DEBUG_SOURCE_APPLICATION:     puts("Source: Application"); break;
+            case GL_DEBUG_SOURCE_OTHER:           puts("Source: Other"); break;
+        }
+
+        switch (type)
+        {
+            case GL_DEBUG_TYPE_ERROR:               puts("Type: Error"); break;
+            case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: puts("Type: Deprecated Behaviour"); break;
+            case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:  puts("Type: Undefined Behaviour"); break; 
+            case GL_DEBUG_TYPE_PORTABILITY:         puts("Type: Portability"); break;
+            case GL_DEBUG_TYPE_PERFORMANCE:         puts("Type: Performance"); break;
+            case GL_DEBUG_TYPE_MARKER:              puts("Type: Marker"); break;
+            case GL_DEBUG_TYPE_PUSH_GROUP:          puts("Type: Push Group"); break;
+            case GL_DEBUG_TYPE_POP_GROUP:           puts("Type: Pop Group"); break;
+            case GL_DEBUG_TYPE_OTHER:               puts("Type: Other"); break;
+        }
+        
+        switch (severity)
+        {
+            case GL_DEBUG_SEVERITY_HIGH:         puts("Severity: high"); break;
+            case GL_DEBUG_SEVERITY_MEDIUM:       puts("Severity: medium"); break;
+            case GL_DEBUG_SEVERITY_LOW:          puts("Severity: low"); break;
+            case GL_DEBUG_SEVERITY_NOTIFICATION: puts("Severity: notification"); break;
+        }
+        puts("");
+    }
+#endif // DEBUG_GL
+
 void Window::Init(const char* title, bool fullscreen)
 {
     memset(this, 0, sizeof(*this));
@@ -47,7 +107,10 @@ void Window::Init(const char* title, bool fullscreen)
     glfwWindowHint(GLFW_BLUE_BITS,      mode->blueBits);
     glfwWindowHint(GLFW_REFRESH_RATE,   mode->refreshRate);
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR,  3);
+    #if DEBUG_GL
+        glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
+    #endif // DEBUG_GL
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR,  4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR,  3);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT,  GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE,         GLFW_OPENGL_CORE_PROFILE);
@@ -123,6 +186,15 @@ void Window::Init(const char* title, bool fullscreen)
         });
 
     glViewport(0, 0, m_width, m_height);
+
+    #if DEBUG_GL
+        int32_t flags; glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
+        Assert(flags & GL_CONTEXT_FLAG_DEBUG_BIT);
+        glEnable(GL_DEBUG_OUTPUT);
+        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+        glDebugMessageCallback(glDebugOutput, nullptr);
+        glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, 0, GL_TRUE);
+    #endif //DEBUG_GL
 }
 
 void Window::Shutdown()

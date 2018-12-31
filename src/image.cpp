@@ -3,13 +3,11 @@
 #include "image.h"
 #include "macro.h"
 #include "gen_array.h"
-
-#include "sokol_gfx.h"
 #include "stb_image.h"
 
 namespace Images
 {
-    gen_array<sg_image> ms_store;
+    gen_array<Renderer::Texture> ms_store;
 
     slot Create(const char* name)
     {
@@ -20,39 +18,29 @@ namespace Images
         void* data = stbi_load(path, &width, &height, nullptr, 4);
         Assert(data);
 
-        sg_image_desc desc = {0};
-        desc.min_filter = SG_FILTER_LINEAR;
-        desc.mag_filter = SG_FILTER_LINEAR;
-        desc.content.subimage[0][0].ptr = data;
-        desc.content.subimage[0][0].size = sizeof(uint8_t) * 4u * width * height;
+        Renderer::TextureDesc desc;
+        desc.minFilter = Renderer::LinearMipmap;
+        desc.magFilter = Renderer::Linear;
+        desc.data = data;
         desc.width = width;
         desc.height = height;
-        sg_image img;
-        img = sg_make_image(&desc);
-        Assert(img.id != SG_INVALID_ID);
-        stbi_image_free(data);
+        desc.layers = 1;
+        desc.type = Renderer::Texture2D;
+        desc.format = Renderer::RGBA8;
+        desc.wrapType = Renderer::Repeat;
 
-        slot s = ms_store.Create();
-        ms_store.GetUnchecked(s) = img;
+        slot s = Create(desc);
+        stbi_image_free(data);
 
         return s;
     }
-    slot Create(const Image& data)
+    slot Create(const Renderer::TextureDesc& desc)
     {
-        sg_image_desc desc = {0};
-        desc.min_filter = SG_FILTER_LINEAR;
-        desc.mag_filter = SG_FILTER_LINEAR;
-        desc.content.subimage[0][0].ptr = data.data;
-        desc.content.subimage[0][0].size = sizeof(uint8_t) * 4u * data.width * data.height;
-        desc.width = data.width;
-        desc.height = data.height;
-
-        sg_image img;
-        img = sg_make_image(&desc);
-        Assert(img.id != SG_INVALID_ID);
+        Renderer::Texture texture = Renderer::CreateTexture(desc);
+        Assert(texture.id != 0);
 
         slot s = ms_store.Create();
-        ms_store.GetUnchecked(s) = img;
+        ms_store.GetUnchecked(s) = texture;
 
         return s;
     }
@@ -60,12 +48,12 @@ namespace Images
     {
         if(ms_store.Exists(s))
         {
-            sg_image img = ms_store.GetUnchecked(s);
-            sg_destroy_image(img);
+            Renderer::Texture texture = ms_store.GetUnchecked(s);
+            Renderer::DestroyTexture(texture);
             ms_store.DestroyUnchecked(s);
         }
     }
-    const sg_image* Get(slot s)
+    const Renderer::Texture* Get(slot s)
     {
         return ms_store.Get(s);
     }

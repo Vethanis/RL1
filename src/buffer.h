@@ -1,17 +1,14 @@
 #pragma once
 
 #include <stdint.h>
-
 #include "slot.h"
-#include "sokol_id.h"
-#include "linmath.h"
-#include "vertex.h"
+#include "renderer.h"
 
 struct Buffer
 {
-    sg_buffer   m_vertices;
-    sg_buffer   m_indices;
-    int32_t     m_count;
+    Renderer::Buffer   m_vertices;
+    Renderer::Buffer   m_indices;
+    uint32_t           m_count;
 };
 
 struct BufferData

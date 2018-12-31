@@ -1,20 +1,17 @@
 #include "shutdown.h"
 
 #include "macro.h"
-#include "sokol_gfx.h"
+#include "renderer.h"
 #include "window.h"
 #include "physics.h"
 #include "task.h"
-#include "imguishim.h"
+#include "ui.h"
 
 void Shutdown()
 {
     TaskManager::Shutdown();
     Physics::Shutdown();
-    ImGuiShim::Shutdown();
-
-    sg_shutdown();
-    
-    Window* window = Window::GetActive();
-    window->Shutdown();
+    UI::Shutdown();
+    Renderer::Shutdown();
+    Window::GetActive()->Shutdown();
 }

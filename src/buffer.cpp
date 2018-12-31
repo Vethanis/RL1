@@ -1,9 +1,8 @@
-#define _CRT_SECURE_NO_WARNINGS
 
 #include "buffer.h"
-
-#include "sokol_gfx.h"
+#include "renderer.h"
 #include "gen_array.h"
+#include "macro.h"
 
 namespace Buffers
 {
@@ -12,26 +11,28 @@ namespace Buffers
     slot Create(const BufferData& data)
     {
         Buffer out;
-        sg_buffer_desc desc = {0};
+        Renderer::BufferDesc desc;
 
         if(data.vertices)
         {
-            desc.type       = SG_BUFFERTYPE_VERTEXBUFFER;
-            desc.content    = data.vertices;
-            desc.size       = data.size * data.vertCount;
-            out.m_vertices  = sg_make_buffer(&desc);
+            desc.data       = data.vertices;
+            desc.count      = data.vertCount;
+            desc.elementSize= data.size;
+            desc.type       = Renderer::Vertices;
+            out.m_vertices  = Renderer::CreateBuffer(desc);
             out.m_count     = data.vertCount;
-            Assert(out.m_vertices.id != SG_INVALID_ID);
+            Assert(out.m_vertices.id != 0);
         }
 
         if(data.indices)
         {
-            desc.type       = SG_BUFFERTYPE_INDEXBUFFER;
-            desc.content    = data.indices;
-            desc.size       = sizeof(data.indices[0]) * data.indexCount;
-            out.m_indices   = sg_make_buffer(&desc);
+            desc.data       = data.indices;
+            desc.count      = data.indexCount;
+            desc.elementSize= sizeof(data.indices[0]);
+            desc.type       = Renderer::Indices;
+            out.m_indices   = Renderer::CreateBuffer(desc);
             out.m_count     = data.indexCount;
-            Assert(out.m_indices.id != SG_INVALID_ID);
+            Assert(out.m_indices.id != 0);
         }
 
         slot s = ms_store.Create();
@@ -43,8 +44,8 @@ namespace Buffers
         if(ms_store.Exists(s))
         {
             Buffer& buf = ms_store.GetUnchecked(s);
-            sg_destroy_buffer(buf.m_vertices);
-            sg_destroy_buffer(buf.m_indices);
+            Renderer::DestroyBuffer(buf.m_vertices);
+            Renderer::DestroyBuffer(buf.m_indices);
             ms_store.DestroyUnchecked(s);
         }
     }

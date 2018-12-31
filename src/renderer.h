@@ -1,0 +1,89 @@
+#pragma once
+
+#include <stdint.h>
+
+#include "shaders/textured.h"
+
+namespace Renderer
+{
+    enum BufferType
+    {
+        Vertices = 0,
+        Indices,
+        BufferTypeCount,
+    };
+    enum Format
+    {
+        RGBA8 = 0,
+        RGBA16F,
+        RGBA32F,
+        R32F,
+        RG32F,
+        RGB32F,
+        FormatCount,
+    };
+    enum ImageType
+    {
+        Texture1D = 0,
+        Texture2D,
+        Texture3D,
+        TextureCube,
+        ImageTypeCount,
+    };
+    enum FilterType
+    {
+        Nearest = 0,
+        Linear,
+        LinearMipmap,
+        FilterTypeCount,
+    };
+    enum WrapType
+    {
+        Clamp = 0,
+        Repeat,
+    };
+    struct Buffer
+    {
+        uint32_t id;
+    };
+    struct Texture
+    {
+        uint32_t id;
+    };
+    struct BufferDesc
+    {
+        void*           data;
+        uint32_t        count; 
+        uint32_t        elementSize; 
+        BufferType      type;
+    };
+    struct TextureDesc
+    {
+        void*       data;
+        uint32_t    width; 
+        uint32_t    height;
+        uint32_t    layers;
+        ImageType   type;
+        Format      format;
+        FilterType  minFilter;
+        FilterType  magFilter;
+        WrapType    wrapType;
+    };
+
+    void Init();
+    void Shutdown();
+    void Begin();
+    void DrawTextured(
+        Buffer      mesh,
+        Buffer      indices,
+        uint32_t    count,
+        Texture     mat,
+        Texture     norm,
+        const Textured::VSUniform& vsuni,
+        const Textured::FSUniform& fsuni);
+    void End();
+    Buffer CreateBuffer(const BufferDesc& desc);
+    void DestroyBuffer(Buffer buffer);
+    Texture CreateTexture(const TextureDesc& desc);
+    void DestroyTexture(Texture texture);
+};
