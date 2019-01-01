@@ -30,6 +30,11 @@ struct LinearAllocator : public BaseAllocator
     }
     inline void* Alloc(size_t bytes) final
     {
+        constexpr size_t align = 16;
+        constexpr size_t alignMask = align - 1u;
+        size_t misalignment = bytes & alignMask;
+        size_t pad = (align - misalignment) & alignMask;
+        bytes += pad;
         Assert(bytes + m_head <= m_size);
         void* p = m_buffer + m_head;
         m_head += bytes;
