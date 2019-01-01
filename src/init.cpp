@@ -21,6 +21,8 @@
 #include "renderer.h"
 #include "vertex.h"
 
+#include "stb_perlin.h"
+
 Window window;
 Camera camera;
 
@@ -40,8 +42,61 @@ void Init()
     Renderer::Init();
 
 
-    slot material = Images::Create("bumpy_PRMA");
-    slot normal = Images::Create("bumpy_normal");
+    slot material;// = Images::Create("bumpy_PRMA");
+    slot normal;// = Images::Create("bumpy_normal");
+
+    {
+        TempArray<vec4> heights;
+        const int32_t width = 1024;
+        const int32_t height = 1024;
+        const float pitch = 16.0f / width;
+        heights.resize(width * height);
+        float bumpScale = 15.0f;
+        auto Sample = [&](float x, float y) -> float
+        {
+            return stb_perlin_noise3(
+                pitch * x, pitch * y, 0.0f,
+                16, 16, 16) * 0.5f + 0.5f;
+        };
+        for(int32_t y = 0; y < height; ++y)
+        {
+            for(int32_t x = 0; x < width; ++x)
+            {
+                heights[x + y * width] = vec4(Sample(x, y), 0.0f, 0.0f, 1.0f);
+            }
+        }
+        TempArray<vec4> normals;
+        normals.resize(width * height);
+        bumpScale = 1.0f / bumpScale;
+        for(int32_t y = 0; y < height; ++y)
+        {
+            for(int32_t x = 0; x < width; ++x)
+            {
+                float h0 = Sample(x, y);
+                float h1 = Sample(x + 1, y);
+                float h2 = Sample(x, y + 1);
+                vec3 v01 = vec3(x + 1, y, h1 - h0);
+                vec3 v02 = vec3(x, y + 1, h2 - h0);
+                vec3 N = glm::cross(v01, v02);
+                N.z *= bumpScale;
+                N = glm::normalize(N);
+                normals[x + y * width] = 0.5f * vec4(N, 0.0f) + 0.5f;
+            }
+        }
+        Renderer::TextureDesc desc = {0};
+        desc.data = heights.begin();
+        desc.format = Renderer::RGBA16F;
+        desc.height = height;
+        desc.layers = 1;
+        desc.type = Renderer::Texture2D;
+        desc.width = width;
+        desc.magFilter = Renderer::Linear;
+        desc.minFilter = Renderer::LinearMipmap;
+        desc.wrapType = Renderer::Repeat;
+        material = Images::Create(desc);
+        desc.data = normals.begin();
+        normal = Images::Create(desc);
+    }
 
     {
         slot ent = Components::Create();

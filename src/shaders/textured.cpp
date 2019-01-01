@@ -10,6 +10,7 @@ layout(location = 1) in vec3 normal;
 
 out vec3 Position;
 out vec3 MacroNormal;
+out vec3 LocalPosition;
 
 uniform mat4 MVP;
 uniform mat4 M;
@@ -21,6 +22,7 @@ void main()
     gl_Position = MVP * vec4(position.xyz, 1.0);
     MacroNormal = normalize(normal * IM);
     Position    = vec3(M * vec4(position.xyz, 1.0));
+    LocalPosition = position;
 }
 
 )";
@@ -32,6 +34,7 @@ R"(
 
 in vec3 Position;
 in vec3 MacroNormal;
+in vec3 LocalPosition;
 
 out vec4 frag_color;
 
@@ -51,12 +54,10 @@ uniform float   LightRad;
 uniform float   RoughnessOffset;
 uniform float   MetalnessOffset;
 
-mat3 GetBasis(vec3 V, vec3 N)
+mat3 GetBasis(vec3 P, vec3 N)
 {
-    vec3 T;
-    vec3 B;
-    T = normalize(cross(N, -V));
-    B = normalize(cross(N, T));
+    vec3 T = normalize(dFdx(LocalPosition));
+    vec3 B = normalize(dFdy(LocalPosition));
     return mat3(T, B, N);
 }
 
@@ -151,22 +152,6 @@ vec3 ToneMap(vec3 x)
     return x;
 }
 
-vec4 MatTriplane(vec3 blending, vec3 P)
-{
-    vec4 x = texture2D(MatTex, P.yz);
-    vec4 y = texture2D(MatTex, P.xz);
-    vec4 z = texture2D(MatTex, P.xy);
-    return x * blending.x + y * blending.y + z * blending.z;
-}
-
-vec4 NorTriplane(vec3 blending, vec3 P)
-{
-    vec4 x = texture2D(NorTex, P.yz);
-    vec4 y = texture2D(NorTex, P.xz);
-    vec4 z = texture2D(NorTex, P.xy);
-    return x * blending.x + y * blending.y + z * blending.z;
-}
-
 vec3 TriplaneBlending(vec3 N)
 {
     vec3 blending = abs(N);
@@ -176,20 +161,60 @@ vec3 TriplaneBlending(vec3 N)
     return blending;
 }
 
+vec4 MatTriplane(vec3 blending, vec3 P)
+{
+    vec4 x = texture2D(MatTex, P.zy);
+    vec4 y = texture2D(MatTex, P.xz);
+    vec4 z = texture2D(MatTex, P.xy);
+    return x * blending.x + y * blending.y + z * blending.z;
+}
+
+vec3 RNMBlend(vec3 n1, vec3 n2)
+{
+    n1 += vec3(0.0, 0.0, 1.0);
+    n2 *= vec3(-1.0, -1.0, 1.0);
+    return n1 * dot(n1, n2) / n1.z - n2;
+}
+
+vec3 NorTriplane(vec3 blending, vec3 P, vec3 N)
+{
+    vec3 x = texture2D(NorTex, P.zy).xyz * 2.0 - 1.0;
+    vec3 y = texture2D(NorTex, P.xz).xyz * 2.0 - 1.0;
+    vec3 z = texture2D(NorTex, P.xy).xyz * 2.0 - 1.0;
+
+    vec3 AVN = abs(N);
+
+    x = RNMBlend(vec3(N.zy, AVN.x), x);
+    y = RNMBlend(vec3(N.xz, AVN.y), y);
+    z = RNMBlend(vec3(N.xy, AVN.z), z);
+
+    vec3 axisSign = sign(N);
+
+    x.z *= axisSign.x;
+    y.z *= axisSign.y;
+    z.z *= axisSign.z;
+
+    return normalize(
+        x * blending.x + 
+        y * blending.y + 
+        z * blending.z + 
+        N);
+}
+
 void main()
 {
     vec3 P      = Position;
     vec3 V      = normalize(Eye - P);
     vec3 N      = normalize(MacroNormal);
+    mat3 TBN    = GetBasis(P, N);
     vec3 blending = TriplaneBlending(N);
 
-    vec4  PRMA      = MatTriplane(blending, P);
+    vec4  PRMA      = MatTriplane(blending, LocalPosition);
     float palette   = PRMA.x;
     float roughness = clamp(PRMA.y + RoughnessOffset, 0.05, 1.0);
     float metalness = clamp(PRMA.z + MetalnessOffset, 0.0, 1.0);
     vec3  albedo    = PaletteToAlbedo(palette);
-    vec3  Ntex      = normalize(NorTriplane(blending, P).xyz * 2.0 - 1.0);
-    N               = GetBasis(V, N) * Ntex;
+    N               = NorTriplane(blending, LocalPosition, N);
 
     vec3 C = vec3(0.0);
     {

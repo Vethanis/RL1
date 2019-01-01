@@ -2,6 +2,7 @@
 
 #define PLM_ENABLE 0
 #define ASSERT_TYPE 1
+#define DEBUG_GL 0
 
 #define NELEM(x) ( sizeof(x) / (sizeof((x)[0])) )
 #define Min(a, b) ( (a) < (b) ? (a) : (b) )
@@ -25,8 +26,6 @@
 #else
     #define Assert(x) 
 #endif // ASSERT_TYPE
-
-#define DEBUG_GL 0
 
 #if DEBUG_GL
     #define DebugGL() \

@@ -611,6 +611,7 @@ Renderer::Texture Renderer::CreateTexture(const Renderer::TextureDesc& desc)
 
     if(desc.minFilter == LinearMipmap)
     {
+        glTexParameterf(glTarget, GL_TEXTURE_MAX_ANISOTROPY_EXT, 4.0f); 
         glGenerateMipmap(glTarget);
     }
 

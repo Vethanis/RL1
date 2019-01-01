@@ -17,12 +17,12 @@ Textured::FSUniform fsuni =
 {
     vec3(0.0f),
     glm::normalize(vec3(1.0f)),
+    vec3(0.0f),
     vec3(1.0f, 0.0f, 0.0f),
-    vec3(0.0f, 1.0f, 0.0f),
-    vec3(0.0f, 0.0f, 1.0f),
-    0.5f,
+    vec3(1.0f),
     1.0f,
-    0.0f,
+    1.0f,
+    0.2f,
     0.0f
 };
 Flat::VSUniform flatvsuni;
@@ -85,7 +85,7 @@ void Draw()
         {
             fsuni.LightDir = cam->direction();
         }
-        ImGui::SliderFloat("Sun Radiance",      &fsuni.LightRad, 0.0f, 100.0f);
+        ImGui::SliderFloat("Sun Radiance",      &fsuni.LightRad, 0.0f, 25.0f);
         ImGui::ColorEdit3("Pal0",               &fsuni.Pal0.x);
         ImGui::ColorEdit3("Pal1",               &fsuni.Pal1.x);
         ImGui::ColorEdit3("Pal2",               &fsuni.Pal2.x);
