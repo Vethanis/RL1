@@ -106,6 +106,7 @@ void Window::Init(const char* title, bool fullscreen)
     glfwWindowHint(GLFW_GREEN_BITS,     mode->greenBits);
     glfwWindowHint(GLFW_BLUE_BITS,      mode->blueBits);
     glfwWindowHint(GLFW_REFRESH_RATE,   mode->refreshRate);
+    glfwWindowHint(GLFW_SAMPLES,        4); // 4x MSAA
 
     #if DEBUG_GL
         glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
