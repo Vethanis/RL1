@@ -52,3 +52,36 @@
 #else
     #define DebugGL() 
 #endif // DEBUG_GL
+
+#include <string.h>
+#include <stdarg.h>
+
+template<typename T>
+void MemZero(T& x)
+{
+    memset(&x, 0, sizeof(T));
+}
+
+template<typename T, size_t capacity>
+void MemZero(T (&x)[capacity])
+{
+    memset(x, 0, sizeof(T) * capacity);
+}
+
+template<typename T>
+void MemZero(T* x, size_t count)
+{
+    memset(x, 0, sizeof(T) * count);
+}
+
+#define MAX_PATH_LEN 256
+
+template<size_t capacity>
+void Format(char (&x)[capacity], const char* fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(x, capacity, fmt, args);
+    va_end(args);
+    x[capacity - 1u] = 0;
+}

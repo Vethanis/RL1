@@ -11,8 +11,8 @@ namespace Images
 
     slot Create(const char* name)
     {
-        char path[256] = {0};
-        sprintf(path, "assets/images/%s.png", name);
+        char path[MAX_PATH_LEN] = {0};
+        Format(path, "assets/images/%s.png", name);
         int32_t width = 0;
         int32_t height = 0;
         void* data = stbi_load(path, &width, &height, nullptr, 4);
