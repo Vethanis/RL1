@@ -7,6 +7,7 @@
 #include "allocator.h"
 #include "window.h"
 #include "camera.h"
+#include "control.h"
 #include "shader.h"
 #include "physics.h"
 #include "buffer.h"
@@ -36,6 +37,7 @@ void Init()
     Camera::SetActive(&camera);
     stm_setup();
     UI::Init();
+    Control::Init();
     Components::Init();
     TaskManager::Init();
     Physics::Init();

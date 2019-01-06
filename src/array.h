@@ -190,6 +190,14 @@ struct Array
         m_data[idx] = back();
         pop();
     }
+    inline void shiftRemove(int32_t idx)
+    {
+        for(int32_t i = idx + 1; i < count(); ++i)
+        {
+            m_data[i - 1] = m_data[i];
+        }
+        pop();
+    }
     int32_t find(const T& t) const
     {
         for(int32_t i = 0; i < count(); ++i)
@@ -323,6 +331,14 @@ struct FixedArray
     inline void remove(int32_t idx)
     {
         m_data[idx] = back();
+        pop();
+    }
+    inline void shiftRemove(int32_t idx)
+    {
+        for(int32_t i = idx + 1; i < count(); ++i)
+        {
+            m_data[i - 1] = m_data[i];
+        }
         pop();
     }
     int32_t find(const T& t) const

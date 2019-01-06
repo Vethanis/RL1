@@ -27,6 +27,29 @@ Textured::FSUniform fsuni =
 };
 Flat::VSUniform flatvsuni;
 Flat::FSUniform flatfsuni;
+float debugOrthoScale = 5.0f;
+
+static const vec4 debugViewports[] = 
+{
+    vec4(0.0f, 0.5f, 0.5f, 0.5f),   // TL
+    vec4(0.5f, 0.5f, 0.5f, 0.5f),   // TR
+    vec4(0.0f, 0.0f, 0.5f, 0.5f),   // BL
+    vec4(0.5f, 0.0f, 0.5f, 0.5f)    // BR
+};
+static const vec3 debugDirs[] = 
+{
+    vec3(0.0f, 1.0f, 0.0f),     // up
+    vec3(1.0f),                 // iso
+    vec3(0.0f, 0.0f, 1.0f),     // fwd
+    vec3(1.0f, 0.0f, 0.0f)      // right
+};
+static const vec3 debugUps[] = 
+{
+    vec3(0.0f, 0.0f, -1.0f),    // fwd
+    vec3(0.0f, 1.0f, 0.0f),     // up
+    vec3(0.0f, 1.0f, 0.0f),     // up
+    vec3(0.0f, 1.0f, 0.0f)      // up
+};
 
 inline void DrawTextured(const RenderComponent* rc)
 {
@@ -53,31 +76,24 @@ inline void DrawTextured(const RenderComponent* rc)
 
 inline void DrawFlat(const RenderComponent* rc)
 {
-    const Renderer::Buffer*     buf         = Buffers::Get(rc->m_buffer);
-    if(!buf)
+    if(const Renderer::Buffer* buf = Buffers::Get(rc->m_buffer))
     {
-        return;
+        flatvsuni.MVP   = VP * rc->m_matrix;
+        flatvsuni.M     = rc->m_matrix;
+        flatfsuni.Seed  = Randf();
+
+        Renderer::DrawFlat(
+            *buf,
+            flatvsuni, 
+            flatfsuni);
     }
-
-    flatvsuni.MVP   = VP * rc->m_matrix;
-    flatvsuni.M     = rc->m_matrix;
-    flatfsuni.Seed  = Randf();
-
-    Renderer::DrawFlat(
-        *buf,
-        flatvsuni, 
-        flatfsuni);
 }
 
 void Draw()
 {
     Camera* cam = Camera::GetActive();
-    Window::GetActive()->Poll(*cam);
     VP = cam->update();
-    fsuni.Eye = cam->m_eye;
 
-    Renderer::Begin();
-    
     ImGui::SetNextWindowSize(ImVec2(800.0f, 600.0f));
     if(ImGui::Begin("Controls"))
     {
@@ -85,6 +101,7 @@ void Draw()
         {
             fsuni.LightDir = cam->direction();
         }
+        ImGui::SliderFloat("Ortho Scale",       &debugOrthoScale, 0.1f, 50.0f);
         ImGui::SliderFloat("Sun Radiance",      &fsuni.LightRad, 0.0f, 25.0f);
         ImGui::ColorEdit3("Pal0",               &fsuni.Pal0.x);
         ImGui::ColorEdit3("Pal1",               &fsuni.Pal1.x);
@@ -95,6 +112,7 @@ void Draw()
         ImGui::End();
     }
 
+    fsuni.Eye = cam->m_eye;
     flatfsuni.Albedo = fsuni.Pal0;
     flatfsuni.Eye = fsuni.Eye;
     flatfsuni.LightDir = fsuni.LightDir;
@@ -102,21 +120,50 @@ void Draw()
     flatfsuni.Metalness = fsuni.MetalnessOffset;
     flatfsuni.Roughness = fsuni.RoughnessOffset;
 
-    for(const slot* s = Components::begin(); s != Components::end(); ++s)
+    Renderer::Begin();
+    if(0)
     {
-        const RenderComponent* rc = Components::Get<RenderComponent>(*s);
-        if(!rc)
+        for(const slot* s = Components::begin(); s != Components::end(); ++s)
         {
-            continue;
+            if(const RenderComponent* rc = Components::Get<RenderComponent>(*s))
+            {
+                switch(rc->m_type)
+                {
+                    case PT_Textured:
+                        DrawTextured(rc);
+                    break;
+                    case PT_Flat:
+                        DrawFlat(rc);
+                    break;
+                }
+            }
         }
-        switch(rc->m_type)
+        Renderer::DrawBackground(cam->P, cam->V);
+    }
+    else 
+    {
+        mat4 perspective = glm::ortho(-debugOrthoScale, debugOrthoScale, -debugOrthoScale, debugOrthoScale, -10.0f, 10.0f);
+        for(int32_t i = 0; i < 4; ++i)
         {
-            case PT_Textured:
-                DrawTextured(rc);
-            break;
-            case PT_Flat:
-                DrawFlat(rc);
-            break;
+            Renderer::SetViewport(debugViewports[i]);
+            mat4 view = glm::lookAt(cam->m_eye, cam->m_eye - debugOrthoScale * debugDirs[i], debugUps[i]);
+            VP = perspective * view;
+            for(const slot* s = Components::begin(); s != Components::end(); ++s)
+            {
+                if(const RenderComponent* rc = Components::Get<RenderComponent>(*s))
+                {
+                    switch(rc->m_type)
+                    {
+                        case PT_Textured:
+                            DrawTextured(rc);
+                        break;
+                        case PT_Flat:
+                            DrawFlat(rc);
+                        break;
+                    }
+                }
+            }
+            Renderer::DrawBackground(glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 100.0f), view);
         }
     }
 

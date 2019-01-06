@@ -1,8 +1,9 @@
 #pragma once
 
-#define PLM_ENABLE 0
-#define ASSERT_TYPE 1
-#define DEBUG_GL 0
+#define PLM_ENABLE      0
+#define ASSERT_TYPE     1
+#define DEBUG_GL        0
+#define MAX_PATH_LEN    256
 
 #define NELEM(x) ( sizeof(x) / (sizeof((x)[0])) )
 #define Min(a, b) ( (a) < (b) ? (a) : (b) )
@@ -73,8 +74,6 @@ void MemZero(T* x, size_t count)
 {
     memset(x, 0, sizeof(T) * count);
 }
-
-#define MAX_PATH_LEN 256
 
 template<size_t capacity>
 void Format(char (&x)[capacity], const char* fmt, ...)

@@ -6,12 +6,14 @@
 #include "physics.h"
 #include "task.h"
 #include "ui.h"
+#include "control.h"
 
 void Shutdown()
 {
     TaskManager::Shutdown();
     Physics::Shutdown();
     UI::Shutdown();
+    Control::Shutdown();
     Renderer::Shutdown();
     Window::GetActive()->Shutdown();
 }

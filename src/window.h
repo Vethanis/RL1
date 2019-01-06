@@ -3,7 +3,6 @@
 #include <stdint.h>
 
 struct GLFWwindow;
-struct Camera;
 
 struct Window
 {
@@ -20,7 +19,6 @@ struct Window
     void Shutdown();
     bool Open();
     void Swap();
-    void Poll(Camera& cam);
 
     static Window* GetActive();
     static void SetActive(Window* window);

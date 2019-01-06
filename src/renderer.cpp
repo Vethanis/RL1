@@ -8,7 +8,6 @@
 #include "ui.h"
 #include "camera.h"
 #include "shaders/ibl.h"
-#include "shaders/textured.h"
 
 #include "glad.h"
 #include <GLFW/glfw3.h>
@@ -40,10 +39,11 @@ static const mat4 captureViews[NumFaces] =
     glm::lookAt(vec3(0.0f), vec3( 0.0f,  0.0f, -1.0f), vec3(0.0f, -1.0f,  0.0f)),
 };
 static const mat4 captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
-
 uint32_t        ms_captureFBO = 0;
 uint32_t        ms_captureRBO = 0;
 uint32_t        ms_brdfLUT = 0;
+int32_t         ms_winWidth = 0;
+int32_t         ms_winHeight = 0;
 EnvironmentMap  ms_envmap;
 GLShader        flatShader;
 GLShader        texturedShader;
@@ -392,13 +392,12 @@ void RenderQuad()
 
 void Renderer::Begin()
 {
-    int32_t winWidth, winHeight;
-    glfwGetWindowSize(Window::GetActive()->m_window, &winWidth, &winHeight);
+    glfwGetWindowSize(Window::GetActive()->m_window, &ms_winWidth, &ms_winHeight);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, winWidth, winHeight);
+    SetViewport(vec4(0.0f, 0.0f, 1.0f, 1.0f));
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_CULL_FACE);
-
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glActiveTexture(GL_TEXTURE0 + 0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, ms_envmap.m_irradianceMap);
     glActiveTexture(GL_TEXTURE0 + 1);
@@ -407,23 +406,30 @@ void Renderer::Begin()
     glBindTexture(GL_TEXTURE_2D, ms_brdfLUT);
 }
 
-void Renderer::End()
+void Renderer::DrawBackground(const mat4& projection, const mat4& view)
 {
-    // draw cubemap background
-    const Camera* cam = Camera::GetActive();
     backgroundShader.Use();
-    backgroundShader.SetMat4("projection", cam->P);
-    backgroundShader.SetMat4("view", cam->V);
+    backgroundShader.SetMat4("projection", projection);
+    backgroundShader.SetMat4("view", view);
     glActiveTexture(GL_TEXTURE0 + 0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, ms_envmap.m_environmentMap);
     //glBindTexture(GL_TEXTURE_CUBE_MAP, ms_envmap.m_irradianceMap); // display irradiance map
     //glBindTexture(GL_TEXTURE_CUBE_MAP, ms_envmap.m_prefilterMap); // display prefilter map
     glDisable(GL_CULL_FACE);
     RenderCube();
+    glEnable(GL_CULL_FACE);
+}
 
-    // draw UI
+void Renderer::End()
+{
     UI::End();
     Window::GetActive()->Swap();
+}
+
+void Renderer::SetViewport(const vec4& viewport)
+{
+    ivec4 px = ivec4(vec4(ms_winWidth, ms_winHeight, ms_winWidth, ms_winHeight) * viewport);
+    glViewport(px[0], px[1], px[2], px[3]);
 }
 
 void Renderer::DrawTextured(
