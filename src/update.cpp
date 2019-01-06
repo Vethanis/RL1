@@ -23,8 +23,8 @@ void Update(float t, float dt)
         yawPitch[1] = Control::RegisterAxis("Pitch");
         movement[0] = Control::RegisterAction("Forward");
         movement[1] = Control::RegisterAction("Backward");
-        movement[2] = Control::RegisterAction("Left");
-        movement[3] = Control::RegisterAction("Right");
+        movement[2] = Control::RegisterAction("Right");
+        movement[3] = Control::RegisterAction("Left");
         movement[4] = Control::RegisterAction("Up");
         movement[5] = Control::RegisterAction("Down");
 
@@ -33,8 +33,8 @@ void Update(float t, float dt)
 
         Control::BindToAction(movement[0], Control::BL_OR, Control::K_W);
         Control::BindToAction(movement[1], Control::BL_OR, Control::K_S);
-        Control::BindToAction(movement[2], Control::BL_OR, Control::K_A);
-        Control::BindToAction(movement[3], Control::BL_OR, Control::K_D);
+        Control::BindToAction(movement[2], Control::BL_OR, Control::K_D);
+        Control::BindToAction(movement[3], Control::BL_OR, Control::K_A);
         Control::BindToAction(movement[4], Control::BL_OR, Control::K_SPACE);
         Control::BindToAction(movement[5], Control::BL_OR, Control::K_LEFT_SHIFT);
     }
