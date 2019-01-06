@@ -19,42 +19,41 @@ void Update(float t, float dt)
     if(!haveControls)
     {
         haveControls = true;
-        yawPitch[0] = Control::RegisterAxis("Yaw");
-        yawPitch[1] = Control::RegisterAxis("Pitch");
-        movement[0] = Control::RegisterAction("Forward");
-        movement[1] = Control::RegisterAction("Backward");
-        movement[2] = Control::RegisterAction("Right");
-        movement[3] = Control::RegisterAction("Left");
-        movement[4] = Control::RegisterAction("Up");
-        movement[5] = Control::RegisterAction("Down");
+        int32_t i = 0;
+        yawPitch[i++] = Control::RegisterAxis("Yaw");
+        yawPitch[i++] = Control::RegisterAxis("Pitch");
+        i = 0;
+        movement[i++] = Control::RegisterAction("Right");
+        movement[i++] = Control::RegisterAction("Left");
+        movement[i++] = Control::RegisterAction("Up");
+        movement[i++] = Control::RegisterAction("Down");
+        movement[i++] = Control::RegisterAction("Forward");
+        movement[i++] = Control::RegisterAction("Backward");
 
-        Control::BindToAxis(yawPitch[0], Control::AL_LARGEST, Control::MA_Cursor_X);
-        Control::BindToAxis(yawPitch[1], Control::AL_LARGEST, Control::MA_Cursor_Y);
+        i = 0;
+        Control::BindToAxis(yawPitch[i++], Control::AL_LARGEST, Control::MA_Cursor_X);
+        Control::BindToAxis(yawPitch[i++], Control::AL_LARGEST, Control::MA_Cursor_Y);
 
-        Control::BindToAction(movement[0], Control::BL_OR, Control::K_W);
-        Control::BindToAction(movement[1], Control::BL_OR, Control::K_S);
-        Control::BindToAction(movement[2], Control::BL_OR, Control::K_D);
-        Control::BindToAction(movement[3], Control::BL_OR, Control::K_A);
-        Control::BindToAction(movement[4], Control::BL_OR, Control::K_SPACE);
-        Control::BindToAction(movement[5], Control::BL_OR, Control::K_LEFT_SHIFT);
+        i = 0;
+        Control::BindToAction(movement[i++], Control::BL_OR, Control::K_D);
+        Control::BindToAction(movement[i++], Control::BL_OR, Control::K_A);
+        Control::BindToAction(movement[i++], Control::BL_OR, Control::K_SPACE);
+        Control::BindToAction(movement[i++], Control::BL_OR, Control::K_LEFT_SHIFT);
+        Control::BindToAction(movement[i++], Control::BL_OR, Control::K_W);
+        Control::BindToAction(movement[i++], Control::BL_OR, Control::K_S);
     }
     {
         Camera* cam = Camera::GetActive();
         float yaw = Control::GetAxisControlDelta(yawPitch[0]);
         float pitch = Control::GetAxisControlDelta(yawPitch[1]);
-        uint8_t states[6];
-        MemZero(states);
+
+        vec3 dv = vec3(0.0f);
         for(int32_t i = 0; i < NELEM(movement); ++i)
         {
-            states[i] = Control::GetActionState(movement[i]);
+            uint8_t state = Control::GetActionState(movement[i]);
+            float sign = (i & 1) ? -1.0f : 1.0f;
+            dv[i >> 1] += state ? sign * dt : 0.0f;
         }
-        vec3 dv = vec3(0.0f);
-        dv.z += states[0] ? dt : 0.0f;
-        dv.z -= states[1] ? dt : 0.0f;
-        dv.x += states[2] ? dt : 0.0f;
-        dv.x -= states[3] ? dt : 0.0f;
-        dv.y += states[4] ? dt : 0.0f;
-        dv.y -= states[5] ? dt : 0.0f;
 
         cam->move(dv);
         cam->pitch(pitch * dt);
