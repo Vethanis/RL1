@@ -61,24 +61,34 @@ namespace Control
     void Update(float dt)
     {
         ms_dt = dt;
-        GLFWwindow* window = Window::GetActive()->m_window;
 
-        ms_mouseAxis[MA_Scroll_X * 2 + 1] = ms_mouseAxis[MA_Scroll_X * 2];
-        ms_mouseAxis[MA_Scroll_Y * 2 + 1] = ms_mouseAxis[MA_Scroll_Y * 2];
-
+        // copy current state to previous state
+        for(int32_t i = 0; i < MA_COUNT; ++i)
+        {
+            ms_mouseAxis[i * 2 + 1] = ms_mouseAxis[i * 2];
+        }
         for(int32_t i = K_FIRST; i < K_COUNT; ++i)
         {
             ms_keys[i * 2 + 1] = ms_keys[i * 2];
         }
-
         for(int32_t i = MB_1; i < MB_COUNT; ++i)
         {
             ms_mouseButtons[i * 2 + 1] = ms_mouseButtons[i * 2];
         }
+        for(int32_t i = 0; i < GPA_COUNT; ++i)
+        {
+            ms_gameAxis[i * 2 + 1] = ms_gameAxis[i * 2];
+        }
+        for(int32_t i = 0; i < GPB_COUNT; ++i)
+        {
+            ms_gameButtons[i * 2 + 1] = ms_gameButtons[i * 2];
+        }
 
+        // update current state
         glfwPollEvents();
 
         {
+            GLFWwindow* window = Window::GetActive()->m_window;
             int32_t width, height;
             glfwGetWindowSize(window, &width, &height);
             double x, y;
@@ -88,16 +98,14 @@ namespace Control
             x = x * 2.0 - 1.0;
             y = y * 2.0 - 1.0;
 
-            ms_mouseAxis[MA_Cursor_X * 2 + 1] = ms_mouseAxis[MA_Cursor_X * 2];
             ms_mouseAxis[MA_Cursor_X * 2] = (float)-x;
-            ms_mouseAxis[MA_Cursor_Y * 2 + 1] = ms_mouseAxis[MA_Cursor_Y * 2];
             ms_mouseAxis[MA_Cursor_Y * 2] = (float)-y;
 
             if(ms_skipCursorUpdate)
             {
                 ms_skipCursorUpdate = false;
-                ms_mouseAxis[MA_Cursor_X * 2 + 1] = ms_mouseAxis[MA_Cursor_X * 2 + 0];
-                ms_mouseAxis[MA_Cursor_Y * 2 + 1] = ms_mouseAxis[MA_Cursor_Y * 2 + 0];
+                ms_mouseAxis[MA_Cursor_X * 2 + 1] = ms_mouseAxis[MA_Cursor_X * 2];
+                ms_mouseAxis[MA_Cursor_Y * 2 + 1] = ms_mouseAxis[MA_Cursor_Y * 2];
             }
         }
 
@@ -107,12 +115,10 @@ namespace Control
             glfwGetGamepadState(0, &state);
             for(int32_t i = 0; i < GPA_COUNT; ++i)
             {
-                ms_gameAxis[i * 2 + 1] = ms_gameAxis[i * 2];
                 ms_gameAxis[i * 2] = state.axes[i];
             }
             for(int32_t i = 0; i < GPB_COUNT; ++i)
             {
-                ms_gameButtons[i * 2 + 1] = ms_gameButtons[i * 2];
                 ms_gameButtons[i * 2] = state.buttons[i] ? Press : Release;
             }
         }
