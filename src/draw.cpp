@@ -121,7 +121,7 @@ void Draw()
     flatfsuni.Roughness = fsuni.RoughnessOffset;
 
     Renderer::Begin();
-    if(0)
+    if(1)
     {
         for(const slot* s = Components::begin(); s != Components::end(); ++s)
         {

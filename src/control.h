@@ -78,6 +78,7 @@ namespace Control
 
     enum Key : uint16_t
     {
+        K_FIRST = 32,
         K_SPACE = 32,
         K_APOSTROPHE = 39,
         K_COMMA = 44,
@@ -205,9 +206,21 @@ namespace Control
         Press = 1,
     };
 
+    enum Transition : uint8_t
+    {
+        NoChange = 0,
+        ReleaseToPress,
+        PressToRelease,
+    };
+
     void Init();
     void Update(float dt);
     void Shutdown();
+
+    void SetCursorHidden(bool hidden);
+    bool IsCursorHidden();
+
+    void CloseMainWindow();
 
     int32_t RegisterAction(const char* name);
     int32_t GetActionLocation(const char* name);
@@ -219,6 +232,7 @@ namespace Control
     void UnbindFromAction(int32_t location, GamePadButton button);
     State GetActionState(int32_t location);
     State GetPrevActionState(int32_t location);
+    Transition GetActionTransition(int32_t location);
 
     int32_t RegisterAxis(const char* name);
     int32_t GetAxisLocation(const char* name);
@@ -230,11 +244,7 @@ namespace Control
     float GetPrevAxisControl(int32_t location);
     float GetAxisControlDelta(int32_t location);
 
-    // private -------------------------------------------------------------------
+    void KeyCB(int32_t key, int32_t action, int32_t mods);
     void MouseButtonCB(int32_t button, int32_t action, int32_t mods);
-    void CursorPosCB(double x, double y);
-    void ScrollCB(double x, double y);
-    void GamePadAxisCB(int32_t axis, double value);
-    void GamePadButtonCB(int32_t button, int32_t action);
-    void KeyCB(int32_t key, int32_t scancode, int32_t action, int32_t mods);
+    void ScrollWheelCB(float dx, float dy);
 };

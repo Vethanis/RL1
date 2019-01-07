@@ -1,6 +1,9 @@
 #include "control.h"
 #include "array.h"
 #include "fnv.h"
+#include "window.h"
+
+#define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
 namespace Control
@@ -13,7 +16,7 @@ namespace Control
     struct AxisBinding
     {
         AxisLogic   m_logic;
-        float*      m_cur;
+        float*     m_cur;
     };
 
     typedef FixedArray<ActionBinding, 16> ActionBindings;
@@ -26,6 +29,8 @@ namespace Control
     static Array<uint64_t>      ms_axesHashes;
 
     static float                ms_dt;
+    static bool                 ms_cursorHidden = true;
+    static bool                 ms_skipCursorUpdate = false;
 
     static float                ms_mouseAxis[MA_COUNT * 2];
     static float                ms_gameAxis[GPA_COUNT * 2];
@@ -56,7 +61,61 @@ namespace Control
     void Update(float dt)
     {
         ms_dt = dt;
+        GLFWwindow* window = Window::GetActive()->m_window;
+
+        ms_mouseAxis[MA_Scroll_X * 2 + 1] = ms_mouseAxis[MA_Scroll_X * 2];
+        ms_mouseAxis[MA_Scroll_Y * 2 + 1] = ms_mouseAxis[MA_Scroll_Y * 2];
+
+        for(int32_t i = K_FIRST; i < K_COUNT; ++i)
+        {
+            ms_keys[i * 2 + 1] = ms_keys[i * 2];
+        }
+
+        for(int32_t i = MB_1; i < MB_COUNT; ++i)
+        {
+            ms_mouseButtons[i * 2 + 1] = ms_mouseButtons[i * 2];
+        }
+
         glfwPollEvents();
+
+        {
+            int32_t width, height;
+            glfwGetWindowSize(window, &width, &height);
+            double x, y;
+            glfwGetCursorPos(window, &x, &y);
+            x /= (double)width;
+            y /= (double)height;
+            x = x * 2.0 - 1.0;
+            y = y * 2.0 - 1.0;
+
+            ms_mouseAxis[MA_Cursor_X * 2 + 1] = ms_mouseAxis[MA_Cursor_X * 2];
+            ms_mouseAxis[MA_Cursor_X * 2] = (float)-x;
+            ms_mouseAxis[MA_Cursor_Y * 2 + 1] = ms_mouseAxis[MA_Cursor_Y * 2];
+            ms_mouseAxis[MA_Cursor_Y * 2] = (float)-y;
+
+            if(ms_skipCursorUpdate)
+            {
+                ms_skipCursorUpdate = false;
+                ms_mouseAxis[MA_Cursor_X * 2 + 1] = ms_mouseAxis[MA_Cursor_X * 2 + 0];
+                ms_mouseAxis[MA_Cursor_Y * 2 + 1] = ms_mouseAxis[MA_Cursor_Y * 2 + 0];
+            }
+        }
+
+        {
+            GLFWgamepadstate state;
+            MemZero(state);
+            glfwGetGamepadState(0, &state);
+            for(int32_t i = 0; i < GPA_COUNT; ++i)
+            {
+                ms_gameAxis[i * 2 + 1] = ms_gameAxis[i * 2];
+                ms_gameAxis[i * 2] = state.axes[i];
+            }
+            for(int32_t i = 0; i < GPB_COUNT; ++i)
+            {
+                ms_gameButtons[i * 2 + 1] = ms_gameButtons[i * 2];
+                ms_gameButtons[i * 2] = state.buttons[i] ? Press : Release;
+            }
+        }
     }
     void Shutdown()
     {
@@ -64,6 +123,31 @@ namespace Control
         ms_actionHashes.reset();
         ms_axesBindings.reset();
         ms_axesHashes.reset();
+    }
+
+    void SetCursorHidden(bool hidden)
+    {
+        ms_cursorHidden = hidden;            
+        ms_skipCursorUpdate = true;
+        GLFWwindow* window = Window::GetActive()->m_window;
+        if(ms_cursorHidden)
+        {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        }
+        else
+        {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        }
+    }
+    bool IsCursorHidden()
+    {
+        return ms_cursorHidden;
+    }
+
+    void CloseMainWindow()
+    {
+        GLFWwindow* window = Window::GetActive()->m_window;
+        glfwSetWindowShouldClose(window, true);
     }
 
     uint8_t EvalLogic(uint8_t cur, uint8_t next, ButtonLogic logic)
@@ -99,7 +183,7 @@ namespace Control
                 cur = Max(cur, next);
             break;
             case AL_SMALLEST:
-                if(fabsf(cur) < fabsf(next))
+                if(fabs(cur) < fabs(next))
                 {
                     cur = cur;
                 }
@@ -109,7 +193,7 @@ namespace Control
                 }
             break;
             case AL_LARGEST:
-                if(fabsf(cur) > fabsf(next))
+                if(fabs(cur) > fabs(next))
                 {
                     cur = next;
                 }
@@ -247,6 +331,16 @@ namespace Control
         }
         return (State)state;
     }
+    Transition GetActionTransition(int32_t location)
+    {
+        State cur = GetActionState(location);
+        State prev = GetPrevActionState(location);
+        if(cur == prev)
+        {
+            return NoChange;
+        }
+        return cur ? ReleaseToPress : PressToRelease;
+    }
 
     int32_t RegisterAxis(const char* name)
     {
@@ -333,42 +427,20 @@ namespace Control
     }
     float GetAxisControlDelta(int32_t location)
     {
-        Assert(location != -1);
         return GetAxisControl(location) - GetPrevAxisControl(location);
     }
 
+    void KeyCB(int32_t key, int32_t action, int32_t mods)
+    {
+        ms_keys[key * 2] = action != GLFW_RELEASE ? Press : Release;
+    }
     void MouseButtonCB(int32_t button, int32_t action, int32_t mods)
     {
-        ms_mouseButtons[button * 2 + 1] = ms_mouseButtons[button * 2];
-        ms_mouseButtons[button * 2] = (action == GLFW_RELEASE) ? Release : Press;
+        ms_mouseButtons[button * 2] = action != GLFW_RELEASE ? Press : Release;
     }
-    void CursorPosCB(double x, double y)
+    void ScrollWheelCB(float dx, float dy)
     {
-        ms_mouseAxis[MA_Cursor_X * 2 + 1] = ms_mouseAxis[MA_Cursor_X * 2];
-        ms_mouseAxis[MA_Cursor_X * 2] = (float)x;
-        ms_mouseAxis[MA_Cursor_Y * 2 + 1] = ms_mouseAxis[MA_Cursor_Y * 2];
-        ms_mouseAxis[MA_Cursor_Y * 2] = (float)x;
-    }
-    void ScrollCB(double x, double y)
-    {
-        ms_mouseAxis[MA_Scroll_X * 2 + 1] = ms_mouseAxis[MA_Scroll_X * 2];
-        ms_mouseAxis[MA_Scroll_X * 2] = (float)x;
-        ms_mouseAxis[MA_Scroll_Y * 2 + 1] = ms_mouseAxis[MA_Scroll_Y * 2];
-        ms_mouseAxis[MA_Scroll_Y * 2] = (float)x;
-    }
-    void GamePadAxisCB(int32_t axis, double value)
-    {
-        ms_gameAxis[axis * 2 + 1] = ms_gameAxis[axis * 2];
-        ms_gameAxis[axis * 2] = (float)value;
-    }
-    void GamePadButtonCB(int32_t button, int32_t action)
-    {
-        ms_gameButtons[button * 2 + 1] = ms_gameButtons[button * 2];
-        ms_gameButtons[button * 2] = (action == GLFW_RELEASE) ? Release : Press;
-    }
-    void KeyCB(int32_t key, int32_t scancode, int32_t action, int32_t mods)
-    {
-        ms_keys[key * 2 + 1] = ms_keys[key * 2];
-        ms_keys[key * 2] = (action == GLFW_RELEASE) ? Release : Press;
+        ms_mouseAxis[MA_Scroll_X * 2] += dx;
+        ms_mouseAxis[MA_Scroll_Y * 2] += dy;
     }
 };
