@@ -56,6 +56,7 @@
 
 #include <string.h>
 #include <stdarg.h>
+#include <stdio.h>
 
 template<typename T>
 void MemZero(T& x)

@@ -1,4 +1,7 @@
 #include "control.h"
+
+#include <math.h>
+
 #include "array.h"
 #include "fnv.h"
 #include "window.h"
@@ -67,11 +70,11 @@ namespace Control
         {
             ms_mouseAxis[i * 2 + 1] = ms_mouseAxis[i * 2];
         }
-        for(int32_t i = K_FIRST; i < K_COUNT; ++i)
+        for(int32_t i = 0; i < K_COUNT; ++i)
         {
             ms_keys[i * 2 + 1] = ms_keys[i * 2];
         }
-        for(int32_t i = MB_1; i < MB_COUNT; ++i)
+        for(int32_t i = 0; i < MB_COUNT; ++i)
         {
             ms_mouseButtons[i * 2 + 1] = ms_mouseButtons[i * 2];
         }

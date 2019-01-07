@@ -1,7 +1,7 @@
 #!/bin/bash
 
-export CC=/usr/bin/clang
-export CXX=/usr/bin/clang++
+#export CC=/usr/bin/clang
+#export CXX=/usr/bin/clang++
 
 if [ "$1" == "clean" ]; then
     rm -rf build
@@ -10,7 +10,7 @@ fi
 if [ ! -d "./build" ]; then
     mkdir build
     cd build
-    cmake .. -G "Visual Studio 15 Win64"
+    cmake .. -G "Unix Makefiles"
     cd ../
 fi
 
@@ -20,22 +20,22 @@ if [ "$1" == "debug" ] || [ "$2" == "debug" ] ; then
     TYPE="Debug"
 fi
 
-cmake --build build --config "$TYPE"
+cd build 
+make -j16
+cd ..
 
 if [[ $? > 0 ]]; then
     exit 1
 fi
 
-mkdir -p bin/Release
-mkdir -p bin/Debug
+mkdir -p bin/
 
-cp -r assets bin/Release/
-cp -r assets bin/Debug/
+cp -r assets bin/
 
 if [ "$1" == "debug" ] || [ "$2" == "debug" ] ; then
     echo ""
 else
-    cd bin/Release
+    cd bin
     ./rl1.exe
-    cd ../..
+    cd ..
 fi

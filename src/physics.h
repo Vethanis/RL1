@@ -5,44 +5,18 @@
 #include "linmath.h"
 #include "component.h"
 
-#include <bullet3/btBulletDynamicsCommon.h>
-
-inline btVector3 toB3(const vec3& x)
-{
-    return btVector3(x.x, x.y, x.z);
-}
-
-inline vec3 toGLM(const btVector3& x)
-{
-    return vec3(x.x(), x.y(), x.z());
-}
-
-inline btTransform toB3(const mat4& x)
-{
-    btTransform y;
-    y.setFromOpenGLMatrix(glm::value_ptr(x));
-    return y;
-}
-
-inline mat4 toGLM(const btTransform& x)
-{
-    mat4 y;
-    x.getOpenGLMatrix(glm::value_ptr(y));
-    return y;
-}
-
 namespace Physics
 {
     void Init();
     void Update(float dt);
     void Shutdown();
-    btRigidBody* Create(float mass, const vec3& position, const vec3& extent);
-    void Destroy(btRigidBody* body);
+    void* Create(float mass, const vec3& position, const vec3& extent);
+    void Destroy(void* body);
 };
 
 struct PhysicsComponent
 {
-    btRigidBody* m_body;
+    void* m_body;
 
     inline void Init(float mass, const vec3& position, const vec3& size)
     {
@@ -55,12 +29,11 @@ struct PhysicsComponent
     }
     inline void SetTransform(const mat4& xform)
     {
-        m_body->setWorldTransform(toB3(xform));
+        
     }
     inline mat4 GetTransform() const 
     {
-        const btTransform& xform = m_body->getWorldTransform();
-        return toGLM(xform);
+        return mat4(1.0f);
     }
 
     static const ComponentType ms_type = CT_Physics;
