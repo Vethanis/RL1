@@ -12,19 +12,49 @@ set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
 add_subdirectory(glfw-master)
+add_subdirectory(bullet3-2.87)
 
-include_directories(${CMAKE_SOURCE_DIR}/include)
-link_directories(${CMAKE_SOURCE_DIR}/build/lib/ )
-set(PROJECT_LINK_LIBS OpenGL32 glfw)
+if(WIN32)
+    set(BULLET_LIBS 
+        Bullet3Collision.lib
+        Bullet3Common.lib
+        Bullet3Dynamics.lib
+        Bullet3Geometry.lib
+        BulletCollision.lib
+        BulletDynamics.lib
+        BulletInverseDynamics.lib
+        LinearMath.lib)
 
-if(0)
+    set(BULLET_DEBUG_LIBS
+        Bullet3Collision_Debug.lib
+        Bullet3Common_Debug.lib
+        Bullet3Dynamics_Debug.lib
+        Bullet3Geometry_Debug.lib
+        BulletCollision_Debug.lib
+        BulletDynamics_Debug.lib
+        BulletInverseDynamics_Debug.lib
+        LinearMath_Debug.lib)
+        
     set(CMAKE_CXX_FLAGS_DEBUG "/Od /MTd /Zi")
     set(CMAKE_CXX_FLAGS_RELEASE "/O2 /MT /arch:AVX2 /fp:fast")
     set(CMAKE_CXX_FLAGS "/W3 /MP /GR-")
-else()
+    include_directories(${CMAKE_SOURCE_DIR}/include)
+
+    set(PROJECT_LINK_LIBS OpenGL32 glfw ${BULLET_LIBS} )
+    link_directories(${CMAKE_SOURCE_DIR}/build/lib/Release/ )
+
+    if(0)
+        set(PROJECT_LINK_LIBS OpenGL32 glfw ${BULLET_DEBUG_LIBS} )
+        link_directories(${CMAKE_SOURCE_DIR}/build/lib/Debug/ )
+    endif()
+
+elseif(UNIX)
     set(CMAKE_CXX_FLAGS_RELEASE "-O3")
     set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
-    set(CMAKE_CXX_FLAGS "-march=native -ffast-math -std=c++11 -Wfatal-errors -pthread -fno-exceptions -fno-rtti -fopenmp")
+    set(CMAKE_CXX_FLAGS "-Wall -std=c++11 -Wfatal-errors -pthread -fno-exceptions -fno-rtti")
+    include_directories("/usr/include")
+    link_directories("/usr/lib")
+    set(PROJECT_LINK_LIBS GL glfw3)
 endif()
 
 file(GLOB_RECURSE SOURCES "src/*.cpp" "src/*.c" "src/*.cc")
