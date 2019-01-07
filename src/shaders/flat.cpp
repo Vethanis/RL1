@@ -45,6 +45,12 @@ uniform vec3    Albedo;
 uniform float   LightRad;
 uniform float   Roughness;
 uniform float   Metalness;
+uniform float   Seed;
+
+float rand(vec2 co)
+{
+    return fract(sin(dot(co.xy, vec2(12.9898,78.233))) * 43758.5453);
+}
 
 float DisGGX(vec3 N, vec3 H, float roughness)
 {
@@ -126,6 +132,19 @@ vec3 ToneMap(vec3 x)
     return x;
 }
 
+vec3 Dither(vec3 x)
+{
+    vec2 s = gl_FragCoord.xy + vec2(Seed);
+    const float amt = 1.0 / 255.0;
+    for(int i = 0; i < 3; ++i)
+    {
+        x[i] *= (1.0 - amt);
+        x[i] += rand(s) * amt;
+        s += vec2(Seed);
+    }
+    return x;
+}
+
 void main()
 {
     vec3 P      = Position;
@@ -169,6 +188,7 @@ void main()
     }
 
     C = ToneMap(C);
+    C = Dither(C);
 
     //C = 0.5 * N + 0.5;
     //C = N;

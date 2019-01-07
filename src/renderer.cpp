@@ -452,6 +452,7 @@ void Renderer::DrawTextured(
     texturedShader.SetFloat("PalCenter", fsuni.PalCenter);
     texturedShader.SetFloat("RoughnessOffset", fsuni.RoughnessOffset);
     texturedShader.SetFloat("MetalnessOffset", fsuni.MetalnessOffset);
+    texturedShader.SetFloat("Seed", fsuni.Seed);
 
     glActiveTexture(GL_TEXTURE0 + 3);
     glBindTexture(GL_TEXTURE_2D, mat.id);
@@ -476,6 +477,7 @@ void Renderer::DrawFlat(
     flatShader.SetFloat("LightRad", fsuni.LightRad);
     flatShader.SetFloat("Roughness", fsuni.Roughness);
     flatShader.SetFloat("Metalness", fsuni.Metalness);
+    flatShader.SetFloat("Seed", fsuni.Seed);
     
     glBindVertexArray(buffer.id);
     glDrawElements(GL_TRIANGLES, buffer.count, GL_UNSIGNED_INT, 0);

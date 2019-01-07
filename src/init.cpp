@@ -53,7 +53,7 @@ void Init()
         const int32_t height = 1024;
         const float pitch = 16.0f / width;
         heights.resize(width * height);
-        float bumpScale = 15.0f;
+        float bumpScale = 10.0f;
         auto Sample = [&](float x, float y) -> float
         {
             return stb_perlin_noise3(

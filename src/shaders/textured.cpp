@@ -53,6 +53,12 @@ uniform float   PalCenter;
 uniform float   LightRad;
 uniform float   RoughnessOffset;
 uniform float   MetalnessOffset;
+uniform float   Seed;
+
+float rand(vec2 co)
+{
+    return fract(sin(dot(co.xy, vec2(12.9898,78.233))) * 43758.5453);
+}
 
 mat3 GetBasis(vec3 P, vec3 N)
 {
@@ -201,6 +207,19 @@ vec3 NorTriplane(vec3 blending, vec3 P, vec3 N)
         N);
 }
 
+vec3 Dither(vec3 x)
+{
+    vec2 s = gl_FragCoord.xy + vec2(Seed);
+    const float amt = 1.0 / 255.0;
+    for(int i = 0; i < 3; ++i)
+    {
+        x[i] *= (1.0 - amt);
+        x[i] += rand(s) * amt;
+        s += vec2(Seed);
+    }
+    return x;
+}
+
 void main()
 {
     vec3 P      = Position;
@@ -249,6 +268,7 @@ void main()
     }
 
     C = ToneMap(C);
+    C = Dither(C);
 
     //C = 0.5 * N + 0.5;
     //C = N;
