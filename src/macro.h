@@ -58,25 +58,51 @@
 #include <stdarg.h>
 
 template<typename T>
-void MemZero(T& x)
+inline void MemZero(T& x)
 {
     memset(&x, 0, sizeof(T));
 }
 
 template<typename T, size_t capacity>
-void MemZero(T (&x)[capacity])
+inline void MemZero(T (&x)[capacity])
 {
     memset(x, 0, sizeof(T) * capacity);
 }
 
 template<typename T>
-void MemZero(T* x, size_t count)
+inline void MemZero(T* x, size_t count)
 {
     memset(x, 0, sizeof(T) * count);
 }
 
+template<typename T>
+inline void Copy(T& dst, const T& src)
+{
+    memcpy(&dst, &src, sizeof(T));
+}
+
+template<typename T>
+inline void Copy(T* dst, const T* src, size_t count)
+{
+    memcpy(dst, src, sizeof(T) * count);
+}
+
+template<typename T>
+inline void Assume(T& dst, T&& src)
+{
+    memcpy(&dst, &src, sizeof(T));
+    memset(&src, 0, sizeof(T));
+}
+
+template<typename T>
+inline void Assume(T& dst, T& src)
+{
+    memcpy(&dst, &src, sizeof(T));
+    memset(&src, 0, sizeof(T));
+}
+
 template<size_t capacity>
-void Format(char (&x)[capacity], const char* fmt, ...)
+inline void Format(char (&x)[capacity], const char* fmt, ...)
 {
     va_list args;
     va_start(args, fmt);

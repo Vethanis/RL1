@@ -15,23 +15,23 @@ struct Array
     int32_t     m_capacity;
 
     Array()
-    { 
-        memset(this, 0, sizeof(*this)); 
+    {
+        MemZero(*this);
     }
     ~Array() { reset(); }
     Array(const T* x, int32_t ct)
     {
-        memset(this, 0, sizeof(*this)); 
+        MemZero(*this);
         resize(ct);
-        memcpy(m_data, x, sizeof(T) * ct);
+        Copy(begin(), x, ct);
     }
     Array(const Array& other)
     {
-        memset(this, 0, sizeof(*this));
+        MemZero(*this);
         resize(other.count());
         if(POD)
         {
-            memcpy(begin(), other.begin(), bytes());
+            Copy(begin(), other.begin(), count());
         }
         else
         {
@@ -43,8 +43,7 @@ struct Array
     }
     Array(Array&& other) noexcept
     {
-        memcpy(this, &other, sizeof(*this));
-        memset(&other, 0, sizeof(*this));
+        Assume(*this, other);
     }
     Array& operator=(const Array& other)
     {
@@ -52,7 +51,7 @@ struct Array
         resize(other.count());
         if(POD)
         {
-            memcpy(begin(), other.begin(), bytes());
+            Copy(begin(), other.begin(), count());
         }
         else
         {
@@ -66,15 +65,13 @@ struct Array
     Array& operator=(Array&& other) noexcept 
     {
         reset();
-        memcpy(this, &other, sizeof(*this));
-        memset(&other, 0, sizeof(*this));
+        Assume(*this, other);
         return *this;
     }
     void assume(Array& other)
     {
         reset();
-        memcpy(this, &other, sizeof(*this));
-        memset(&other, 0, sizeof(*this));
+        Assume(*this, other);
     }
     inline int32_t capacity()   const { return m_capacity; }
     inline int32_t count()      const { return m_count; }
@@ -94,7 +91,7 @@ struct Array
         if(new_cap > capacity())
         {
             T* data = (T*)Allocator::Alloc(t_bucket, sizeof(T) * new_cap);
-            memcpy(data, m_data, sizeof(T) * count());
+            Copy(data, begin(), count());
             Allocator::Free(t_bucket, m_data);
             m_data = data;
             m_capacity = new_cap;
@@ -150,7 +147,7 @@ struct Array
     {
         if(count() == capacity())
         {
-            reserve(count() ? count() * 2 : 16);
+            reserve(capacity() ? capacity() * 2 : 16);
         }
         ++m_count;
         if(!POD)
@@ -183,7 +180,7 @@ struct Array
     {
         clear();
         Allocator::Free(t_bucket, m_data);
-        memset(this, 0, sizeof(*this));
+        MemZero(*this);
     }
     inline void remove(int32_t idx)
     {
@@ -232,54 +229,231 @@ struct Array
 template<typename T, bool POD = true>
 using TempArray = Array<T, POD, AB_Temp>;
 
+template<typename A, typename B, AllocBucket t_bucket = AB_Default>
+struct Array2
+{
+    uint8_t* m_data;
+    int32_t  m_count;
+    int32_t  m_capacity;
+
+    inline Array2()
+    {
+        MemZero(*this);
+    }
+    inline Array2(const Array2& o)
+    {
+        MemZero(*this);
+        resize(o.count());
+        Copy(beginA(), o.beginA(), o.count());
+        Copy(beginB(), o.beginB(), o.count());
+    }
+    inline Array2(Array2&& o) noexcept
+    {
+        Assume(*this, o);
+    }
+    inline Array2& operator=(const Array2& o)
+    {
+        reset();
+        resize(o.count());
+        Copy(beginA(), o.beginA(), o.count());
+        Copy(beginB(), o.beginB(), o.count());
+        return *this;
+    }
+    inline Array2& operator=(Array2&& o) noexcept
+    {
+        reset();
+        Assume(*this, o);
+        return *this;
+    }
+    ~Array2()
+    {
+        reset();
+    }
+    inline void reset()
+    {
+        Allocator::Free(t_bucket, m_data);
+        MemZero(*this);
+    }
+    inline void clear()
+    {
+        m_count = 0;
+    }
+    inline int32_t count() const 
+    {
+        return m_count;
+    }
+    inline int32_t capacity() const 
+    {
+        return m_capacity;
+    }
+    inline A* beginA()
+    {
+        return (A*)m_data;
+    }
+    inline A* endA()
+    {
+        return beginA() + count();
+    }
+    inline B* beginB()
+    {
+        uint8_t* end = m_data + sizeof(A) * capacity();
+        return (B*)end;
+    }
+    inline B* endB()
+    {
+        return beginB() + count();
+    }
+    inline const A* beginA() const
+    {
+        return (A*)m_data;
+    }
+    inline const A* endA() const
+    {
+        return beginA() + count();
+    }
+    inline const B* beginB() const
+    {
+        uint8_t* end = m_data + sizeof(A) * capacity();
+        return (B*)end;
+    }
+    inline const B* endB() const
+    {
+        return beginB() + count();
+    }
+    inline A& backA()
+    {
+        return beginA()[count() - 1];
+    }
+    inline B& backB()
+    {
+        return beginB()[count() - 1];
+    }
+    inline const A& backA() const
+    {
+        return beginA()[count() - 1];
+    }
+    inline const B& backB() const
+    {
+        return beginB()[count() - 1];
+    }
+    inline A& getA(int32_t i)
+    {
+        return beginA()[i];
+    }
+    inline const A& getA(int32_t i) const
+    {
+        return beginA()[i];
+    }
+    inline B& getB(int32_t i)
+    {
+        return beginB()[i];
+    }
+    inline const B& getB(int32_t i) const
+    {
+        return beginB()[i];
+    }
+    void reserve(int32_t newCap)
+    {
+        if(newCap > capacity())
+        {
+            size_t bytes = sizeof(A) * newCap + sizeof(B) * newCap;
+            uint8_t* data = (uint8_t*)Allocator::Alloc(t_bucket, bytes);
+
+            Copy((A*)data, beginA(), count());
+            Copy((B*)(data + sizeof(A) * newCap), beginB(), count());
+
+            Allocator::Free(t_bucket, m_data);
+            m_data = data;
+            m_capacity = newCap;
+        }
+    }
+    void resize(int32_t newCount)
+    {
+        if(newCount > capacity())
+        {
+            reserve(newCount);
+        }
+        m_count = newCount;
+    }
+    void expand(int32_t step)
+    {
+        int32_t newCount = count() + step;
+        if(newCount > capacity())
+        {
+            if(newCount > capacity() * 2)
+            {
+                reserve(newCount);
+            }
+            else
+            {
+                reserve(capacity() * 2);
+            }
+        }
+    }
+    void grow()
+    {
+        if(count() == capacity())
+        {
+            reserve(capacity() ? capacity() * 2 : 16);
+        }
+        ++m_count;
+    }
+    void pop()
+    {
+        --m_count;
+    }
+    void remove(int32_t i)
+    {
+        getA(i) = backA();
+        getB(i) = backB();
+        --m_count;
+    }
+    void shiftRemove(int32_t i)
+    {
+        A* as = beginA();
+        B* bs = beginB();
+        for(int32_t j = i + 1; j < count(); ++j)
+        {
+            as[j - 1] = as[j];
+        }
+        for(int32_t j = i + 1; j < count(); ++j)
+        {
+            bs[j - 1] = bs[j];
+        }
+        pop();
+    }
+    int32_t findA(const A& x) const
+    {
+        const A* as = beginA();
+        for(int32_t i = 0; i < count(); ++i)
+        {
+            if(as[i] == x)
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+    int32_t findB(const B& x) const
+    {
+        const B* bs = beginB();
+        for(int32_t i = 0; i < count(); ++i)
+        {
+            if(bs[i] == x)
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+};
+
 template<typename T, int32_t m_capacity>
 struct FixedArray
 {
     T          m_data[m_capacity];
     int32_t    m_count;
 
-    FixedArray(){ memset(this, 0, sizeof(*this)); }
-    ~FixedArray() { reset(); }
-    FixedArray(const FixedArray& other)
-    {
-        memset(this, 0, sizeof(*this));
-        resize(other.count());
-        memcpy(begin(), other.begin(), bytes());
-    }
-    FixedArray(FixedArray&& other) noexcept
-    {
-        memcpy(this, &other, sizeof(*this));
-        memset(&other, 0, sizeof(*this));
-    }
-    FixedArray(const T* x, int32_t count)
-    {
-        Assert(count <= m_capacity);
-        for(int32_t i = 0; i < count; ++i)
-        {
-            m_data[i] = x[i];
-        }
-        m_count = count;
-    }
-    FixedArray& operator=(const FixedArray& other)
-    {
-        reset();
-        resize(other.count());
-        memcpy(begin(), other.begin(), bytes());
-        return *this;
-    }
-    FixedArray& operator=(FixedArray&& other) noexcept 
-    {
-        reset();
-        memcpy(this, &other, sizeof(*this));
-        memset(&other, 0, sizeof(*this));
-        return *this;
-    }
-    void assume(FixedArray& other)
-    {
-        reset();
-        memcpy(this, &other, sizeof(*this));
-        memset(&other, 0, sizeof(*this));
-    }
     inline int32_t capacity()   const { return m_capacity; }
     inline int32_t count()      const { return m_count; }
     inline bool full()          const { return count() == capacity(); }
@@ -326,7 +500,6 @@ struct FixedArray
     inline void reset()
     {
         clear();
-        memset(this, 0, sizeof(*this));
     }
     inline void remove(int32_t idx)
     {

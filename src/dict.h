@@ -2,66 +2,83 @@
 
 #include "array.h"
 
-template<typename K, typename V, uint64_t width, bool POD = true, AllocBucket t_bucket = AB_Default>
+template<typename K, typename V, uint64_t width, AllocBucket t_bucket = AB_Default>
 struct Dict
 {
-    Array<K, true, t_bucket>    m_keys[width];
-    Array<V, POD, t_bucket>     m_data[width];
-    uint32_t                    m_count = 0u;
+    typedef Array2<K, V, t_bucket> Lane;
 
+    Lane     m_lanes[width];
+    int32_t  m_count = 0u;
+
+    inline Lane& GetLane(K key)
+    {
+        return m_lanes[key % width];
+    }
+    inline const Lane& GetLane(K key) const
+    {
+        return m_lanes[key % width];
+    }
     inline void Insert(K key, const V& item)
     {
-        uint64_t slot = key % width;
-        int32_t idx = m_keys[slot].find(key);
+        Lane& lane = GetLane(key);
+        int32_t idx = lane.findA(key);
         if(idx == -1)
         {
-            m_data[slot].grow() = item;
-            m_keys[slot].grow() = key;
+            lane.grow();
+            lane.backA() = key;
+            lane.backB() = item;
             ++m_count;
         }
     }
     inline V* Get(K key)
     {
-        uint64_t slot = key % width;
-        int32_t idx = m_keys[slot].find(key);
-        return idx == -1 ? nullptr : &(m_data[slot][idx]);
+        Lane& lane = GetLane(key);
+        int32_t idx = lane.findA(key);
+        return idx == -1 ? nullptr : &(lane.getB(idx));
     }
     inline const V* Get(K key) const
     {
-        uint64_t slot = key % width;
-        int32_t idx = m_keys[slot].find(key);
-        return idx == -1 ? nullptr : &(m_data[slot][idx]);
+        const Lane& lane = GetLane(key);
+        int32_t idx = lane.findA(key);
+        return idx == -1 ? nullptr : &(lane.getB(idx));
     }
     inline void Remove(K key)
     {
-        uint64_t slot = key % width;
-        int32_t idx = m_keys[slot].find(key);
+        Lane& lane = GetLane(key);
+        int32_t idx = lane[slot].findA(key);
         if(idx != -1)
         {
-            m_data[slot].remove(idx);
-            m_keys[slot].remove(idx);
+            lane.remove(idx);
             --m_count;
         }
     }
-    inline uint32_t Count() const 
+    inline void Clear()
+    {
+        for(Lane& lane : m_lanes)
+        {
+            lane.clear();
+        }
+    }
+    inline void Reset()
+    {
+        for(Lane& lane : m_lanes)
+        {
+            lane.reset();
+        }
+    }
+    inline int32_t Count() const 
     {
         return m_count;
     }
 };
 
-template<typename K, typename V, uint64_t width, bool POD = true>
-using TempDict = Dict<K, V, width, POD, AB_Temp>;
-
-template<typename K, typename V, bool POD = true, AllocBucket t_bucket = AB_Default>
+template<typename K, typename V, AllocBucket t_bucket = AB_Default>
 struct Dict2
 {
-    struct Lane
-    {
-        Array<K, true, t_bucket> m_keys;
-        Array<V, POD,  t_bucket> m_data;
-    };
+    typedef Array2<K, V, t_bucket> Lane;
+
     Array<Lane, false, t_bucket> m_lanes;
-    uint32_t                     m_count = 0u;
+    int32_t                      m_count = 0u;
 
     inline bool NeedRehash() const 
     {
@@ -76,15 +93,22 @@ struct Dict2
         uint64_t slot = key % Width();
         return m_lanes[(int32_t)slot];
     }
+    inline const Lane& GetLane(K key) const
+    {
+        uint64_t slot = key % Width();
+        return m_lanes[(int32_t)slot];
+    }
     void Rehash(int32_t size)
     {
         Array<Lane, false, t_bucket> newLanes;
         newLanes.resize(size);
         for(Lane& lane : m_lanes)
         {
-            for(int32_t i = 0; i < lane.m_keys.count(); ++i)
+            K* keys = lane.beginA();
+            V* data = lane.beginB();
+            for(int32_t i = 0; i < lane.count(); ++i)
             {
-                Insert(newLanes, lane.m_keys[i], lane.m_data[i]);
+                Insert(newLanes, keys[i], data[i]);
             }
         }
         m_lanes.assume(newLanes);
@@ -93,8 +117,9 @@ struct Dict2
     {
         uint64_t slot = key % (uint64_t)lanes.count();
         Lane& lane = lanes[(int32_t)slot];
-        memcpy(&lane.m_data.grow(), &item, sizeof(V));
-        memset(&item, 0, sizeof(V));
+        lane.grow();
+        lane.backA() = key;
+        Assume(lane.backB(), item);
     }
     inline void Insert(K key, const V& item)
     {
@@ -104,10 +129,12 @@ struct Dict2
         }
 
         Lane& lane = GetLane(key);
-        int32_t idx = lane.m_keys.find(key);
+        int32_t idx = lane.findA(key);
         if(idx == -1)
         {
-            lane.m_data.grow() = item;
+            lane.grow();
+            lane.backA() = key;
+            lane.backB() = item;
             ++m_count;
         }
     }
@@ -124,31 +151,33 @@ struct Dict2
     inline V* Get(K key)
     {
         Lane& lane = GetLane(key);
-        int32_t idx = lane.m_keys.find(key);
-        return idx == -1 ? nullptr : &(lane.m_data[idx]);
+        int32_t idx = lane.findA(key);
+        return idx == -1 ? nullptr : &(lane.getB(idx));
     }
     inline const V* Get(K key) const
     {
-        Lane& lane = GetLane(key);
-        int32_t idx = lane.m_keys.find(key);
-        return idx == -1 ? nullptr : &(lane.m_data[idx]);
+        const Lane& lane = GetLane(key);
+        int32_t idx = lane.findA(key);
+        return idx == -1 ? nullptr : &(lane.getB(idx));
     }
     inline void Remove(K key)
     {
         Lane& lane = GetLane(key);
-        int32_t idx = lane.m_keys.find(key);
+        int32_t idx = lane.findA(key);
         if(idx != -1)
         {
-            lane.m_data.remove(idx);
-            lane.m_keys.remove(idx);
+            lane.remove(idx);
             --m_count;
         }
     }
-    inline uint32_t Count() const 
+    inline int32_t Count() const 
     {
         return m_count;
     }
 };
 
-template<typename K, typename V, bool POD = true>
-using TempDict2 = Dict2<K, V, POD, AB_Temp>;
+template<typename K, typename V, uint64_t width>
+using TempDict = Dict<K, V, width, AB_Temp>;
+
+template<typename K, typename V>
+using TempDict2 = Dict2<K, V, AB_Temp>;

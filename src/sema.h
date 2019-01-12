@@ -24,20 +24,26 @@ struct Semaphore
     std::condition_variable m_cvar;
     uint64_t                m_count = 0;
 
-    inline void Signal() 
+    inline void Signal(int32_t count = 1) 
     {
         LockGuard lock(m_mutex);
-        ++m_count;
-        m_cvar.notify_one();
+        for(int32_t i = 0; i < count; ++i)
+        {
+            ++m_count;
+            m_cvar.notify_one();
+        }
     }
-    inline void Wait() 
+    inline void Wait(int32_t count = 1) 
     {
         std::unique_lock<std::mutex> lock(m_mutex);
-        while(!m_count)
+        for(int32_t i = 0; i < count; ++i)
         {
-            m_cvar.wait(lock);
+            while(!m_count)
+            {
+                m_cvar.wait(lock);
+            }
+            --m_count;
         }
-        --m_count;
     }
     inline bool TryWait() 
     {

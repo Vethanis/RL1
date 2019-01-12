@@ -1,5 +1,8 @@
 
 #include "vertex.h"
+#include "dict.h"
+#include "fnv.h"
+
 
 void IndexVertices(
     const TempArray<Vertex>&    verts, 
@@ -10,23 +13,24 @@ void IndexVertices(
     indout.clear();
     indout.reserve(verts.count());
     out.reserve(verts.count() / 6);
+
+    TempDict2<uint64_t, int32_t> lookup;
+    lookup.Rehash(verts.count() / 64);
+
     for(const Vertex& v : verts)
     {
-        int32_t idx = -1;
-        for(int32_t i = out.count() - 1; i >= 0; --i)
+        uint64_t hash = Fnv64(&v, sizeof(Vertex));
+        int32_t* idx = lookup.Get(hash);
+        if(idx)
         {
-            if(DISTSQ(v.position, out[i].position) == 0.0f)
-            {
-                idx = i;
-                break;
-            }
+            indout.append() = *idx;
         }
-        if(idx == -1)
+        else
         {
-            idx = out.count();
+            lookup.Insert(hash, out.count());
+            indout.append() = out.count();
             out.grow() = v;
         }
-        indout.append() = idx;
     }
 }
 

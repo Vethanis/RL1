@@ -15,8 +15,7 @@ Semaphore       ms_finishBarrier;
 Array<Task>     ms_tasks[TT_Count];
 TaskType        ms_curtype;
 volatile bool   ms_running = false;
-bool            ms_working = false;
-int32_t         ms_granularity = 4;
+int32_t         ms_granularity = 16;
 
 // internal
 void Run(int32_t tid)
@@ -65,18 +64,15 @@ namespace TaskManager
     void Init()
     {
         ms_running = true;
-        for(int32_t tid = 0; tid < NumThreads; ++tid)
+        for(int32_t i = 0; i < NumThreads; ++i)
         {
-            ms_threads[tid] = std::thread(Run, tid);
+            ms_threads[i] = std::thread(Run, i);
         }
     }
     void Shutdown()
     {
         ms_running = false;
-        for(const std::thread& t : ms_threads)
-        {
-            ms_startBarrier.Signal();
-        }
+        ms_startBarrier.Signal(NumThreads);
         for(std::thread& t : ms_threads)
         {
             t.join();
@@ -85,21 +81,12 @@ namespace TaskManager
     void Start(TaskType space, int32_t granularity)
     {
         ms_curtype = space;
-        ms_working = true;
         ms_granularity = granularity;
-        for(const std::thread& t : ms_threads)
-        {
-            ms_startBarrier.Signal();
-        }
-        for(const std::thread& t : ms_threads)
-        {
-            ms_finishBarrier.Wait();
-        }
-        ms_working = false;
+        ms_startBarrier.Signal(NumThreads);
+        ms_finishBarrier.Wait(NumThreads);
     }
     void Add(TaskType space, const Task& task)
     {
-        Assert(!ms_working);
         ms_tasks[space].grow() = task;
     }
 };

@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include "linmath.h"
 #include "array.h"
+#include "dict.h"
 
 struct Vertex
 {
