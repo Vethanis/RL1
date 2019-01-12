@@ -45,7 +45,8 @@ namespace Renderer
     };
     struct Buffer
     {
-        uint32_t id;
+        uint32_t vbo;
+        uint32_t ebo;
         uint32_t count;
     };
     struct Texture

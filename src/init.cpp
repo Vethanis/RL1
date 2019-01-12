@@ -133,7 +133,7 @@ void Init()
         };
 
         TempArray<Vertex> pts;
-        CSGUtil::Evaluate(csgs, NELEM(csgs), pts, vec3(0.0f), 3.0f, 128);
+        CSGUtil::Evaluate(csgs, NELEM(csgs), pts, vec3(0.0f), 3.0f, 64);
 
         TempArray<Vertex> verts;
         TempArray<int32_t> inds;
@@ -176,7 +176,7 @@ void Init()
         };
 
         TempArray<Vertex> pts;
-        CSGUtil::Evaluate(csgs, NELEM(csgs), pts, vec3(0.0f), 3.0f, 128);
+        CSGUtil::Evaluate(csgs, NELEM(csgs), pts, vec3(0.0f), 3.0f, 64);
 
         TempArray<Vertex> verts;
         TempArray<int32_t> inds;
