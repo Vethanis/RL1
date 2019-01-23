@@ -715,8 +715,8 @@ struct ReservedWords : public Parser
             uint64_t hash = Fnv64(tok.start, tok.len);
             for(const Keyword& kw : ms_keywords)
             {
-                if( kw.len  == tok.len  && 
-                    kw.hash == hash     && 
+                if( kw.hash == hash     &&  
+                    kw.len  == tok.len  && 
                     memcmp(kw.lit, tok.start, tok.len) == 0)
                 {
                     tok.name = kw.name;
