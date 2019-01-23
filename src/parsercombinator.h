@@ -42,8 +42,7 @@ struct Scanner
     }
     void SkipWhitespace()
     {
-        const char* start = src;
-        const char* p = start;
+        const char* p = src;
 
         bool loop = true;
         while(loop)
@@ -201,11 +200,11 @@ struct Char : public Parser
         {
             return 0;
         }
-        const char* p = sc.src;
-        if(*p)
+        const char* start = sc.src;
+        if(*start)
         {
             ++sc.src;
-            return CreateToken(tokens, p, 1, TN_Char);
+            return CreateToken(tokens, start, 1, TN_Char);
         }
         return 0;
     }
@@ -222,17 +221,14 @@ struct String : public Parser
         }
         const char* start = sc.src;
         const char* p = start;
-        if(*p)
+        while(*p && !IsWhitespace(p))
         {
-            while(IsAlpha(p) || IsDigit(p))
-            {
-                ++p;
-            }
-            if(p != start)
-            {
-                sc.src = p;
-                return CreateToken(tokens, start, p - start, TN_String);
-            }
+            ++p;
+        }
+        if(p != start)
+        {
+            sc.src = p;
+            return CreateToken(tokens, start, p - start, TN_String);
         }
         return 0;
     }
@@ -249,7 +245,7 @@ struct Integral : public Parser
         }
         const char* start = sc.src;
         const char* x = sc.src;
-        while(*x >= '0' && *x <= '9')
+        while(IsDigit(x))
         {
             ++x;
         }
@@ -274,7 +270,7 @@ struct Float : public Parser
         }
         const char* start = sc.src;
         const char* x = sc.src;
-        while(*x >= '0' && *x <= '9')
+        while(IsDigit(x))
         {
             ++x;
         }
@@ -282,7 +278,7 @@ struct Float : public Parser
         {
             const char* dot = x;
             ++x;
-            while(*x >= '0' && *x <= '9')
+            while(IsDigit(x))
             {
                 ++x;
             }
@@ -321,7 +317,7 @@ struct Quote : public Parser
             }
             else 
             {
-                return -1;
+                return 0;
             }
             if(p != start)
             {
@@ -358,23 +354,24 @@ struct CharLiteral : public Parser
 struct StringLiteral : public Parser
 {
     const char* lit;
+    int32_t     len;
 
+    inline StringLiteral() {}
+    inline StringLiteral(const char* x)
+    {
+        lit = x;
+        len = strlen(x);
+    }
     inline int32_t Parse(Array<Token>& tokens, Scanner& sc) const final 
     {
+        sc.SkipWhitespace();
         const char* start = sc.src;
-        String p0;
-        int32_t count = p0.Parse(tokens, sc);
-        if(count)
+        if(strncmp(lit, start, len) == 0)
         {
-            int32_t len = strlen(lit);
-            if(len == tokens.back().len && 
-                memcmp(lit, tokens.back().start, len) == 0)
-            {
-                return count;
-            }
-            sc.src = start;
-            FreeTokens(tokens, count);
+            sc.src += len;
+            return CreateToken(tokens, start, len, TN_String);
         }
+        sc.src = start;
         return 0;
     }
 };
@@ -382,14 +379,12 @@ struct StringLiteral : public Parser
 struct Keyword : public Parser
 {
     const char* lit;
-    uint64_t    hash;
     int32_t     name;
     int32_t     len;
 
     Keyword(const char* x, int32_t y)
     {
         lit = x;
-        hash = Fnv64(x);
         name = y;
         len = strlen(lit);
     }
@@ -398,6 +393,7 @@ struct Keyword : public Parser
         const char* start = sc.src;
         StringLiteral p0;
         p0.lit = lit;
+        p0.len = len;
 
         int32_t count = p0.Parse(tokens, sc);
         if(count)
@@ -422,10 +418,11 @@ struct IntegralLiteral : public Parser
         int32_t count = p0.Parse(tokens, sc);
         if(count)
         {
-            int32_t value = atoi(tokens.back().start);
+            Token& tok = tokens.back();
+            int32_t value = atoi(tok.start);
             if(value == lit)
             {
-                tokens.back().name = TN_IntegralLiteral;
+                tok.name = TN_IntegralLiteral;
                 return count;
             }
             FreeTokens(tokens, count);
@@ -446,10 +443,11 @@ struct FloatLiteral : public Parser
         int32_t count = p0.Parse(tokens, sc);
         if(count)
         {
-            float value = (float)atof(tokens.back().start);
+            Token& tok = tokens.back();
+            float value = (float)atof(tok.start);
             if(value == lit)
             {
-                tokens.back().name = TN_FloatLiteral;
+                tok.name = TN_FloatLiteral;
                 return count;
             }
             FreeTokens(tokens, count);
@@ -511,9 +509,9 @@ struct And : public Parser
 struct Any : public Parser
 {
     const Parser*   parsers;
-    size_t          count;
+    int32_t         count;
 
-    inline Any(const Parser* a, size_t b)
+    inline Any(const Parser* a, int32_t b)
     {
         parsers = a;
         count = b;
@@ -521,7 +519,7 @@ struct Any : public Parser
     inline int32_t Parse(Array<Token>& tokens, Scanner& sc) const final
     {
         const char* start = sc.src;
-        for(size_t i = 0; i < count; ++i)
+        for(int32_t i = 0; i < count; ++i)
         {
             int32_t ct = parsers[i].Parse(tokens, sc);
             if(ct)
@@ -538,9 +536,9 @@ struct Any : public Parser
 struct All : public Parser
 {
     const Parser*   parsers;
-    size_t          count;
+    int32_t         count;
 
-    inline All(const Parser* a, size_t b)
+    inline All(const Parser* a, int32_t b)
     {
         parsers = a;
         count = b;
@@ -549,7 +547,7 @@ struct All : public Parser
     {
         const char* start = sc.src;
         int32_t ct = 0;
-        for(size_t i = 0; i < count; ++i)
+        for(int32_t i = 0; i < count; ++i)
         {
             int32_t cti = parsers[i].Parse(tokens, sc);
             if(cti)
@@ -706,27 +704,8 @@ struct ReservedWords : public Parser
 {
     inline int32_t Parse(Array<Token>& tokens, Scanner& sc) const final 
     {
-        const char* start = sc.src;
-        String str;
-        int32_t ct = str.Parse(tokens, sc);
-        if(ct == 1)
-        {
-            Token& tok = tokens.back();
-            uint64_t hash = Fnv64(tok.start, tok.len);
-            for(const Keyword& kw : ms_keywords)
-            {
-                if( kw.hash == hash     &&  
-                    kw.len  == tok.len  && 
-                    memcmp(kw.lit, tok.start, tok.len) == 0)
-                {
-                    tok.name = kw.name;
-                    return 1;
-                }
-            }
-        }
-        FreeTokens(tokens, ct);
-        sc.src = start;
-        return 0;
+        const Any any(ms_keywords, NELEM(ms_keywords));
+        return any.Parse(tokens, sc);
     }
 };
 
@@ -739,26 +718,31 @@ struct Identifier : public Parser
         {
             return 0;
         }
-        // all identifiers start with an alphabetical character
-        if(!IsAlpha(sc.src))
-        {
-            return 0;
-        }
 
         const ReservedWords rw;
-        const String str;
         int32_t ctrw = rw.Parse(tokens, sc);
         if(ctrw)
         {
             return ctrw;
         }
 
-        int32_t ctstr = str.Parse(tokens, sc);
-        if(ctstr)
+        const char* start = sc.src;
+        const char* p = start;
+        if(!IsAlpha(p))
         {
-            tokens.back().name = TN_Identifier;
+            return 0;
         }
-        return ctstr;
+        while(IsAlpha(p) || IsDigit(p) || *p == '_')
+        {
+            ++p;
+        }
+        if(p != start)
+        {
+            sc.src = p;
+            return CreateToken(tokens, start, p - start, TN_Identifier);
+        }
+
+        return 0;
     }
 };
 
