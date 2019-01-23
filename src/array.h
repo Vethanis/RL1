@@ -14,7 +14,7 @@ struct Array
     int32_t     m_count;
     int32_t     m_capacity;
 
-    Array()
+    inline Array()
     {
         MemZero(*this);
     }
@@ -23,7 +23,17 @@ struct Array
     {
         MemZero(*this);
         resize(ct);
-        Copy(begin(), x, ct);
+        if(!POD)
+        {
+            for(int32_t i = 0; i < count(); ++i)
+            {
+                m_data[i] = x[i];
+            }
+        }
+        else
+        {
+            Copy(begin(), x, ct);
+        }
     }
     Array(const Array& other)
     {
@@ -41,7 +51,7 @@ struct Array
             }
         }
     }
-    Array(Array&& other) noexcept
+    inline Array(Array&& other) noexcept
     {
         Assume(*this, other);
     }
@@ -62,13 +72,13 @@ struct Array
         }
         return *this;
     }
-    Array& operator=(Array&& other) noexcept 
+    inline Array& operator=(Array&& other) noexcept 
     {
         reset();
         Assume(*this, other);
         return *this;
     }
-    void assume(Array& other)
+    inline void assume(Array& other)
     {
         reset();
         Assume(*this, other);
@@ -80,8 +90,8 @@ struct Array
     inline size_t bytes()       const { return sizeof(T) * (size_t)count(); }
     inline T* begin()                 { return m_data; }
     inline const T* begin()     const { return m_data; }
-    inline T* end()                   { return m_data + m_count; }
-    inline const T* end()       const { return m_data + m_count; }
+    inline T* end()                   { return m_data + count(); }
+    inline const T* end()       const { return m_data + count(); }
     inline T& operator[](int32_t idx) { return m_data[idx]; }
     inline const T& operator[](int32_t idx) const { return m_data[idx]; }
     inline T& back()                  { return m_data[count() - 1u]; }
@@ -99,17 +109,11 @@ struct Array
     }
     inline void expand(int32_t step)
     {
-        const int32_t newCount = count() + step;
+        int32_t newCount = count() + step;
         if(newCount > capacity())
         {
-            int32_t newCap = capacity() * 2;
-            if(newCount > newCap)
-            {
-                newCap += step;
-            }
-            reserve(newCap);
+            reserve(Max(capacity() * 2, newCount));
         }
-        // dont update count, let user append
     }
     void resize(const int32_t new_size)
     {
@@ -132,10 +136,7 @@ struct Array
     }
     inline T& append()
     {
-        if(count() == capacity())
-        {
-            Assert(false);
-        }
+        Assert(count() != capacity());
         ++m_count;
         if(!POD)
         {
@@ -367,7 +368,7 @@ struct Array2
             m_capacity = newCap;
         }
     }
-    void resize(int32_t newCount)
+    inline void resize(int32_t newCount)
     {
         if(newCount > capacity())
         {
@@ -375,22 +376,15 @@ struct Array2
         }
         m_count = newCount;
     }
-    void expand(int32_t step)
+    inline void expand(int32_t step)
     {
         int32_t newCount = count() + step;
         if(newCount > capacity())
         {
-            if(newCount > capacity() * 2)
-            {
-                reserve(newCount);
-            }
-            else
-            {
-                reserve(capacity() * 2);
-            }
+            reserve(Max(capacity() * 2, newCount));
         }
     }
-    void grow()
+    inline void grow()
     {
         if(count() == capacity())
         {
@@ -398,11 +392,11 @@ struct Array2
         }
         ++m_count;
     }
-    void pop()
+    inline void pop()
     {
         --m_count;
     }
-    void remove(int32_t i)
+    inline void remove(int32_t i)
     {
         getA(i) = backA();
         getB(i) = backB();
@@ -467,7 +461,7 @@ struct FixedArray
     inline const T& operator[](int32_t idx) const { return m_data[idx]; }
     inline T& back()                  { return m_data[count() - 1u]; }
     inline const T& back()      const { return m_data[count() - 1u]; }
-    void resize(const int32_t new_size)
+    inline void resize(const int32_t new_size)
     {
         if(new_size > capacity())
         {

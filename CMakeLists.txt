@@ -15,6 +15,8 @@ add_subdirectory(glfw-master)
 add_subdirectory(bullet3-2.87)
 
 if(WIN32)
+    set(VK_LIBS
+        vulkan-1.lib)
     set(BULLET_LIBS 
         Bullet3Collision.lib
         Bullet3Common.lib
@@ -38,13 +40,13 @@ if(WIN32)
     set(CMAKE_CXX_FLAGS_DEBUG "/Od /MTd /Zi")
     set(CMAKE_CXX_FLAGS_RELEASE "/O2 /MT /arch:AVX2 /fp:fast")
     set(CMAKE_CXX_FLAGS "/W3 /MP /GR-")
-    include_directories(${CMAKE_SOURCE_DIR}/include)
+    include_directories(${CMAKE_SOURCE_DIR}/include "C:/VulkanSDK/Include/")
 
-    set(PROJECT_LINK_LIBS OpenGL32 glfw ${BULLET_LIBS} )
-    link_directories(${CMAKE_SOURCE_DIR}/build/lib/Release/ )
+    set(PROJECT_LINK_LIBS OpenGL32 glfw ${BULLET_LIBS} ${VK_LIBS})
+    link_directories(${CMAKE_SOURCE_DIR}/build/lib/Release/ "C:/VulkanSDK/Lib/")
 
     if(0)
-        set(PROJECT_LINK_LIBS OpenGL32 glfw ${BULLET_DEBUG_LIBS} )
+        set(PROJECT_LINK_LIBS OpenGL32 glfw ${BULLET_DEBUG_LIBS} ${VK_LIBS})
         link_directories(${CMAKE_SOURCE_DIR}/build/lib/Debug/ )
     endif()
 

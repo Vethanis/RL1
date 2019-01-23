@@ -28,6 +28,8 @@ Textured::FSUniform fsuni =
 Flat::VSUniform flatvsuni;
 Flat::FSUniform flatfsuni;
 float debugOrthoScale = 5.0f;
+static int32_t frameNo = 0;
+Camera bgCam;
 
 static const vec4 debugViewports[] = 
 {
@@ -89,8 +91,19 @@ inline void DrawFlat(const RenderComponent* rc)
     }
 }
 
+void FirstDraw()
+{
+
+}
+
 void Draw()
 {
+    if(frameNo == 0)
+    {
+        FirstDraw();
+    }
+    ++frameNo;
+
     Camera* cam = Camera::GetActive();
     VP = cam->update();
 
@@ -138,16 +151,18 @@ void Draw()
                 }
             }
         }
-        Renderer::DrawBackground(cam->P, cam->V);
+        Renderer::DrawBackground();
     }
     else 
     {
         mat4 perspective = glm::ortho(-debugOrthoScale, debugOrthoScale, -debugOrthoScale, debugOrthoScale, -10.0f, 10.0f);
+        bgCam.P = perspective;
         for(int32_t i = 0; i < 4; ++i)
         {
             Renderer::SetViewport(debugViewports[i]);
             mat4 view = glm::lookAt(cam->m_eye, cam->m_eye - debugOrthoScale * debugDirs[i], debugUps[i]);
             VP = perspective * view;
+            bgCam.V = view;
             for(const slot* s = Components::begin(); s != Components::end(); ++s)
             {
                 if(const RenderComponent* rc = Components::Get<RenderComponent>(*s))
@@ -163,7 +178,8 @@ void Draw()
                     }
                 }
             }
-            Renderer::DrawBackground(glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 100.0f), view);
+            PushCamera pushCam(&bgCam);
+            Renderer::DrawBackground();
         }
     }
 

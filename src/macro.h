@@ -6,10 +6,6 @@
 #define MAX_PATH_LEN    256
 
 #define NELEM(x) ( sizeof(x) / (sizeof((x)[0])) )
-#define Min(a, b) ( (a) < (b) ? (a) : (b) )
-#define Max(a, b) ( (a) > (b) ? (a) : (b) )
-#define Clamp(x, lo, hi) ( Min(hi, Max(lo, x)) )
-#define Lerp(a, b, i) ( (a) + (i) * ((b) - (a)) )
 
 #if PLM_ENABLE
     #include <stdio.h>
@@ -56,6 +52,30 @@
 
 #include <string.h>
 #include <stdarg.h>
+
+template<typename T>
+inline T Min(T a, T b)
+{
+    return a < b ? a : b;
+}
+
+template<typename T>
+inline T Max(T a, T b)
+{
+    return a > b ? a : b;
+}
+
+template<typename T>
+inline T Clamp(T x, T lo, T hi)
+{
+    return Min(hi, Max(lo, x));
+}
+
+template<typename T>
+inline T Lerp(T a, T b, T i)
+{
+    return a + i * (b - a);
+}
 
 template<typename T>
 inline void MemZero(T& x)

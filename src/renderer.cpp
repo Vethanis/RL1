@@ -422,11 +422,12 @@ void Renderer::Begin()
     glBindTexture(GL_TEXTURE_2D, ms_brdfLUT); DebugGL();
 }
 
-void Renderer::DrawBackground(const mat4& projection, const mat4& view)
+void Renderer::DrawBackground()
 {
+    const Camera* cam = Camera::GetActive();
     backgroundShader.Use();
-    backgroundShader.SetMat4("projection", projection);
-    backgroundShader.SetMat4("view", view);
+    backgroundShader.SetMat4("projection", cam->P);
+    backgroundShader.SetMat4("view", cam->V);
     glActiveTexture(GL_TEXTURE0 + 0); DebugGL();
     glBindTexture(GL_TEXTURE_CUBE_MAP, ms_envmap.m_environmentMap); DebugGL();
     //glBindTexture(GL_TEXTURE_CUBE_MAP, ms_envmap.m_irradianceMap); // display irradiance map

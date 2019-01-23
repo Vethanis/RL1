@@ -5,7 +5,7 @@
 #include "shaders/textured.h"
 #include "shaders/flat.h"
 
-namespace Renderer
+namespace VkRenderer
 {
     enum BufferType
     {
@@ -45,21 +45,18 @@ namespace Renderer
     };
     struct Buffer
     {
-        uint32_t vbo;
-        uint32_t ebo;
-        uint32_t count;
+        int32_t     id;
+        int32_t     count;
     };
     struct Texture
     {
-        uint32_t id;
+        int32_t     id;
     };
     struct BufferDesc
     {
-        void*           vertexData;
-        void*           indexData;
-        uint32_t        vertexBytes;
-        uint32_t        indexBytes;
-        uint32_t        elementCount;
+        void*           data;
+        uint32_t        bytes;
+        uint32_t        stride;
     };
     struct TextureDesc
     {
@@ -79,7 +76,7 @@ namespace Renderer
     void Begin();
     void End();
     void SetViewport(const vec4& viewport);
-    void DrawBackground();
+    void DrawBackground(const mat4& projection, const mat4& view);
     void DrawTextured(
         Buffer      buffer,
         Texture     mat,

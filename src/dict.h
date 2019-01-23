@@ -82,7 +82,7 @@ struct Dict2
 
     inline bool NeedRehash() const 
     {
-        return (m_lanes.count() == 0) || (m_count / 8 > m_lanes.count());
+        return (m_lanes.count() == 0) || (m_count / 16 > m_lanes.count());
     }
     inline uint64_t Width() const 
     {

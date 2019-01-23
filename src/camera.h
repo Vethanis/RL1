@@ -93,3 +93,19 @@ struct Camera
     static Camera* GetActive();
     static void SetActive(Camera* cam);
 };
+
+struct PushCamera
+{
+    Camera* prev;
+
+    inline PushCamera(Camera* toPush)
+    {
+        prev = Camera::GetActive();
+        Camera::SetActive(toPush);
+    }
+    ~PushCamera()
+    {
+        Camera::SetActive(prev);
+    }
+};
+
