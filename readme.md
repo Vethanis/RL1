@@ -3,7 +3,7 @@
 A toy engine for testing and implementing engine and rendering techniques.
 
 ## **Video**
-[![](https://i.imgur.com/M9HMRA9.png)](https://vimeo.com/313102703)
+[![](https://i.imgur.com/d03TeoN.png)](https://vimeo.com/313102703)
 
 ## **Details**
 
