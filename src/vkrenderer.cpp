@@ -44,7 +44,7 @@ namespace VkRenderer
     }
     Buffer CreateBuffer(const BufferDesc& desc)
     {
-        
+        return Buffer();
     }
     void DestroyBuffer(Buffer buffer)
     {
@@ -52,7 +52,7 @@ namespace VkRenderer
     }
     Texture CreateTexture(const TextureDesc& desc)
     {
-        
+        return Texture();
     }
     void DestroyTexture(Texture texture)
     {
