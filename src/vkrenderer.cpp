@@ -14,10 +14,7 @@
 #define CheckResult(expr) \
 { \
     VkResult res = (expr); \
-    if(res != VK_SUCCESS) \
-    { \
-        Assert(false); \
-    } \
+    Assert(res == VK_SUCCESS); \
 }
 
 enum QueueType
@@ -239,6 +236,9 @@ namespace VkRenderer
     {
         support.formats.clear();
         support.modes.clear();
+
+        CheckResult(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
+            pdev, ms_surface, &support.capabilities));
 
         {
             uint32_t count = 0;
