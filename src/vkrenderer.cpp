@@ -54,9 +54,8 @@ namespace VkRenderer
     static VkSurfaceKHR                     ms_surface;
     static VkSurfaceCapabilitiesKHR         ms_surfaceCaps;
     static VkSurfaceFormatKHR               ms_surfaceFormat;
-    static VkPresentModeKHR                 ms_presentMode;
     static VkExtent2D                       ms_surfaceExtent;
-    static uint32_t                         ms_swapImageCount;
+    static VkPresentModeKHR                 ms_presentMode;
 
     static const VkSurfaceFormatKHR         preferredSwapFormats[] = 
     {
@@ -451,7 +450,7 @@ namespace VkRenderer
         VkDeviceCreateInfo dci;
         MemZero(dci);
         dci.pQueueCreateInfos = qcis;
-        dci.queueCreateInfoCount = 1;
+        dci.queueCreateInfoCount = NELEM(qcis);
         dci.pEnabledFeatures = &pdevFeats;
         dci.enabledExtensionCount = ms_devExtNames.count();
         dci.ppEnabledExtensionNames = ms_devExtNames.begin();
@@ -477,7 +476,7 @@ namespace VkRenderer
         CheckResult(glfwCreateWindowSurface(
             ms_inst, 
             Window::GetActive(), 
-            0, 
+            nullptr, 
             &ms_surface));
     }
     void CreateSwapchain()
@@ -488,17 +487,19 @@ namespace VkRenderer
         ms_surfaceFormat    = ChooseSwapFormat(scSupport);
         ms_surfaceExtent    = ChooseSwapExtent(scSupport);
         ms_presentMode      = ChoosePresentMode(scSupport);
-        ms_swapImageCount   = scSupport.capabilities.minImageCount + 1;
+        uint32_t imgCount   = scSupport.capabilities.minImageCount + 1;
         if(scSupport.capabilities.maxImageCount != 0)
         {
-            Assert(ms_swapImageCount <= scSupport.capabilities.maxImageCount);
+            Assert(imgCount <= scSupport.capabilities.maxImageCount);
         }
+        Assert(ms_surfaceExtent.width != 0);
+        Assert(ms_surfaceExtent.height != 0);
 
         VkSwapchainCreateInfoKHR sci;
         MemZero(sci);
         sci.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
         sci.surface             = ms_surface;
-        sci.minImageCount       = ms_swapImageCount;
+        sci.minImageCount       = imgCount;
         sci.imageFormat         = ms_surfaceFormat.format;
         sci.imageColorSpace     = ms_surfaceFormat.colorSpace;
         sci.imageExtent         = ms_surfaceExtent;
@@ -525,10 +526,10 @@ namespace VkRenderer
         CheckResult(vkCreateSwapchainKHR(ms_dev, &sci, nullptr, &ms_swapchain));
 
         CheckResult(vkGetSwapchainImagesKHR(
-            ms_dev, ms_swapchain, &ms_swapImageCount, nullptr));
-        ms_swapImages.resize(ms_swapImageCount);
+            ms_dev, ms_swapchain, &imgCount, nullptr));
+        ms_swapImages.resize(imgCount);
         CheckResult(vkGetSwapchainImagesKHR(
-            ms_dev, ms_swapchain, &ms_swapImageCount, ms_swapImages.begin()));
+            ms_dev, ms_swapchain, &imgCount, ms_swapImages.begin()));
     }
     void Shutdown()
     {
