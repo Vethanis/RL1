@@ -82,7 +82,7 @@ struct BlockAlloc
     int32_t         m_blockSize;
 
     template<typename T>
-    void Init(int32_t blockSize = 8)
+    void Init(int32_t blockSize = 64)
     {
         m_itemSize = sizeof(T);
         m_blockSize = blockSize;

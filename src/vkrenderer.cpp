@@ -50,6 +50,7 @@ namespace VkRenderer
     static VmaAllocator                     ms_allocator;
 
     static FixedArray<VkImage, 4>           ms_swapImages;
+    static FixedArray<VkImageView, 4>       ms_swapViews;
     static VkSwapchainKHR                   ms_swapchain;
     static VkSurfaceKHR                     ms_surface;
     static VkSurfaceCapabilitiesKHR         ms_surfaceCaps;
@@ -487,11 +488,12 @@ namespace VkRenderer
         ms_surfaceFormat    = ChooseSwapFormat(scSupport);
         ms_surfaceExtent    = ChooseSwapExtent(scSupport);
         ms_presentMode      = ChoosePresentMode(scSupport);
-        uint32_t imgCount   = scSupport.capabilities.minImageCount + 1;
+        uint32_t imgCount   = 3;
         if(scSupport.capabilities.maxImageCount != 0)
         {
             Assert(imgCount <= scSupport.capabilities.maxImageCount);
         }
+        Assert(imgCount >= scSupport.capabilities.minImageCount);
         Assert(ms_surfaceExtent.width != 0);
         Assert(ms_surfaceExtent.height != 0);
 
@@ -530,9 +532,32 @@ namespace VkRenderer
         ms_swapImages.resize(imgCount);
         CheckResult(vkGetSwapchainImagesKHR(
             ms_dev, ms_swapchain, &imgCount, ms_swapImages.begin()));
+
+        ms_swapViews.resize(ms_swapImages.count());
+
+        VkImageViewCreateInfo ivi;
+        MemZero(ivi);
+        ivi.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        ivi.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        ivi.format = ms_surfaceFormat.format;
+        ivi.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        ivi.subresourceRange.baseMipLevel = 0;
+        ivi.subresourceRange.levelCount = 1;
+        ivi.subresourceRange.baseArrayLayer = 0;
+        ivi.subresourceRange.layerCount = 1;
+
+        for(int32_t i = 0; i < ms_swapViews.count(); ++i)
+        {
+            ivi.image = ms_swapImages[i];
+            CheckResult(vkCreateImageView(ms_dev, &ivi, nullptr, &ms_swapViews[i]));
+        }
     }
     void Shutdown()
     {
+        for(VkImageView view : ms_swapViews)
+        {
+            vkDestroyImageView(ms_dev, view, 0);
+        }
         vkDestroySwapchainKHR(ms_dev, ms_swapchain, 0);
         vkDestroyDevice(ms_dev, 0);
         vkDestroySurfaceKHR(ms_inst, ms_surface, 0);
