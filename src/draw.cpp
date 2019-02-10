@@ -56,40 +56,30 @@ static const vec3 debugUps[] =
 
 inline void DrawTextured(const RenderComponent* rc)
 {
-    const Renderer::Buffer*     buf         = Buffers::Get(rc->m_buffer);
-    const Renderer::Texture*    material    = Images::Get(rc->m_material);
-    const Renderer::Texture*    normal      = Images::Get(rc->m_normal);
-
-    if(!buf || !material || !normal)
-    {
-        return;
-    }
-
     vsuni.MVP   = VP * rc->m_matrix;
     vsuni.M     = rc->m_matrix;
     fsuni.Seed  = Randf();
 
-    GL_ONLY(Renderer::DrawTextured(
-        *buf, 
-        *material, 
-        *normal, 
+    Renderer::DrawTextured(
+        rc->m_vertices,
+        rc->m_indices, 
+        rc->m_material, 
+        rc->m_normal, 
         vsuni, 
-        fsuni));
+        fsuni);
 }
 
 inline void DrawFlat(const RenderComponent* rc)
 {
-    if(const Renderer::Buffer* buf = Buffers::Get(rc->m_buffer))
-    {
-        flatvsuni.MVP   = VP * rc->m_matrix;
-        flatvsuni.M     = rc->m_matrix;
-        flatfsuni.Seed  = Randf();
+    flatvsuni.MVP   = VP * rc->m_matrix;
+    flatvsuni.M     = rc->m_matrix;
+    flatfsuni.Seed  = Randf();
 
-        GL_ONLY(Renderer::DrawFlat(
-            *buf,
-            flatvsuni, 
-            flatfsuni));
-    }
+    Renderer::DrawFlat(
+        rc->m_vertices,
+        rc->m_indices,
+        flatvsuni, 
+        flatfsuni);
 }
 
 void FirstDraw()
@@ -134,8 +124,7 @@ void Draw()
     flatfsuni.Metalness = fsuni.MetalnessOffset;
     flatfsuni.Roughness = fsuni.RoughnessOffset;
 
-    GL_ONLY(Renderer::Begin());
-    VK_ONLY(VkRenderer::Begin());
+    Renderer::Begin();
     if(true)
     {
         for(const slot* s = Components::begin(); s != Components::end(); ++s)
@@ -161,8 +150,7 @@ void Draw()
         bgCam.P = perspective;
         for(int32_t i = 0; i < 4; ++i)
         {
-            GL_ONLY(Renderer::SetViewport(debugViewports[i]));
-            VK_ONLY(VkRenderer::SetViewport(debugViewports[i]));
+            Renderer::SetViewport(debugViewports[i]);
             mat4 view = glm::lookAt(cam->m_eye, cam->m_eye - debugOrthoScale * debugDirs[i], debugUps[i]);
             VP = perspective * view;
             bgCam.V = view;

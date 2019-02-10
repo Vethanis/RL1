@@ -2,6 +2,7 @@
 
 #include "component.h"
 #include "linmath.h"
+#include "renderer.h"
 
 enum PipelineType
 {
@@ -12,11 +13,12 @@ enum PipelineType
 
 struct RenderComponent
 {
-    mat4            m_matrix;
-    PipelineType    m_type;
-    slot            m_buffer;
-    slot            m_normal;
-    slot            m_material;
+    mat4                m_matrix;
+    PipelineType        m_type;
+    Renderer::Buffer    m_vertices;
+    Renderer::Buffer    m_indices;
+    Renderer::Texture   m_material;
+    Renderer::Texture   m_normal;
 
     static const ComponentType ms_type = CT_Render;
 };

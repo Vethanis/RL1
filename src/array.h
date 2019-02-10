@@ -137,7 +137,7 @@ struct Array
     }
     inline T& append()
     {
-        Assert(count() != capacity());
+        Assert(count() < capacity());
         ++m_count;
         if(!POD)
         {
@@ -496,18 +496,12 @@ struct FixedArray
     inline const T& back()      const { return m_data[count() - 1u]; }
     inline void resize(const int32_t new_size)
     {
-        if(new_size > capacity())
-        {
-            Assert(false);
-        }
+        Assert(new_size <= capacity());
         m_count = new_size;
     }
     inline T& append()
     {
-        if(count() == capacity())
-        {
-            Assert(false);
-        }
+        Assert(count() < capacity());
         ++m_count;
         return back();
     }

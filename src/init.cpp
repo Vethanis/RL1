@@ -46,11 +46,10 @@ void Init()
     TaskManager::Init();
     Physics::Init();
 
-    GL_ONLY(Renderer::Init());
-    VK_ONLY(VkRenderer::Init());
+    Renderer::Init();
 
-    slot material;// = Images::Create("bumpy_PRMA");
-    slot normal;// = Images::Create("bumpy_normal");
+    Renderer::Texture material;
+    Renderer::Texture normal;
 
     {
         TempArray<vec4> heights;
@@ -90,19 +89,21 @@ void Init()
                 normals[x + y * width] = 0.5f * vec4(N, 0.0f) + 0.5f;
             }
         }
-        Renderer::TextureDesc desc = {0};
-        desc.data = heights.begin();
-        desc.format = Renderer::RGBA16F;
-        desc.height = height;
-        desc.layers = 1;
-        desc.type = Renderer::Texture2D;
-        desc.width = width;
-        desc.magFilter = Renderer::Linear;
-        desc.minFilter = Renderer::LinearMipmap;
-        desc.wrapType = Renderer::Repeat;
-        material = Images::Create(desc);
-        desc.data = normals.begin();
-        normal = Images::Create(desc);
+
+        Renderer::TextureDesc desc;
+        MemZero(desc);
+        desc.data       = heights.begin();
+        desc.format     = Renderer::RGBA16F;
+        desc.height     = height;
+        desc.layers     = 1;
+        desc.type       = Renderer::Texture2D;
+        desc.width      = width;
+        desc.magFilter  = Renderer::Linear;
+        desc.minFilter  = Renderer::LinearMipmap;
+        desc.wrapType   = Renderer::Repeat;
+        material        = Renderer::CreateTexture(desc);
+        desc.data       = normals.begin();
+        normal          = Renderer::CreateTexture(desc);
     }
 
     {
@@ -144,20 +145,25 @@ void Init()
         TempArray<int32_t> inds;
         IndexVertices(pts, verts, inds);
 
-        Renderer::BufferDesc desc;
-        desc.vertexData     = verts.begin();
-        desc.vertexBytes    = verts.bytes();
-        desc.indexData      = inds.begin();
-        desc.indexBytes     = inds.bytes();
-        desc.elementCount   = inds.count();
+        Renderer::BufferDesc descs[2];
+        MemZero(descs);
+        descs[0].data       = verts.begin();
+        descs[0].count      = verts.count();
+        descs[0].stride     = sizeof(verts[0]);
+        descs[0].type       = Renderer::Vertices;
+        descs[1].data       = inds.begin();
+        descs[1].count      = inds.count();
+        descs[1].stride     = sizeof(inds[0]);
+        descs[0].type       = Renderer::Indices;
 
         rc->m_type      = PT_Textured;
-        rc->m_buffer    = Buffers::Create(desc);
+        rc->m_vertices  = Renderer::CreateBuffer(descs[0]);
+        rc->m_indices   = Renderer::CreateBuffer(descs[1]);
         rc->m_material  = material;
         rc->m_normal    = normal;
         rc->m_matrix    = mat4(1.0f);
     }
-    
+
     {
         slot ent = Components::Create();
         RenderComponent* rc = Components::GetAdd<RenderComponent>(ent);
@@ -187,17 +193,20 @@ void Init()
         TempArray<int32_t> inds;
         IndexVertices(pts, verts, inds);
 
-        Renderer::BufferDesc desc;
-        desc.vertexData     = verts.begin();
-        desc.vertexBytes    = verts.bytes();
-        desc.indexData      = inds.begin();
-        desc.indexBytes     = inds.bytes();
-        desc.elementCount   = inds.count();
+        Renderer::BufferDesc descs[2];
+        MemZero(descs);
+        descs[0].data       = verts.begin();
+        descs[0].count      = verts.count();
+        descs[0].stride     = sizeof(verts[0]);
+        descs[0].type       = Renderer::Vertices;
+        descs[1].data       = inds.begin();
+        descs[1].count      = inds.count();
+        descs[1].stride     = sizeof(inds[0]);
+        descs[0].type       = Renderer::Indices;
 
         rc->m_type      = PT_Flat;
-        rc->m_buffer    = Buffers::Create(desc);
-        //rc->m_material  = material;
-        //rc->m_normal    = normal;
+        rc->m_vertices  = Renderer::CreateBuffer(descs[0]);
+        rc->m_indices   = Renderer::CreateBuffer(descs[1]);
         rc->m_matrix    = glm::translate(mat4(1.0f), vec3(5.0f, 0.0f, 0.0f));
     }
 }

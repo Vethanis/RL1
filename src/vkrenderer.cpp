@@ -52,6 +52,7 @@ namespace VkRenderer
     static VkPhysicalDeviceMemoryProperties ms_memprops;
     static VmaAllocator                     ms_allocator;
 
+    static FixedArray<VkImage, 4>           ms_swapImages;
     static VkSwapchainKHR                   ms_swapchain;
     static VkSurfaceKHR                     ms_surface;
     static VkSurfaceCapabilitiesKHR         ms_surfaceCaps;
@@ -522,6 +523,12 @@ namespace VkRenderer
         }
 
         CheckResult(vkCreateSwapchainKHR(ms_dev, &sci, nullptr, &ms_swapchain));
+
+        CheckResult(vkGetSwapchainImagesKHR(
+            ms_dev, ms_swapchain, &ms_swapImageCount, nullptr));
+        ms_swapImages.resize(ms_swapImageCount);
+        CheckResult(vkGetSwapchainImagesKHR(
+            ms_dev, ms_swapchain, &ms_swapImageCount, ms_swapImages.begin()));
     }
     void Shutdown()
     {
@@ -576,7 +583,7 @@ namespace VkRenderer
     }
     void DestroyBuffer(Renderer::Buffer buffer)
     {
-        
+
     }
     Renderer::Texture CreateTexture(const Renderer::TextureDesc& desc)
     {
