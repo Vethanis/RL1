@@ -88,11 +88,11 @@ namespace Control
         glfwPollEvents();
 
         {
-            GLFWwindow* window = Window::GetActive()->m_window;
+            GLFWwindow* window = Window::GetActive();
             int32_t width, height;
-            glfwGetWindowSize(window, &width, &height);
             double x, y;
-            glfwGetCursorPos(window, &x, &y);
+            Window::GetSize(window, width, height);
+            Window::GetCursorPos(window, x, y);
             x /= (double)width;
             y /= (double)height;
             x = x * 2.0 - 1.0;
@@ -133,17 +133,9 @@ namespace Control
 
     void SetCursorHidden(bool hidden)
     {
-        ms_cursorHidden = hidden;            
+        ms_cursorHidden = hidden;
         ms_skipCursorUpdate = true;
-        GLFWwindow* window = Window::GetActive()->m_window;
-        if(ms_cursorHidden)
-        {
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        }
-        else
-        {
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        }
+        Window::SetCursorHidden(Window::GetActive(), ms_cursorHidden);
     }
     bool IsCursorHidden()
     {
@@ -152,8 +144,7 @@ namespace Control
 
     void CloseMainWindow()
     {
-        GLFWwindow* window = Window::GetActive()->m_window;
-        glfwSetWindowShouldClose(window, true);
+        Window::SetShouldClose(Window::GetActive(), true);
     }
 
     uint8_t EvalLogic(uint8_t cur, uint8_t next, ButtonLogic logic)

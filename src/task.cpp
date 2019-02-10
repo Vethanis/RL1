@@ -7,15 +7,15 @@
 
 constexpr int32_t NumThreads = 16;
 
-std::thread     ms_threads[NumThreads];
-Array<Task>     ms_queues[NumThreads];
-std::mutex      ms_lock;
-Semaphore       ms_startBarrier;
-Semaphore       ms_finishBarrier;
-Array<Task>     ms_tasks[TT_Count];
-TaskType        ms_curtype;
-volatile bool   ms_running = false;
-int32_t         ms_granularity = 16;
+static std::thread     ms_threads[NumThreads];
+static Array<Task>     ms_queues[NumThreads];
+static std::mutex      ms_lock;
+static Semaphore       ms_startBarrier;
+static Semaphore       ms_finishBarrier;
+static Array<Task>     ms_tasks[TT_Count];
+static TaskType        ms_curtype;
+static volatile bool   ms_running = false;
+static int32_t         ms_granularity = 16;
 
 // internal
 void Run(int32_t tid)

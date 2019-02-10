@@ -9,11 +9,12 @@
 #include "window.h"
 #include "prng.h"
 #include "renderer.h"
+#include "vkrenderer.h"
 #include "imgui.h"
 
-mat4                VP;
-Textured::VSUniform vsuni;
-Textured::FSUniform fsuni = 
+static mat4                VP;
+static Textured::VSUniform vsuni;
+static Textured::FSUniform fsuni = 
 {
     vec3(0.0f),
     glm::normalize(vec3(1.0f)),
@@ -25,11 +26,11 @@ Textured::FSUniform fsuni =
     0.2f,
     0.0f
 };
-Flat::VSUniform flatvsuni;
-Flat::FSUniform flatfsuni;
-float debugOrthoScale = 5.0f;
+static Flat::VSUniform flatvsuni;
+static Flat::FSUniform flatfsuni;
+static float debugOrthoScale = 5.0f;
 static int32_t frameNo = 0;
-Camera bgCam;
+static Camera bgCam;
 
 static const vec4 debugViewports[] = 
 {
@@ -68,12 +69,12 @@ inline void DrawTextured(const RenderComponent* rc)
     vsuni.M     = rc->m_matrix;
     fsuni.Seed  = Randf();
 
-    Renderer::DrawTextured(
+    GL_ONLY(Renderer::DrawTextured(
         *buf, 
         *material, 
         *normal, 
         vsuni, 
-        fsuni);
+        fsuni));
 }
 
 inline void DrawFlat(const RenderComponent* rc)
@@ -84,10 +85,10 @@ inline void DrawFlat(const RenderComponent* rc)
         flatvsuni.M     = rc->m_matrix;
         flatfsuni.Seed  = Randf();
 
-        Renderer::DrawFlat(
+        GL_ONLY(Renderer::DrawFlat(
             *buf,
             flatvsuni, 
-            flatfsuni);
+            flatfsuni));
     }
 }
 
@@ -133,8 +134,9 @@ void Draw()
     flatfsuni.Metalness = fsuni.MetalnessOffset;
     flatfsuni.Roughness = fsuni.RoughnessOffset;
 
-    Renderer::Begin();
-    if(1)
+    GL_ONLY(Renderer::Begin());
+    VK_ONLY(VkRenderer::Begin());
+    if(true)
     {
         for(const slot* s = Components::begin(); s != Components::end(); ++s)
         {
@@ -159,7 +161,8 @@ void Draw()
         bgCam.P = perspective;
         for(int32_t i = 0; i < 4; ++i)
         {
-            Renderer::SetViewport(debugViewports[i]);
+            GL_ONLY(Renderer::SetViewport(debugViewports[i]));
+            VK_ONLY(VkRenderer::SetViewport(debugViewports[i]));
             mat4 view = glm::lookAt(cam->m_eye, cam->m_eye - debugOrthoScale * debugDirs[i], debugUps[i]);
             VP = perspective * view;
             bgCam.V = view;

@@ -4,22 +4,31 @@
 
 struct GLFWwindow;
 
-struct Window
+namespace Window
 {
-    GLFWwindow* m_window;
-    int32_t     m_width;
-    int32_t     m_height;
-    float       m_dt;
-    float       m_cx;
-    float       m_cy;
-    float       m_dcx;
-    float       m_dcy;
+    GLFWwindow* Init(const char* title, bool fullscreen);
+    void Shutdown(GLFWwindow* window);
+    bool IsOpen(GLFWwindow* window);
+    void SetShouldClose(GLFWwindow* window, bool close);
+    void Swap(GLFWwindow* window);
+    void GetSize(GLFWwindow* window, int32_t& width, int32_t& height);
+    void GetCursorPos(GLFWwindow* window, double& xpos, double& ypos);
+    void SetCursorHidden(GLFWwindow* window, bool hidden);
+    GLFWwindow* GetActive();
+    void SetActive(GLFWwindow* window);
+};
 
-    void Init(const char* title, bool fullscreen);
-    void Shutdown();
-    bool Open();
-    void Swap();
-
-    static Window* GetActive();
-    static void SetActive(Window* window);
+struct PushWindow
+{
+    GLFWwindow* prev;
+    
+    inline PushWindow(GLFWwindow* toPush)
+    {
+        prev = Window::GetActive();
+        Window::SetActive(toPush);
+    }
+    ~PushWindow()
+    {
+        Window::SetActive(prev);
+    }
 };

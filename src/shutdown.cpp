@@ -15,5 +15,5 @@ void Shutdown()
     UI::Shutdown();
     Control::Shutdown();
     Renderer::Shutdown();
-    Window::GetActive()->Shutdown();
+    Window::Shutdown(Window::GetActive());
 }

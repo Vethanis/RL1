@@ -17,17 +17,17 @@ struct Camera
     float   m_yaw;
     float   m_pitch;
 
-    void Init(
-        int width,
-        int height, 
+    inline void Init(
+        int32_t width,
+        int32_t height, 
         float yaw = -90.0f,
         float pitch = 0.0f,
         float fov=60.0f, 
         float near=0.1f, 
         float far=100.0f)
     {
-        P = mat4();
-        V = mat4();
+        P = mat4(1.0f);
+        V = mat4(1.0f);
         m_eye = vec3(0.0f);
         m_at = vec3(0.0f, 0.0f, -1.0f);
         m_fov = fov;
@@ -38,7 +38,7 @@ struct Camera
         m_pitch = pitch;
         update();
     }
-    void updateP()
+    inline void updateP()
     {
         P = glm::perspective(
             glm::radians(m_fov), 
@@ -46,7 +46,7 @@ struct Camera
             m_near, 
             m_far);
     }
-    void updateV()
+    inline void updateV()
     {
         m_at.x = cosf(glm::radians(m_yaw)) * cosf(glm::radians(m_pitch));
         m_at.y = sinf(glm::radians(m_pitch));
@@ -54,41 +54,32 @@ struct Camera
         m_at += m_eye;
         V = glm::lookAt(m_eye, m_at, UP);
     }
-    mat4 update()
+    inline mat4 update()
     {
         updateP();
         updateV();
         return P * V;
     }
-    void resize(int32_t width, int32_t height)
+    inline void resize(int32_t width, int32_t height)
     {
         m_whratio = (float)width / (float)height;
     }
-    void setFov(float fov)
-    {
-        m_fov = fov;
-    }
-    void move(const vec3& v)
+    inline void move(const vec3& v)
     {
         m_eye += 
             v.x * getRight(V) + 
             v.y * getUp(V) + 
             v.z * getForward(V);
     }
-    void pitch(float amt)
+    inline void pitch(float amt)
     {
         m_pitch = glm::clamp(m_pitch + amt, -89.0f, 89.0f);
     }
-    void yaw(float amt)
+    inline void yaw(float amt)
     {
         m_yaw = fmod(m_yaw - amt, 360.0f);
     }
-    const vec3 direction() const { return normalize(m_at - m_eye); }
-    void setPlanes(float near, float far)
-    {
-        m_near = near; 
-        m_far = far;
-    }
+    inline vec3 direction() const { return getForward(V); }
 
     static Camera* GetActive();
     static void SetActive(Camera* cam);

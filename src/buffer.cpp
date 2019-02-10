@@ -6,7 +6,7 @@
 
 namespace Buffers
 {
-    gen_array<Renderer::Buffer> ms_store;
+    static gen_array<Renderer::Buffer> ms_store;
 
     slot Create(const Renderer::BufferDesc& desc)
     {

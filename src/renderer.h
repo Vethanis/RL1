@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "slot.h"
 
 #include "shaders/textured.h"
 #include "shaders/flat.h"
@@ -23,13 +24,13 @@ namespace Renderer
         RGB32F,
         FormatCount,
     };
-    enum ImageType
+    enum TextureType
     {
         Texture1D = 0,
         Texture2D,
         Texture3D,
         TextureCube,
-        ImageTypeCount,
+        TextureTypeCount,
     };
     enum FilterType
     {
@@ -43,23 +44,14 @@ namespace Renderer
         Clamp = 0,
         Repeat,
     };
-    struct Buffer
-    {
-        uint32_t vbo;
-        uint32_t ebo;
-        uint32_t count;
-    };
-    struct Texture
-    {
-        uint32_t id;
-    };
+    struct Buffer  { slot id; };
+    struct Texture { slot id; };
     struct BufferDesc
     {
-        void*           vertexData;
-        void*           indexData;
-        uint32_t        vertexBytes;
-        uint32_t        indexBytes;
-        uint32_t        elementCount;
+        void*           data;
+        uint32_t        stride; // size of each element, in bytes
+        uint32_t        count;  // number of elements
+        BufferType      type;
     };
     struct TextureDesc
     {
@@ -67,7 +59,7 @@ namespace Renderer
         uint32_t    width; 
         uint32_t    height;
         uint32_t    layers;
-        ImageType   type;
+        TextureType type;
         Format      format;
         FilterType  minFilter;
         FilterType  magFilter;
@@ -81,13 +73,15 @@ namespace Renderer
     void SetViewport(const vec4& viewport);
     void DrawBackground();
     void DrawTextured(
-        Buffer      buffer,
+        Buffer      verts,
+        Buffer      indices,
         Texture     mat,
         Texture     norm,
         const Textured::VSUniform& vsuni,
         const Textured::FSUniform& fsuni);
     void DrawFlat(
-        Buffer buffer,
+        Buffer verts,
+        Buffer indices,
         const Flat::VSUniform& vsuni,
         const Flat::FSUniform& fsuni);
     Buffer CreateBuffer(const BufferDesc& desc);

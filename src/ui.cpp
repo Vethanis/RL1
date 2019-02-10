@@ -16,7 +16,7 @@ namespace UI
         io.DeltaTime = 1.0f / 60.0f;
         //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
         //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
-        ImGui_ImplGlfw_InitForOpenGL(Window::GetActive()->m_window, false);
+        ImGui_ImplGlfw_InitForOpenGL(Window::GetActive(), false);
         ImGui_ImplOpenGL3_Init("#version 330 core");
         ImGui::StyleColorsDark();
     }

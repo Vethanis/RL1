@@ -5,20 +5,20 @@
 #include "blockalloc.h"
 #include "rendercomponent.h"
 
-btDefaultCollisionConfiguration     ms_collisionConfig;
-btCollisionDispatcher               ms_dispatcher = btCollisionDispatcher(
+static btDefaultCollisionConfiguration     ms_collisionConfig;
+static btCollisionDispatcher               ms_dispatcher = btCollisionDispatcher(
                                         &ms_collisionConfig);
-btDbvtBroadphase                    ms_broadphase;
-btSequentialImpulseConstraintSolver ms_solver;
-btDiscreteDynamicsWorld             ms_world = btDiscreteDynamicsWorld(
+static btDbvtBroadphase                    ms_broadphase;
+static btSequentialImpulseConstraintSolver ms_solver;
+static btDiscreteDynamicsWorld             ms_world = btDiscreteDynamicsWorld(
                                         &ms_dispatcher, 
                                         &ms_broadphase, 
                                         &ms_solver, 
                                         &ms_collisionConfig);
 
-TBlockAlloc<btBoxShape>             ms_shapes;
-TBlockAlloc<btRigidBody>            ms_bodies;
-TBlockAlloc<btDefaultMotionState>   ms_motionStates;
+static TBlockAlloc<btBoxShape>             ms_shapes;
+static TBlockAlloc<btRigidBody>            ms_bodies;
+static TBlockAlloc<btDefaultMotionState>   ms_motionStates;
 
 namespace Physics
 {

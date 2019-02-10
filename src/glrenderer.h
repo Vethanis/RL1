@@ -2,7 +2,7 @@
 
 #include "renderer.h"
 
-namespace VkRenderer
+namespace GLRenderer
 {
     void Init();
     void Shutdown();

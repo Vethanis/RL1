@@ -100,10 +100,11 @@ struct Array
     {
         if(new_cap > capacity())
         {
-            T* data = (T*)Allocator::Alloc(t_bucket, sizeof(T) * new_cap);
-            Copy(data, begin(), count());
-            Allocator::Free(t_bucket, m_data);
-            m_data = data;
+            m_data = (T*)Allocator::Realloc(
+                t_bucket, 
+                m_data, 
+                m_capacity * sizeof(T), 
+                new_cap * sizeof(T));
             m_capacity = new_cap;
         }
     }
@@ -224,6 +225,38 @@ struct Array
             return true;
         }
         return false;
+    }
+    inline int32_t largest() const
+    {
+        if(empty())
+        {
+            return -1;
+        }
+        int32_t i = 0;
+        for(int32_t j = 1; j < count(); ++j)
+        {
+            if(m_data[j] > m_data[i])
+            {
+                i = j;
+            }
+        }
+        return i;
+    }
+    inline int32_t smallest() const 
+    {
+        if(empty())
+        {
+            return -1;
+        }
+        int32_t i = 0;
+        for(int32_t j = 1; j < count(); ++j)
+        {
+            if(m_data[j] < m_data[i])
+            {
+                i = j;
+            }
+        }
+        return i;
     }
 };
 
@@ -536,5 +569,37 @@ struct FixedArray
             return true;
         }
         return false;
+    }
+    inline int32_t largest() const
+    {
+        if(empty())
+        {
+            return -1;
+        }
+        int32_t i = 0;
+        for(int32_t j = 1; j < count(); ++j)
+        {
+            if(m_data[j] > m_data[i])
+            {
+                i = j;
+            }
+        }
+        return i;
+    }
+    inline int32_t smallest() const 
+    {
+        if(empty())
+        {
+            return -1;
+        }
+        int32_t i = 0;
+        for(int32_t j = 1; j < count(); ++j)
+        {
+            if(m_data[j] < m_data[i])
+            {
+                i = j;
+            }
+        }
+        return i;
     }
 };

@@ -7,10 +7,10 @@
 #include "control.h"
 #include "camera.h"
 
-int32_t yawPitch[2];
-int32_t movement[6];
-int32_t modes[3];
-bool haveControls = false;
+static int32_t yawPitch[2];
+static int32_t movement[6];
+static int32_t modes[3];
+static bool haveControls = false;
 
 void Update(float t, float dt)
 {

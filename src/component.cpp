@@ -25,10 +25,10 @@ struct Row
 
 namespace Components
 {
-    gen_array<Row>      ms_rows;
-    Array<slot>         ms_alive;
-    BlockAlloc          ms_allocs[CT_Count];
-    bool                ms_hasInit = false;
+    static gen_array<Row>      ms_rows;
+    static Array<slot>         ms_alive;
+    static BlockAlloc          ms_allocs[CT_Count];
+    static bool                ms_hasInit = false;
 
     void Init()
     {

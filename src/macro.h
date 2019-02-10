@@ -2,7 +2,8 @@
 
 #define PLM_ENABLE      0
 #define ASSERT_TYPE     1
-#define DEBUG_GL        0
+#define VK_BACKEND      1
+#define GFX_DBG         1
 #define MAX_PATH_LEN    256
 
 #define NELEM(x) ( sizeof(x) / (sizeof((x)[0])) )
@@ -24,31 +25,50 @@
     #define Assert(x) 
 #endif // ASSERT_TYPE
 
-#if DEBUG_GL
-    #define DebugGL() \
-    {\
-        const char* error = 0; \
-        uint32_t value = glGetError(); \
-        while(value != GL_NO_ERROR) \
-        { \
-            switch(value) \
-            { \
-                case GL_INVALID_ENUM:                  error = "INVALID_ENUM"; break; \
-                case GL_INVALID_VALUE:                 error = "INVALID_VALUE"; break; \
-                case GL_INVALID_OPERATION:             error = "INVALID_OPERATION"; break; \
-                case GL_STACK_OVERFLOW:                error = "STACK_OVERFLOW"; break; \
-                case GL_STACK_UNDERFLOW:               error = "STACK_UNDERFLOW"; break; \
-                case GL_OUT_OF_MEMORY:                 error = "OUT_OF_MEMORY"; break; \
-                case GL_INVALID_FRAMEBUFFER_OPERATION: error = "INVALID_FRAMEBUFFER_OPERATION"; break; \
-            } \
-            printf("GL ERROR: %s %d :: %s\n", __FILE__, __LINE__, error); \
-            value = glGetError(); \
-        } \
-        Assert(!error); \
-    }
-#else
+#if VK_BACKEND
+    #define VK_ONLY(x) x
+    #if GFX_DBG
+        #define DVK_ONLY(x) x
+    #else 
+        #define DVK_ONLY(x) 
+    #endif // GFX_DBG
+
+    #define GL_ONLY(x) 
+    #define DGL_ONLY(x) 
     #define DebugGL() 
-#endif // DEBUG_GL
+#else 
+    #define GL_ONLY(x) x
+    #if GFX_DBG
+        #define DebugGL() \
+        {\
+            const char* error = 0; \
+            uint32_t value = glGetError(); \
+            while(value != GL_NO_ERROR) \
+            { \
+                switch(value) \
+                { \
+                    case GL_INVALID_ENUM:                  error = "INVALID_ENUM"; break; \
+                    case GL_INVALID_VALUE:                 error = "INVALID_VALUE"; break; \
+                    case GL_INVALID_OPERATION:             error = "INVALID_OPERATION"; break; \
+                    case GL_STACK_OVERFLOW:                error = "STACK_OVERFLOW"; break; \
+                    case GL_STACK_UNDERFLOW:               error = "STACK_UNDERFLOW"; break; \
+                    case GL_OUT_OF_MEMORY:                 error = "OUT_OF_MEMORY"; break; \
+                    case GL_INVALID_FRAMEBUFFER_OPERATION: error = "INVALID_FRAMEBUFFER_OPERATION"; break; \
+                } \
+                printf("GL ERROR: %s %d :: %s\n", __FILE__, __LINE__, error); \
+                value = glGetError(); \
+            } \
+            Assert(!error); \
+        }
+        #define DGL_ONLY(x) x
+    #else
+        #define DebugGL() 
+        #define DGL_ONLY(x) 
+    #endif  // GFX_DBG
+
+    #define VK_ONLY(x) 
+    #define DVK_ONLY(x) 
+#endif // VK_BACKEND
 
 #include <string.h>
 #include <stdarg.h>
@@ -121,12 +141,42 @@ inline void Assume(T& dst, T& src)
     memset(&src, 0, sizeof(T));
 }
 
-template<size_t capacity>
-inline void Format(char (&x)[capacity], const char* fmt, ...)
+template<int32_t capacity>
+inline int32_t Format(char (&x)[capacity], const char* fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
-    vsnprintf(x, capacity, fmt, args);
+    int32_t stringLen = vsnprintf(x, capacity, fmt, args);
     va_end(args);
-    x[capacity - 1u] = 0;
+    Assert(stringLen >= 0);
+    int32_t stringLen = Clamp(stringLen, 0, capacity - 1);
+    x[stringLen] = 0;
+    return stringLen;
+}
+
+inline int32_t strlcpy(char* dst, const char* src, int32_t len)
+{
+    --len;
+    int32_t i = 0;
+    for(; i < len && src[i]; ++i)
+    {
+        dst[i] = src[i];
+    }
+    dst[i] = '\0';
+    return i;
+}
+
+template<int32_t capacity>
+inline int32_t Copy(char (&dst)[capacity], const char* src)
+{
+    return strlcpy(dst, src, capacity);
+}
+
+template<typename T>
+static void Swap(T& a, T& b)
+{
+    uint8_t mem[sizeof(T)];
+    memcpy(mem, &a, sizeof(T));
+    memcpy(&a, &b, sizeof(T));
+    memcpy(&b, mem, sizeof(T));
 }

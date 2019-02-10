@@ -11,10 +11,12 @@ int main()
 {
     Init();
     uint64_t last_time = stm_now();
-    while(Window::GetActive()->Open())
+    while(Window::IsOpen(Window::GetActive()))
     {
         uint64_t dt = stm_laptime(&last_time);
-        Update((float)stm_sec(last_time), (float)stm_sec(dt));
+        Update(
+            (float)stm_sec(last_time), 
+            (float)stm_sec(dt));
         Draw();
     }
     Shutdown();

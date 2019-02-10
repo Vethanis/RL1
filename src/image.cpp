@@ -7,7 +7,7 @@
 
 namespace Images
 {
-    gen_array<Renderer::Texture> ms_store;
+    static gen_array<Renderer::Texture> ms_store;
 
     slot Create(const char* name)
     {

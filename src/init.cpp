@@ -20,29 +20,34 @@
 #include "ui.h"
 #include "sokol_time.h"
 #include "renderer.h"
+#include "vkrenderer.h"
 #include "vertex.h"
 
 #include "stb_perlin.h"
 
-Window window;
-Camera camera;
+static Camera defaultCam;
 
 void Init()
 {
     SRand(time(0) ^ (uint64_t)&puts);
-    window.Init("RL1", false);
-    Window::SetActive(&window);
-    camera.Init(window.m_width, window.m_height);
-    camera.move(vec3(0.0f, 0.0f, -3.0f));
-    Camera::SetActive(&camera);
+    
+    Window::SetActive(Window::Init("RL1", false));
+    int32_t wwidth = 0;
+    int32_t wheight = 0;
+    Window::GetSize(Window::GetActive(), wwidth, wheight);
+    defaultCam.Init(wwidth, wheight);
+    defaultCam.move(vec3(0.0f, 0.0f, -3.0f));
+    Camera::SetActive(&defaultCam);
+    
     stm_setup();
     UI::Init();
     Control::Init();
     Components::Init();
     TaskManager::Init();
     Physics::Init();
-    Renderer::Init();
 
+    GL_ONLY(Renderer::Init());
+    VK_ONLY(VkRenderer::Init());
 
     slot material;// = Images::Create("bumpy_PRMA");
     slot normal;// = Images::Create("bumpy_normal");

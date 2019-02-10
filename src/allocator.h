@@ -13,6 +13,7 @@ namespace Allocator
 {
     void* Alloc(AllocBucket bucket, size_t bytes);
     void Free(AllocBucket bucket, void* p);
+    void* Realloc(AllocBucket bucket, void* pOld, size_t oldBytes, size_t newBytes);
     void Update();
 
     template<typename T>
