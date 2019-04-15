@@ -5,105 +5,95 @@
 #include "control.h"
 #include "imgui.h"
 
-#if VK_BACKEND
-    #define GLFW_INCLUDE_VULKAN
-    #include <GLFW/glfw3.h>
-#else
-    #define GLFW_INCLUDE_NONE
-    #include <GLFW/glfw3.h>
-    #include "glad.h"
-#endif // VK_BACKEND
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
+#include "glad.h"
+
+#if _DEBUG
+    static void APIENTRY glDebugOutput(
+        GLenum          source,
+        GLenum          type,
+        GLuint          id,
+        GLenum          severity,
+        GLsizei         length,
+        const GLchar*   message,
+        const void*     userParam)
+    {
+        if(id == 131169 || id == 131185 || id == 131218 || id == 131204)
+        {
+            return;
+        } 
+
+        puts("-----------------------------");
+        printf("Debug message (%d): %s\n", id, message);
+        switch (source)
+        {
+            case GL_DEBUG_SOURCE_API:             puts("Source: API"); break;
+            case GL_DEBUG_SOURCE_WINDOW_SYSTEM:   puts("Source: Window System"); break;
+            case GL_DEBUG_SOURCE_SHADER_COMPILER: puts("Source: Shader Compiler"); break;
+            case GL_DEBUG_SOURCE_THIRD_PARTY:     puts("Source: Third Party"); break;
+            case GL_DEBUG_SOURCE_APPLICATION:     puts("Source: Application"); break;
+            case GL_DEBUG_SOURCE_OTHER:           puts("Source: Other"); break;
+        }
+
+        switch (type)
+        {
+            case GL_DEBUG_TYPE_ERROR:               puts("Type: Error"); break;
+            case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: puts("Type: Deprecated Behaviour"); break;
+            case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:  puts("Type: Undefined Behaviour"); break; 
+            case GL_DEBUG_TYPE_PORTABILITY:         puts("Type: Portability"); break;
+            case GL_DEBUG_TYPE_PERFORMANCE:         puts("Type: Performance"); break;
+            case GL_DEBUG_TYPE_MARKER:              puts("Type: Marker"); break;
+            case GL_DEBUG_TYPE_PUSH_GROUP:          puts("Type: Push Group"); break;
+            case GL_DEBUG_TYPE_POP_GROUP:           puts("Type: Pop Group"); break;
+            case GL_DEBUG_TYPE_OTHER:               puts("Type: Other"); break;
+        }
+        
+        switch (severity)
+        {
+            case GL_DEBUG_SEVERITY_HIGH:         puts("Severity: high"); break;
+            case GL_DEBUG_SEVERITY_MEDIUM:       puts("Severity: medium"); break;
+            case GL_DEBUG_SEVERITY_LOW:          puts("Severity: low"); break;
+            case GL_DEBUG_SEVERITY_NOTIFICATION: puts("Severity: notification"); break;
+        }
+        puts("");
+
+        DebugAssert(false);
+    }
+#endif // _DEBUG
 
 namespace Window
 {
-    static int32_t      ms_glfwRefs = 0;
-    static GLFWwindow*  ms_active = nullptr;
+    static WindowHandle ms_active;
+    static i32          ms_glfwRefs;
+    static bool         ms_gladInit;
 
-    GL_ONLY(
-        static bool ms_gladInit = false;
-        );
+    static GLFWwindow* ToWindow(WindowHandle hdl)
+    {
+        DebugAssert(hdl.ptr);
+        return (GLFWwindow*)hdl.ptr;
+    }
 
-    DGL_ONLY(
-    /*
-        typedef void (APIENTRY *GLDEBUGPROC)(
-            GLenum source,
-            GLenum type,
-            GLuint id,
-            GLenum severity,
-            GLsizei length,
-            const GLchar *message,
-            const void *userParam);
-    */
-
-        void APIENTRY glDebugOutput(
-            GLenum source, 
-            GLenum type, 
-            GLuint id, 
-            GLenum severity, 
-            GLsizei length, 
-            const GLchar *message, 
-            const void *userParam)
-        {
-            if(id == 131169 || id == 131185 || id == 131218 || id == 131204) return; 
-
-            puts("-----------------------------");
-            printf("Debug message (%d): %s\n", id, message);
-            switch (source)
-            {
-                case GL_DEBUG_SOURCE_API:             puts("Source: API"); break;
-                case GL_DEBUG_SOURCE_WINDOW_SYSTEM:   puts("Source: Window System"); break;
-                case GL_DEBUG_SOURCE_SHADER_COMPILER: puts("Source: Shader Compiler"); break;
-                case GL_DEBUG_SOURCE_THIRD_PARTY:     puts("Source: Third Party"); break;
-                case GL_DEBUG_SOURCE_APPLICATION:     puts("Source: Application"); break;
-                case GL_DEBUG_SOURCE_OTHER:           puts("Source: Other"); break;
-            }
-
-            switch (type)
-            {
-                case GL_DEBUG_TYPE_ERROR:               puts("Type: Error"); break;
-                case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: puts("Type: Deprecated Behaviour"); break;
-                case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:  puts("Type: Undefined Behaviour"); break; 
-                case GL_DEBUG_TYPE_PORTABILITY:         puts("Type: Portability"); break;
-                case GL_DEBUG_TYPE_PERFORMANCE:         puts("Type: Performance"); break;
-                case GL_DEBUG_TYPE_MARKER:              puts("Type: Marker"); break;
-                case GL_DEBUG_TYPE_PUSH_GROUP:          puts("Type: Push Group"); break;
-                case GL_DEBUG_TYPE_POP_GROUP:           puts("Type: Pop Group"); break;
-                case GL_DEBUG_TYPE_OTHER:               puts("Type: Other"); break;
-            }
-            
-            switch (severity)
-            {
-                case GL_DEBUG_SEVERITY_HIGH:         puts("Severity: high"); break;
-                case GL_DEBUG_SEVERITY_MEDIUM:       puts("Severity: medium"); break;
-                case GL_DEBUG_SEVERITY_LOW:          puts("Severity: low"); break;
-                case GL_DEBUG_SEVERITY_NOTIFICATION: puts("Severity: notification"); break;
-            }
-            puts("");
-
-            Assert(false);
-        }
-    );
-
-    GLFWwindow* Init(const char* title, bool fullscreen)
+    WindowHandle Create(const char* title, bool fullscreen)
     {
         ++ms_glfwRefs;
         if(ms_glfwRefs == 1)
         {
-            int32_t glfwLoaded = glfwInit();
-            Assert(glfwLoaded);
+            i32 glfwLoaded = glfwInit();
+            DebugAssert(glfwLoaded);
         }
 
         glfwSetErrorCallback(
-            [](int32_t error, const char* msg)
+            [](i32 error, const char* msg)
             {
-                fprintf(stderr, "%d :: %s\n", error, msg);
+                fprintf(stdout, "%d :: %s\n", error, msg);
             });
 
         GLFWmonitor* monitor = glfwGetPrimaryMonitor();
-        Assert(monitor);
+        DebugAssert(monitor);
 
         const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-        Assert(mode);
+        DebugAssert(mode);
         
         glfwWindowHint(GLFW_RED_BITS,       mode->redBits);
         glfwWindowHint(GLFW_GREEN_BITS,     mode->greenBits);
@@ -111,18 +101,12 @@ namespace Window
         glfwWindowHint(GLFW_REFRESH_RATE,   mode->refreshRate);
         glfwWindowHint(GLFW_RESIZABLE,      GLFW_FALSE);
 
-        DGL_ONLY(
-            glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
-            );
+        DebugOnly(glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE));
 
-        GL_ONLY(
-            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR,  4);
-            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR,  3);
-            glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT,  GL_TRUE);
-            glfwWindowHint(GLFW_OPENGL_PROFILE,         GLFW_OPENGL_CORE_PROFILE);
-        );
-
-        VK_ONLY(glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API));
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR,  3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR,  3);
+        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT,  GL_TRUE);
+        glfwWindowHint(GLFW_OPENGL_PROFILE,         GLFW_OPENGL_CORE_PROFILE);
 
         GLFWwindow* window = glfwCreateWindow(
             mode->width, 
@@ -130,46 +114,44 @@ namespace Window
             title, 
             fullscreen ? monitor : nullptr, 
             nullptr);
-        Assert(window);
+        DebugAssert(window);
         
-        GL_ONLY(
-            glfwMakeContextCurrent(window);
-            glfwSwapInterval(1);
-            );
+        glfwMakeContextCurrent(window);
+        glfwSwapInterval(1);
 
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-        GL_ONLY(
-            if(!ms_gladInit)
-            {
-                int32_t gladLoaded = gladLoadGL();
-                Assert(gladLoaded);
-                ms_gladInit = true;
-            });
+        if(!ms_gladInit)
+        {
+            i32 gladLoaded = gladLoadGL();
+            DebugAssert(gladLoaded);
+            ms_gladInit = true;
+        }
 
         glfwSetMouseButtonCallback(window, 
-            [](GLFWwindow* w, int32_t btn, int32_t action, int32_t mods)
+            [](GLFWwindow* w, i32 btn, i32 action, i32 mods)
             {
                 if(btn >= 0 && btn < 3)
                 {
                     ImGui::GetIO().MouseDown[btn] = (action == GLFW_PRESS);
                 }
-                Control::MouseButtonCB(btn, action, mods);
+                Ctrl::MouseButtonCB(btn, action, mods);
             });
         glfwSetCursorPosCallback(window, 
-            [](GLFWwindow* w, double x, double y)
+            [](GLFWwindow* w, f64 x, f64 y)
             {
-                ImGui::GetIO().MousePos.x = (float)x;
-                ImGui::GetIO().MousePos.y = (float)y;
+                ImGui::GetIO().MousePos.x = (f32)x;
+                ImGui::GetIO().MousePos.y = (f32)y;
+                Ctrl::CursorPosCB((f32)x, (f32)y);
             });
         glfwSetScrollCallback(window, 
-            [](GLFWwindow* w, double x, double y)
+            [](GLFWwindow* w, f64 x, f64 y)
             {
-                ImGui::GetIO().MouseWheel = (float)y;
-                Control::ScrollWheelCB((float)x, (float)y);
+                ImGui::GetIO().MouseWheel = (f32)y;
+                Ctrl::ScrollWheelCB((f32)x, (f32)y);
             });
         glfwSetKeyCallback(window, 
-            [](GLFWwindow* w, int32_t key, int32_t scancode, int32_t action, int32_t mods)
+            [](GLFWwindow* w, i32 key, i32 scancode, i32 action, i32 mods)
             {
                 ImGuiIO& io = ImGui::GetIO();
                 if(key >= 0 && key < 512)
@@ -179,7 +161,7 @@ namespace Window
                 io.KeyCtrl  = (0 != (mods & GLFW_MOD_CONTROL));
                 io.KeyAlt   = (0 != (mods & GLFW_MOD_ALT));
                 io.KeyShift = (0 != (mods & GLFW_MOD_SHIFT));
-                Control::KeyCB(key, action, mods);
+                Ctrl::KeyCB(key, action, mods);
             });
         glfwSetCharCallback(window, 
             [](GLFWwindow* w, uint32_t codepoint)
@@ -187,29 +169,27 @@ namespace Window
                 ImGui::GetIO().AddInputCharacter((ImWchar)codepoint);
             });
 
-        GL_ONLY(
-            int32_t wwidth = 0;
-            int32_t wheight = 0;
-            Window::GetSize(window, wwidth, wheight);
-            glViewport(0, 0, wwidth, wheight);
-            );
+        i32 wwidth = 0;
+        i32 wheight = 0;
+        Window::GetSize({ window }, wwidth, wheight);
+        glViewport(0, 0, wwidth, wheight);
 
-        DGL_ONLY(
-            int32_t flags; glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
-            Assert(flags & GL_CONTEXT_FLAG_DEBUG_BIT);
-            glEnable(GL_DEBUG_OUTPUT);
-            glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-            glDebugMessageCallback(glDebugOutput, nullptr);
-            glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, 0, GL_TRUE);
-        );
+#if _DEBUG
+        i32 flags = 0; 
+        glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
+        Assert(flags & GL_CONTEXT_FLAG_DEBUG_BIT);
+        glEnable(GL_DEBUG_OUTPUT);
+        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+        glDebugMessageCallback(glDebugOutput, nullptr);
+        glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, 0, GL_TRUE);
+#endif // _DEBUG
 
-        return window;
+        return { window };
     }
 
-    void Shutdown(GLFWwindow* window)
+    void Destroy(WindowHandle window)
     {
-        Assert(window);
-        glfwDestroyWindow(window);
+        glfwDestroyWindow(ToWindow(window));
 
         --ms_glfwRefs;
         if(ms_glfwRefs == 0)
@@ -218,54 +198,46 @@ namespace Window
         }
     }
 
-    bool IsOpen(GLFWwindow* window)
+    bool IsOpen(WindowHandle window)
     {
-        Assert(window);
-        return !glfwWindowShouldClose(window);
+        return !glfwWindowShouldClose(ToWindow(window));
     }
 
-    void SetShouldClose(GLFWwindow* window, bool closed)
+    void SetShouldClose(WindowHandle window, bool closed)
     {
-        Assert(window);
-        glfwSetWindowShouldClose(window, closed);
+        glfwSetWindowShouldClose(ToWindow(window), closed);
     }
 
-    void Swap(GLFWwindow* window)
+    void Swap(WindowHandle window)
     {
-        Assert(window);
-        glfwSwapBuffers(window);
+        glfwSwapBuffers(ToWindow(window));
     }
 
-    void GetSize(GLFWwindow* window, int32_t& width, int32_t& height)
+    void GetSize(WindowHandle window, i32& width, i32& height)
     {
-        Assert(window);
-        glfwGetWindowSize(window, &width, &height);
+        glfwGetWindowSize(ToWindow(window), &width, &height);
     }
 
-    void GetCursorPos(GLFWwindow* window, double& xpos, double& ypos)
+    void GetCursorPos(WindowHandle window, double& xpos, double& ypos)
     {
-        Assert(window);
-        glfwGetCursorPos(window, &xpos, &ypos);
+        glfwGetCursorPos(ToWindow(window), &xpos, &ypos);
     }
 
-    void SetCursorHidden(GLFWwindow* window, bool hidden)
+    void SetCursorHidden(WindowHandle window, bool hidden)
     {
-        Assert(window);
         glfwSetInputMode(
-            window, 
+            ToWindow(window), 
             GLFW_CURSOR, 
             hidden ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
     }
 
-    GLFWwindow* GetActive()
+    WindowHandle GetActive()
     {
-        Assert(ms_active);
         return ms_active;
     }
 
-    void SetActive(GLFWwindow* window)
+    void SetActive(WindowHandle window)
     {
-        Assert(window);
         ms_active = window;
     }
 

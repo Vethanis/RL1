@@ -1,10 +1,10 @@
 #pragma once
 
-#include <stdint.h>
+#include "slice.h"
 
-inline uint32_t Fnv32(const char* x)
+inline u32 Fnv32(const char* x)
 {
-    uint32_t y = 2166136261u;
+    u32 y = 2166136261u;
     while(*x)
     {
         y ^= *x;
@@ -14,21 +14,20 @@ inline uint32_t Fnv32(const char* x)
     return y;
 }
 
-inline uint32_t Fnv32(const void* x, uint32_t len)
+inline u32 Fnv32(CByteSlice bytes)
 {
-    const uint8_t* octets = (uint8_t*)x;
-    uint32_t y = 2166136261u;
-    for(uint32_t i = 0u; i < len; ++i)
+    u32 y = 2166136261u;
+    for(u8 byte : bytes)
     {
-        y ^= octets[i];
+        y ^= byte;
         y *= 16777619u;
     }
     return y;
 }
 
-inline uint64_t Fnv64(const char* x)
+inline u64 Fnv64(const char* x)
 {
-    uint64_t y = 14695981039346656037ull;
+    u64 y = 14695981039346656037ull;
     while(*x)
     {
         y ^= *x;
@@ -38,13 +37,12 @@ inline uint64_t Fnv64(const char* x)
     return y;
 }
 
-inline uint64_t Fnv64(const void* x, uint32_t len)
+inline u64 Fnv64(CByteSlice bytes)
 {
-    const uint8_t* octets = (uint8_t*)x;
-    uint64_t y = 14695981039346656037ull;
-    for(uint32_t i = 0u; i < len; ++i)
+    u64 y = 14695981039346656037ull;
+    for(u8 byte : bytes)
     {
-        y ^= octets[i];
+        y ^= byte;
         y *= 1099511628211ull;
     }
     return y;

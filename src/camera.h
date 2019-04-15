@@ -1,37 +1,36 @@
 #pragma once
 
-#include <stdint.h>
 #include <math.h>
-#include "linmath.h"
+#include "hlsl_types.h"
 
 struct Camera
 {
-    mat4    P;
-    mat4    V;
-    vec3    m_eye;
-    float   m_fov;
-    vec3    m_at;
-    float   m_whratio;
-    float   m_near;
-    float   m_far;
-    float   m_yaw;
-    float   m_pitch;
+    float4x4    P;
+    float4x4    V;
+    float4      m_eye;
+    f32         m_fov;
+    float4      m_at;
+    f32         m_whratio;
+    f32         m_near;
+    f32         m_far;
+    f32         m_yaw;
+    f32         m_pitch;
 
     inline void Init(
-        int32_t width,
-        int32_t height, 
-        float yaw = -90.0f,
-        float pitch = 0.0f,
-        float fov=60.0f, 
-        float near=0.1f, 
-        float far=100.0f)
+        i32 width,
+        i32 height, 
+        f32 yaw = -90.0f,
+        f32 pitch = 0.0f,
+        f32 fov=60.0f, 
+        f32 near=0.1f, 
+        f32 far=100.0f)
     {
-        P = mat4(1.0f);
-        V = mat4(1.0f);
-        m_eye = vec3(0.0f);
-        m_at = vec3(0.0f, 0.0f, -1.0f);
+        P = float4x4(1.0f);
+        V = float4x4(1.0f);
+        m_eye = float4(0.0f);
+        m_at = float4(0.0f, 0.0f, -1.0f);
         m_fov = fov;
-        m_whratio = (float)width / (float)height;
+        m_whratio = (f32)width / (f32)height;
         m_near = near;
         m_far = far;
         m_yaw = yaw;
@@ -54,32 +53,32 @@ struct Camera
         m_at += m_eye;
         V = glm::lookAt(m_eye, m_at, UP);
     }
-    inline mat4 update()
+    inline float4x4 update()
     {
         updateP();
         updateV();
         return P * V;
     }
-    inline void resize(int32_t width, int32_t height)
+    inline void resize(i32 width, i32 height)
     {
-        m_whratio = (float)width / (float)height;
+        m_whratio = (f32)width / (f32)height;
     }
-    inline void move(const vec3& v)
+    inline void move(const float4& v)
     {
         m_eye += 
             v.x * getRight(V) + 
             v.y * getUp(V) + 
             v.z * getForward(V);
     }
-    inline void pitch(float amt)
+    inline void pitch(f32 amt)
     {
         m_pitch = glm::clamp(m_pitch + amt, -89.0f, 89.0f);
     }
-    inline void yaw(float amt)
+    inline void yaw(f32 amt)
     {
         m_yaw = fmod(m_yaw - amt, 360.0f);
     }
-    inline vec3 direction() const { return getForward(V); }
+    inline float4 direction() const { return getForward(V); }
 
     static Camera* GetActive();
     static void SetActive(Camera* cam);
@@ -99,4 +98,3 @@ struct PushCamera
         Camera::SetActive(prev);
     }
 };
-

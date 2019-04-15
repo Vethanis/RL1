@@ -1,28 +1,31 @@
 #pragma once
 
-#include <stdint.h>
+#include "slot.h"
 
-struct GLFWwindow;
+struct WindowHandle
+{
+    void* ptr;
+};
 
 namespace Window
 {
-    GLFWwindow* Init(const char* title, bool fullscreen);
-    void Shutdown(GLFWwindow* window);
-    bool IsOpen(GLFWwindow* window);
-    void SetShouldClose(GLFWwindow* window, bool close);
-    void Swap(GLFWwindow* window);
-    void GetSize(GLFWwindow* window, int32_t& width, int32_t& height);
-    void GetCursorPos(GLFWwindow* window, double& xpos, double& ypos);
-    void SetCursorHidden(GLFWwindow* window, bool hidden);
-    GLFWwindow* GetActive();
-    void SetActive(GLFWwindow* window);
+    WindowHandle Create(const char* title, bool fullscreen);
+    void Destroy(WindowHandle window);
+    bool IsOpen(WindowHandle window);
+    void SetShouldClose(WindowHandle window, bool close);
+    void Swap(WindowHandle window);
+    void GetSize(WindowHandle window, int32_t& width, int32_t& height);
+    void GetCursorPos(WindowHandle window, double& xpos, double& ypos);
+    void SetCursorHidden(WindowHandle window, bool hidden);
+    WindowHandle GetActive();
+    void SetActive(WindowHandle window);
 };
 
 struct PushWindow
 {
-    GLFWwindow* prev;
+    WindowHandle prev;
     
-    inline PushWindow(GLFWwindow* toPush)
+    inline PushWindow(WindowHandle toPush)
     {
         prev = Window::GetActive();
         Window::SetActive(toPush);

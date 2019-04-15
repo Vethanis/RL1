@@ -3,78 +3,71 @@
 #include "slot.h"
 #include "array.h"
 
-template<typename T, bool POD = true, AllocBucket t_bucket = AB_Default>
-struct gen_array
+template<const Allocator& t_alloc>
+struct GenIndices
 {
-    Array<T, POD, t_bucket> m_data;
-    Array<int32_t>          m_gen;
-    Array<int32_t>          m_free;
+    Array<u32, t_alloc> m_gen;
+    Array<u32, t_alloc> m_free;
 
-    void Reset()
+    inline bool exists(Slot s) const
     {
-        m_data.reset();
-        m_gen.reset();
-        m_free.reset();
+        const u32 idx = s.id;
+        if(idx >= m_gen.size())
+        {
+            return false;
+        }
+        const u32 gen = m_gen[idx];
+        return (gen & 1u) && (gen == s.gen);
     }
-    slot Create()
+    inline Slot create()
     {
         if(m_free.empty())
         {
-            m_free.grow() = m_data.count();
-            m_data.grow();
-            m_gen.grow() = 0;
+            m_free.grow() = m_gen.size();
+            m_gen.grow()  = 0u;
         }
 
-        slot s;
-        s.id = m_free.back();
+        const u32 idx = m_free.back();
         m_free.pop();
-        s.gen = m_gen[s.id];
 
-        memset(&m_data[s.id], 0, sizeof(T));
+        const u32 gen = m_gen[idx] | 1u;
+        m_gen[idx] = gen;
+
+        Slot s;
+        s.id  = idx;
+        s.gen = gen;
 
         return s;
     }
-    inline T* Get(slot s)
+    inline bool destroy(Slot s)
     {
-        if(!Exists(s))
+        if(!exists(s))
         {
-            return nullptr;
+            return false;
         }
-        return &GetUnchecked(s);
+
+        const u32 idx = s.id;
+        m_free.grow() = idx;
+        m_gen[idx] = ( (m_gen[idx] >> 1u) + 1u ) << 1u;
+
+        return true;
     }
-    inline const T* Get(slot s) const
+    inline void reset()
     {
-        if(!Exists(s))
-        {
-            return nullptr;
-        }
-        return &GetUnchecked(s);
+        m_gen.reset();
+        m_free.reset();
     }
-    // for when you check Exists() first and layer behavior above this
-    inline T& GetUnchecked(slot s)
+    inline void clear()
     {
-        return m_data[s.id];
+        m_gen.clear();
+        m_free.clear();
     }
-    inline const T& GetUnchecked(slot s) const
+    inline Slice<const u32> gens() const
     {
-        return m_data[s.id];
+        return m_gen.cslice();
     }
-    inline void Destroy(slot s)
+    inline size_t capacity()
     {
-        if(!Exists(s))
-        {
-            return;
-        }
-        DestroyUnchecked(s);
-    }
-    // for when you check Exists() first and layer behavior above this
-    inline void DestroyUnchecked(slot s)
-    {
-        m_gen[s.id]++;
-        m_free.grow() = s.id;
-    }
-    inline bool Exists(slot s) const
-    {
-        return s.id < (uint32_t)m_data.count() && m_gen[s.id] == s.gen; 
+        return m_gen.size();
     }
 };

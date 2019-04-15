@@ -1,141 +1,86 @@
 #include "control.h"
-#include "array.h"
-#include "fnv.h"
+
+#include "macro.h"
 #include "window.h"
+#include "sokol_time.h"
+#include "circular_stack.h"
 
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
-namespace Control
+namespace Ctrl
 {
-    struct ActionBinding
+    static constexpr u32 ms_StackCap = 256;
+
+    static CircularStack<u32, ms_StackCap>  ms_channels;
+    static CircularStack<f32, ms_StackCap>  ms_values;
+    static CircularStack<u64, ms_StackCap>  ms_ticks;
+
+    static GLFWgamepadstate ms_prevPad;
+
+    static f32  ms_scrollX = 0.0f;
+    static f32  ms_scrollY = 0.0f;
+    static i32  ms_winWidth;
+    static i32  ms_winHeight;
+
+    static void PushEvent(u32 ch, f32 value)
     {
-        ButtonLogic m_logic;
-        State*      m_cur;
-    };
-    struct AxisBinding
-    {
-        AxisLogic   m_logic;
-        float*     m_cur;
-    };
-
-    typedef FixedArray<ActionBinding, 16> ActionBindings;
-    typedef FixedArray<AxisBinding, 8> AxisBindings;
-
-    static Array<ActionBindings> ms_actionBindings;
-    static Array<uint64_t>      ms_actionHashes;
-
-    static Array<AxisBindings>  ms_axesBindings;
-    static Array<uint64_t>      ms_axesHashes;
-
-    static float                ms_dt;
-    static bool                 ms_cursorHidden = true;
-    static bool                 ms_skipCursorUpdate = false;
-
-    static float                ms_mouseAxis[MA_COUNT * 2];
-    static float                ms_gameAxis[GPA_COUNT * 2];
-
-    static State                ms_keys[K_COUNT * 2];
-    static State                ms_mouseButtons[MB_COUNT * 2];
-    static State                ms_gameButtons[GPB_COUNT * 2];
+        ms_channels.push(ch);
+        ms_values.push(value);
+        ms_ticks.push(stm_now());
+    }
 
     void Init()
     {
-        ms_dt = 1.0f / 60.0f;
-        for(float& x : ms_mouseAxis)
-        {
-            x = 0.0f;
-        }
-        for(float& x : ms_gameAxis)
-        {
-            x = 0.0f;
-        }
-        MemZero(ms_keys);
-        MemZero(ms_mouseButtons);
-        MemZero(ms_gameButtons);
-        ms_actionBindings.clear();
-        ms_actionHashes.clear();
-        ms_axesBindings.clear();
-        ms_axesHashes.clear();
+        EraseR(ms_ticks);
+        EraseR(ms_channels);
+        EraseR(ms_values);
     }
-    void Update(float dt)
+    void Update(f32 dt)
     {
-        ms_dt = dt;
-
-        // copy current state to previous state
-        for(int32_t i = 0; i < MA_COUNT; ++i)
-        {
-            ms_mouseAxis[i * 2 + 1] = ms_mouseAxis[i * 2];
-        }
-        for(int32_t i = K_FIRST; i < K_COUNT; ++i)
-        {
-            ms_keys[i * 2 + 1] = ms_keys[i * 2];
-        }
-        for(int32_t i = MB_1; i < MB_COUNT; ++i)
-        {
-            ms_mouseButtons[i * 2 + 1] = ms_mouseButtons[i * 2];
-        }
-        for(int32_t i = 0; i < GPA_COUNT; ++i)
-        {
-            ms_gameAxis[i * 2 + 1] = ms_gameAxis[i * 2];
-        }
-        for(int32_t i = 0; i < GPB_COUNT; ++i)
-        {
-            ms_gameButtons[i * 2 + 1] = ms_gameButtons[i * 2];
-        }
-
-        // update current state
+        Window::GetSize(Window::GetActive(), ms_winWidth, ms_winHeight);
         glfwPollEvents();
-
-        {
-            GLFWwindow* window = Window::GetActive();
-            int32_t width, height;
-            double x, y;
-            Window::GetSize(window, width, height);
-            Window::GetCursorPos(window, x, y);
-            x /= (double)width;
-            y /= (double)height;
-            x = x * 2.0 - 1.0;
-            y = y * 2.0 - 1.0;
-
-            ms_mouseAxis[MA_Cursor_X * 2] = (float)-x;
-            ms_mouseAxis[MA_Cursor_Y * 2] = (float)-y;
-
-            if(ms_skipCursorUpdate)
-            {
-                ms_skipCursorUpdate = false;
-                ms_mouseAxis[MA_Cursor_X * 2 + 1] = ms_mouseAxis[MA_Cursor_X * 2];
-                ms_mouseAxis[MA_Cursor_Y * 2 + 1] = ms_mouseAxis[MA_Cursor_Y * 2];
-            }
-        }
-
         {
             GLFWgamepadstate state;
-            MemZero(state);
-            glfwGetGamepadState(0, &state);
-            for(int32_t i = 0; i < GPA_COUNT; ++i)
+            EraseR(state);
+            if(glfwGetGamepadState(0, &state) == GLFW_TRUE)
             {
-                ms_gameAxis[i * 2] = state.axes[i];
-            }
-            for(int32_t i = 0; i < GPB_COUNT; ++i)
-            {
-                ms_gameButtons[i * 2] = state.buttons[i] ? Press : Release;
+                const u64 tick = stm_now();
+                for(u32 i = 0; i < CountOf(state.axes); ++i)
+                {
+                    if(state.axes[i] != ms_prevPad.axes[i])
+                    {
+                        ms_prevPad.axes[i] = state.axes[i];
+                        ms_ticks.push(tick);
+                        ms_channels.push(PadAxis_LX + i);
+                        ms_values.push(state.axes[i]);
+                    }
+                }
+                for(u32 i = 0; i < CountOf(state.buttons); ++i)
+                {
+                    if(state.buttons[i] != ms_prevPad.axes[i])
+                    {
+                        ms_prevPad.buttons[i] = state.buttons[i];
+                        ms_ticks.push(tick);
+                        ms_channels.push(PadBtn_A + i);
+                        ms_values.push(state.buttons ? 1.0f : 0.0f);
+                    }
+                }
             }
         }
     }
     void Shutdown()
     {
-        ms_actionBindings.reset();
-        ms_actionHashes.reset();
-        ms_axesBindings.reset();
-        ms_axesHashes.reset();
+        EraseR(ms_ticks);
+        EraseR(ms_channels);
+        EraseR(ms_values);
     }
 
+    static bool ms_cursorHidden;
     void SetCursorHidden(bool hidden)
     {
         ms_cursorHidden = hidden;
-        ms_skipCursorUpdate = true;
-        Window::SetCursorHidden(Window::GetActive(), ms_cursorHidden);
+        Window::SetCursorHidden(Window::GetActive(), hidden);
     }
     bool IsCursorHidden()
     {
@@ -147,297 +92,60 @@ namespace Control
         Window::SetShouldClose(Window::GetActive(), true);
     }
 
-    uint8_t EvalLogic(uint8_t cur, uint8_t next, ButtonLogic logic)
-    {            
-        switch(logic)
-        {
-            case BL_OR:
-                cur = cur | next;
-            break;
-            case BL_AND:
-                cur = cur & next;
-            break;
-            case BL_XOR:
-                cur = cur ^ next;
-            break;
-            case BL_NOR:
-                cur = ~(cur | next);
-            case BL_NAND:
-                cur = ~(cur & next);
-            break;
-        }
-        cur = cur & 1u;
-        return cur;
-    }
-    float EvalLogic(float cur, float next, AxisLogic logic)
+    bool Get(Channel ch, f64 secsElapsed, Event& evtOut)
     {
-        switch(logic)
+        const u64 maxElapsed = (u64)(secsElapsed * 1000000000.0);
+        const u64 now        = stm_now();
+
+        const u64* pTicks   = ms_ticks.m_data;
+        const u32* pChans   = ms_channels.m_data;
+        const u32 bot       = ms_channels.bottom_idx();
+
+        for(u32 i  = ms_channels.top_idx();
+                i != bot;
+                i  = circular_prev<ms_StackCap>(i))
         {
-            case AL_MIN:
-                cur = Min(cur, next);
-            break;
-            case AL_MAX:
-                cur = Max(cur, next);
-            break;
-            case AL_SMALLEST:
-                if(fabs(cur) < fabs(next))
-                {
-                    cur = cur;
-                }
-                else
-                {
-                    cur = next;
-                }
-            break;
-            case AL_LARGEST:
-                if(fabs(cur) > fabs(next))
-                {
-                    cur = next;
-                }
-                else
-                {
-                    cur = cur;
-                }
-            break;
-        }
-        return cur;
-    }
-    void RemoveFromBinding(ActionBindings& bindings, State* ptr)
-    {
-        for(int32_t i = 0; i < bindings.count(); ++i)
-        {
-            if(bindings[i].m_cur == ptr)
+            const u64 elapsed = now - pTicks[i];
+            if(elapsed > maxElapsed)
             {
-                bindings.shiftRemove(i);
-                --i;
+                return false;
+            }
+            if(pChans[i] == ch)
+            {
+                evtOut.channel = ch;
+                evtOut.tick    = ms_ticks[i];
+                evtOut.value   = ms_values[i];
+                return true;
             }
         }
-    }
-    void RemoveFromBinding(AxisBindings& bindings, float* ptr)
-    {
-        for(int32_t i = 0; i < bindings.count(); ++i)
-        {
-            if(bindings[i].m_cur == ptr)
-            {
-                bindings.shiftRemove(i);
-                --i;
-            }
-        }
+
+        return false;
     }
 
-    int32_t RegisterAction(const char* name)
+    void KeyCB(i32 key, i32 action, i32 mods)
     {
-        uint64_t hash = Fnv64(name);
-        int32_t idx = ms_actionHashes.find(hash);
-        if(idx != -1)
-        {
-            return idx;
-        }
-        idx = ms_actionHashes.count();
-        ms_actionHashes.grow() = hash;
-        MemZero(ms_actionBindings.grow());
-        return idx;
+        PushEvent(key, action ? 1.0f : 0.0f);
     }
-    int32_t GetActionLocation(const char* name)
+    void MouseButtonCB(i32 button, i32 action, i32 mods)
     {
-        return ms_actionHashes.find(Fnv64(name));
+        PushEvent(MouseBtn_1 + button, action ? 1.0f : 0.0f);
     }
-    void BindToAction(int32_t location, ButtonLogic logic, Key key)
+    void CursorPosCB(f32 x, f32 y)
     {
-        Assert(location != -1);
-        ActionBindings& bindings = ms_actionBindings[location];
-        if(!bindings.full())
-        {
-            ActionBinding& binding = bindings.grow();
-            binding.m_logic = logic;
-            binding.m_cur = ms_keys + key * 2;
-        }
-    }
-    void BindToAction(int32_t location, ButtonLogic logic, MouseButton button)
-    {
-        Assert(location != -1);
-        ActionBindings& bindings = ms_actionBindings[location];
-        if(!bindings.full())
-        {
-            ActionBinding& binding = bindings.grow();
-            binding.m_logic = logic;
-            binding.m_cur = ms_mouseButtons + button * 2;
-        }
-    }
-    void BindToAction(int32_t location, ButtonLogic logic, GamePadButton button)
-    {
-        Assert(location != -1);
-        ActionBindings& bindings = ms_actionBindings[location];
-        if(!bindings.full())
-        {
-            ActionBinding& binding = bindings.grow();
-            binding.m_logic = logic;
-            binding.m_cur = ms_gameButtons + button * 2;
-        }
-    }
-    void UnbindFromAction(int32_t location, Key key)
-    {
-        Assert(location != -1);
-        ActionBindings& bindings = ms_actionBindings[location];
-        State* ptr = ms_keys + key * 2;
-        RemoveFromBinding(bindings, ptr);
-    }
-    void UnbindFromAction(int32_t location, MouseButton button)
-    {
-        Assert(location != -1);
-        ActionBindings& bindings = ms_actionBindings[location];
-        State* ptr = ms_mouseButtons + button * 2;
-        RemoveFromBinding(bindings, ptr);
-    }
-    void UnbindFromAction(int32_t location, GamePadButton button)
-    {
-        Assert(location != -1);
-        ActionBindings& bindings = ms_actionBindings[location];
-        State* ptr = ms_gameButtons + button * 2;
-        RemoveFromBinding(bindings, ptr);
-    }
-    State GetActionState(int32_t location)
-    {
-        Assert(location != -1);
-        const ActionBindings& bindings = ms_actionBindings[location];
-        if(bindings.empty())
-        {
-            return Release;
-        }
-        uint8_t state = *(bindings[0].m_cur);
-        for(int32_t i = 1; i < bindings.count(); ++i)
-        {
-            uint8_t nextState = *(bindings[i].m_cur);
-            state = EvalLogic(state, nextState, bindings[i].m_logic);
-        }
-        return (State)state;
-    }
-    State GetPrevActionState(int32_t location)
-    {
-        Assert(location != -1);
-        const ActionBindings& bindings = ms_actionBindings[location];
-        if(bindings.empty())
-        {
-            return Release;
-        }
-        uint8_t state = *(bindings[0].m_cur + 1);
-        for(int32_t i = 1; i < bindings.count(); ++i)
-        {
-            uint8_t nextState = *(bindings[i].m_cur + 1);
-            state = EvalLogic(state, nextState, bindings[i].m_logic);
-        }
-        return (State)state;
-    }
-    Transition GetActionTransition(int32_t location)
-    {
-        State cur = GetActionState(location);
-        State prev = GetPrevActionState(location);
-        if(cur == prev)
-        {
-            return NoChange;
-        }
-        return cur ? ReleaseToPress : PressToRelease;
-    }
+        x /= (f32)ms_winWidth;
+        y /= (f32)ms_winHeight;
+        x = x * 2.0 - 1.0;
+        y = y * 2.0 - 1.0;
 
-    int32_t RegisterAxis(const char* name)
-    {
-        uint64_t hash = Fnv64(name);
-        int32_t idx = ms_axesHashes.find(hash);
-        if(idx != -1)
-        {
-            return idx;
-        }
-        idx = ms_axesHashes.count();
-        ms_axesHashes.grow() = hash;
-        MemZero(ms_axesBindings.grow());
-        return idx;
+        PushEvent(MouseAxis_X, -x);
+        PushEvent(MouseAxis_Y, -y);
     }
-    int32_t GetAxisLocation(const char* name)
+    void ScrollWheelCB(f32 dx, f32 dy)
     {
-        return ms_axesHashes.find(Fnv64(name));
-    }
-    void BindToAxis(int32_t location, AxisLogic logic, MouseAxis axis)
-    {
-        Assert(location != -1);
-        AxisBindings& bindings = ms_axesBindings[location];
-        if(!bindings.full())
-        {
-            AxisBinding& binding = bindings.grow();
-            binding.m_logic = logic;
-            binding.m_cur = ms_mouseAxis + axis * 2;
-        }
-    }
-    void BindToAxis(int32_t location, AxisLogic logic, GamePadAxis axis)
-    {
-        Assert(location != -1);
-        AxisBindings& bindings = ms_axesBindings[location];
-        if(!bindings.full())
-        {
-            AxisBinding& binding = bindings.grow();
-            binding.m_logic = logic;
-            binding.m_cur = ms_gameAxis + axis * 2;
-        }
-    }
-    void UnbindFromAxis(int32_t location, MouseAxis axis)
-    {
-        Assert(location != -1);
-        AxisBindings& bindings = ms_axesBindings[location];
-        float* ptr = ms_mouseAxis + axis * 2;
-        RemoveFromBinding(bindings, ptr);
-    }
-    void UnbindFromAxis(int32_t location, GamePadAxis axis)
-    {
-        Assert(location != -1);
-        AxisBindings& bindings = ms_axesBindings[location];
-        float* ptr = ms_gameAxis + axis * 2;
-        RemoveFromBinding(bindings, ptr);
-    }
-    float GetAxisControl(int32_t location)
-    {
-        Assert(location != -1);
-        const AxisBindings& bindings = ms_axesBindings[location];
-        if(bindings.empty())
-        {
-            return 0.0f;
-        }
-        float value = *(bindings[0].m_cur);
-        for(int32_t i = 1; i < bindings.count(); ++i)
-        {
-            value = EvalLogic(value, *(bindings[i].m_cur), bindings[i].m_logic);
-        }
-        return value;
-    }
-    float GetPrevAxisControl(int32_t location)
-    {
-        Assert(location != -1);
-        const AxisBindings& bindings = ms_axesBindings[location];
-        if(bindings.empty())
-        {
-            return 0.0f;
-        }
-        float value = *(bindings[0].m_cur + 1);
-        for(int32_t i = 1; i < bindings.count(); ++i)
-        {
-            value = EvalLogic(value, *(bindings[i].m_cur + 1), bindings[i].m_logic);
-        }
-        return value;
-    }
-    float GetAxisControlDelta(int32_t location)
-    {
-        return GetAxisControl(location) - GetPrevAxisControl(location);
-    }
+        ms_scrollX += dx;
+        ms_scrollY += dy;
 
-    void KeyCB(int32_t key, int32_t action, int32_t mods)
-    {
-        ms_keys[key * 2] = action != GLFW_RELEASE ? Press : Release;
-    }
-    void MouseButtonCB(int32_t button, int32_t action, int32_t mods)
-    {
-        ms_mouseButtons[button * 2] = action != GLFW_RELEASE ? Press : Release;
-    }
-    void ScrollWheelCB(float dx, float dy)
-    {
-        ms_mouseAxis[MA_Scroll_X * 2] += dx;
-        ms_mouseAxis[MA_Scroll_Y * 2] += dy;
+        PushEvent(MouseAxis_Z, ms_scrollX);
+        PushEvent(MouseAxis_W, ms_scrollY);
     }
 };

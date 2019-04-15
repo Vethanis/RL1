@@ -10,13 +10,13 @@
 int main()
 {
     Init();
-    uint64_t last_time = stm_now();
+    u64 last_time = stm_now();
     while(Window::IsOpen(Window::GetActive()))
     {
-        uint64_t dt = stm_laptime(&last_time);
+        u64 dt = stm_laptime(&last_time);
         Update(
-            (float)stm_sec(last_time), 
-            (float)stm_sec(dt));
+            (f32)stm_sec(last_time), 
+            (f32)stm_sec(dt));
         Draw();
     }
     Shutdown();

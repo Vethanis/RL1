@@ -1,42 +1,43 @@
 #pragma once
 
-#include "swap.h"
+#include "memory.h"
+#include "slice.h"
 
-template<typename T>
-static void Sort(T* x, int32_t len)
+template<typename T, typename C>
+inline void Sort(Slice<T> list, C cmp)
 {
-    if(len <= 8)
+    const int64_t len = list.size();
+    if(len < 2)
     {
-        for(int32_t i = 0; i < len; ++i)
-        {
-            int32_t c = i;
-            for(int32_t j = i + 1; j < len; ++j)
-            {
-                if(x[j] < x[c])
-                {
-                    c = j;
-                }
-            }
-            Swap(x[c], x[i]);
-        }
         return;
     }
-
-    int32_t i, j;
+    int64_t i = 0;
+    int64_t j = len - 1;
     {
-        const int32_t p = len / 2;
-        for(i = 0, j = len - 1; ; ++i, --j)
+        const int64_t p = len >> 1;
+        while(i >= j)
         {
-            while(x[i] < x[p]) ++i;
-            while(x[j] > x[p]) --j;
+            while(cmp(x[i], x[p]) < 0)
+            {
+                ++i;
+            }
+            while(cmp(x[j], x[p]) > 0)
+            {
+                --j;
+            }
 
-            if(i >= j) 
+            if(i >= j)
+            {
                 break;
+            }
 
             Swap(x[i], x[j]);
+
+            ++i;
+            --j;
         }
     }
 
-    Sort(x, i);
-    Sort(x + i, len - i);
+    Sort(list.subslice(0, i), cmp);
+    Sort(list.subslice(i, len - i), cmp);
 }
