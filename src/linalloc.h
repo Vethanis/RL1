@@ -15,5 +15,5 @@ struct LinearAllocator
 
     Allocation Allocate(size_t bytes, size_t align);
     Allocation Reallocate(Allocation prev, size_t bytes, size_t align);
-    Allocation Free(Allocation prev);
+    void Free(Allocation prev);
 };

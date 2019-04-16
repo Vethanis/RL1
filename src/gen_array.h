@@ -17,7 +17,7 @@ struct GenIndices
     {
         if(m_free.empty())
         {
-            m_free.grow() = m_gen.size();
+            m_free.grow() = (u32)m_gen.size();
             m_gen.grow()  = 0u;
         }
 
@@ -34,7 +34,7 @@ struct GenIndices
         }
 
         m_free.grow() = s.id;
-        m_gen[idx]++;
+        m_gen[s.id]++;
 
         return true;
     }

@@ -96,7 +96,7 @@ Allocation LinearAllocator::Reallocate(Allocation prev, size_t bytes, size_t ali
     return outAlloc;
 }
 
-Allocation LinearAllocator::Free(Allocation user)
+void LinearAllocator::Free(Allocation user)
 {
     if(!user.begin())
     {

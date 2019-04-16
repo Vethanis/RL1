@@ -36,7 +36,7 @@ namespace ECS
     }
     void Shutdown()
     {
-        const u32 cap = ms_indices.capacity();
+        const u32 cap = (u32)ms_indices.capacity();
         for(u32 c = 0u; c < CT_Count; ++c)
         {
             for(u32 e = 0u; e < cap; ++e)

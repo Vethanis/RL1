@@ -11,6 +11,5 @@ namespace Window
     bool IsOpen();
     void SetShouldClose(bool close);
     void SetCursorHidden(bool hidden);
-
     GLFWwindow* Get();
 };

@@ -133,8 +133,8 @@ namespace Ctrl
     {
         x /= (f32)ms_winWidth;
         y /= (f32)ms_winHeight;
-        x = x * 2.0 - 1.0;
-        y = y * 2.0 - 1.0;
+        x = x * 2.0f - 1.0f;
+        y = y * 2.0f - 1.0f;
 
         PushEvent(MouseAxis_X, -x);
         PushEvent(MouseAxis_Y, -y);

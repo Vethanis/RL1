@@ -13,15 +13,13 @@ set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
 add_subdirectory(glfw-master)
 
-set(VK_LIBS vulkan-1.lib)
-
 set(CMAKE_CXX_FLAGS_DEBUG "/Od /MTd /Zi")
 set(CMAKE_CXX_FLAGS_RELEASE "/O2 /MT /arch:AVX2 /fp:fast")
 set(CMAKE_CXX_FLAGS "/W3 /MP /GR-")
-include_directories(${CMAKE_SOURCE_DIR}/include "C:/VulkanSDK/Include/")
+include_directories(${CMAKE_SOURCE_DIR}/include)
 
-set(PROJECT_LINK_LIBS OpenGL32 glfw ${BULLET_LIBS} ${VK_LIBS})
-link_directories(${CMAKE_SOURCE_DIR}/build/lib/Release/ "C:/VulkanSDK/Lib/")
+set(PROJECT_LINK_LIBS OpenGL32 glfw)
+link_directories(${CMAKE_SOURCE_DIR}/build/lib/Release/ )
 
 file(GLOB_RECURSE SOURCES "src/*.cpp" "src/*.c" "src/*.cc")
 add_executable(rl1 ${SOURCES})

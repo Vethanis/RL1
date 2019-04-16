@@ -1,9 +1,12 @@
 
 #include "window.h"
 #include "system.h"
+#include "sokol_time.h"
 
 int main()
 {
+    stm_setup();
+    
     for(const auto fn : sc_SystemInits)
     {
         fn();

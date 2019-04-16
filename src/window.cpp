@@ -203,4 +203,9 @@ namespace Window
             hidden ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
     }
 
+    GLFWwindow* Get()
+    {
+        return ms_window;
+    }
+
 }; // Window

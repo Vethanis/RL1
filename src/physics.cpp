@@ -13,7 +13,7 @@ namespace Physics
     }
     void Update()
     {
-        float dt = stm_sec(stm_laptime(&ms_time));
+        f32 dt = (f32)stm_sec(stm_laptime(&ms_time));
 
         Slice<Position> positions = ECS::GetAll<Position>();
     }
