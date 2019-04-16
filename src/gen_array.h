@@ -11,13 +11,7 @@ struct GenIndices
 
     inline bool exists(Slot s) const
     {
-        const u32 idx = s.id;
-        if(idx >= m_gen.size())
-        {
-            return false;
-        }
-        const u32 gen = m_gen[idx];
-        return (gen & 1u) && (gen == s.gen);
+        return s.id < m_gen.size() && s.gen == m_gen[s.id];
     }
     inline Slot create()
     {
@@ -30,14 +24,7 @@ struct GenIndices
         const u32 idx = m_free.back();
         m_free.pop();
 
-        const u32 gen = m_gen[idx] | 1u;
-        m_gen[idx] = gen;
-
-        Slot s;
-        s.id  = idx;
-        s.gen = gen;
-
-        return s;
+        return { idx, m_gen[idx] };
     }
     inline bool destroy(Slot s)
     {
@@ -46,9 +33,8 @@ struct GenIndices
             return false;
         }
 
-        const u32 idx = s.id;
-        m_free.grow() = idx;
-        m_gen[idx] = ( (m_gen[idx] >> 1u) + 1u ) << 1u;
+        m_free.grow() = s.id;
+        m_gen[idx]++;
 
         return true;
     }

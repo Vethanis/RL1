@@ -36,9 +36,8 @@ namespace Ctrl
         EraseR(ms_channels);
         EraseR(ms_values);
     }
-    void Update(f32 dt)
+    void Update()
     {
-        Window::GetSize(Window::GetActive(), ms_winWidth, ms_winHeight);
         glfwPollEvents();
         {
             GLFWgamepadstate state;
@@ -80,7 +79,7 @@ namespace Ctrl
     void SetCursorHidden(bool hidden)
     {
         ms_cursorHidden = hidden;
-        Window::SetCursorHidden(Window::GetActive(), hidden);
+        Window::SetCursorHidden(hidden);
     }
     bool IsCursorHidden()
     {
@@ -89,7 +88,7 @@ namespace Ctrl
 
     void CloseMainWindow()
     {
-        Window::SetShouldClose(Window::GetActive(), true);
+        Window::SetShouldClose(true);
     }
 
     bool Get(Channel ch, f64 secsElapsed, Event& evtOut)
@@ -147,5 +146,10 @@ namespace Ctrl
 
         PushEvent(MouseAxis_Z, ms_scrollX);
         PushEvent(MouseAxis_W, ms_scrollY);
+    }
+    void WindowSizeCB(i32 width, i32 height)
+    {
+        ms_winWidth = width;
+        ms_winHeight = height;
     }
 };

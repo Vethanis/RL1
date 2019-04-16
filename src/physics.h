@@ -3,6 +3,6 @@
 namespace Physics
 {
     void Init();
-    void Update(float dt);
+    void Update();
     void Shutdown();
 };

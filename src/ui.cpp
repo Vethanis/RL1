@@ -5,9 +5,13 @@
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_glfw.h"
 #include "window.h"
+#include "scalar_types.h"
+#include "sokol_time.h"
 
 namespace UI
 {
+    static u64 ms_time = 0;
+
     void Init()
     {    
         IMGUI_CHECKVERSION();
@@ -16,7 +20,7 @@ namespace UI
         io.DeltaTime = 1.0f / 60.0f;
         //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
         //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
-        ImGui_ImplGlfw_InitForOpenGL(Window::GetActive(), false);
+        ImGui_ImplGlfw_InitForOpenGL(Window::Get(), false);
         ImGui_ImplOpenGL3_Init("#version 330 core");
         ImGui::StyleColorsDark();
     }
@@ -26,9 +30,10 @@ namespace UI
         ImGui_ImplGlfw_Shutdown();
         ImGui::DestroyContext();
     }
-    void Begin(float dt)
+    void Begin()
     {
-        ImGui::GetIO().DeltaTime = dt;
+        const f64 dt = stm_sec(stm_laptime(&ms_time));
+        ImGui::GetIO().DeltaTime = (f32)dt;
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();

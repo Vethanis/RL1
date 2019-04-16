@@ -12,8 +12,8 @@ namespace Malloc
 namespace LinAlloc
 {
     void Init();
+    void Update();
     void Shutdown();
-    void Reset();
 
     Allocation Allocate(size_t bytes, size_t align);
     Allocation Reallocate(Allocation prev, size_t bytes, size_t align);

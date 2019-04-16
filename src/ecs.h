@@ -12,15 +12,14 @@ struct Entity
 namespace ECS
 {
     void Init();
+    void Update();
     void Shutdown();
 
     Entity Create();
     bool Destroy(Entity e);
     bool Exists(Entity e);
 
-    // find the number of entities with the given component types
-    // optionally get the entities with the given component types
-    u32 Query(Slice<const ComponentType> query, Entity* pOptionalOut);
+    Slice<const ComponentFlags> GetFlags();
 
     bool AddComponent(Entity e, ComponentType type);
     bool RemoveComponent(Entity e, ComponentType type);

@@ -1,9 +1,8 @@
 #pragma once
 
-namespace UI
+namespace AI
 {
     void Init();
+    void Update();
     void Shutdown();
-    void Begin();
-    void End();
 };

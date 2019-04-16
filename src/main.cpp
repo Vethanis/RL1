@@ -1,23 +1,22 @@
 
 #include "window.h"
-
-#include "init.h"
-#include "update.h"
-#include "draw.h"
-#include "shutdown.h"
-#include "sokol_time.h"
+#include "system.h"
 
 int main()
 {
-    Init();
-    u64 last_time = stm_now();
-    while(Window::IsOpen(Window::GetActive()))
+    for(const auto fn : sc_SystemInits)
     {
-        u64 dt = stm_laptime(&last_time);
-        Update(
-            (f32)stm_sec(last_time), 
-            (f32)stm_sec(dt));
-        Draw();
+        fn();
     }
-    Shutdown();
+    while(Window::IsOpen())
+    {
+        for(const auto fn : sc_SystemUpdates)
+        {
+            fn();
+        }
+    }
+    for(const auto fn : sc_SystemShutdowns)
+    {
+        fn();
+    }
 }

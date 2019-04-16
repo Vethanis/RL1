@@ -3,7 +3,6 @@
 #include "component_types.h"
 #include "memory.h"
 
-using ComponentData   = Slice<u8>;
 using ComponentNewFn  = void(*)(ComponentData component);
 using ComponentDropFn = void(*)(ComponentData component);
 

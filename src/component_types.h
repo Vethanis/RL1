@@ -2,6 +2,7 @@
 
 #include "hlsl_types.h"
 #include "array.h"
+#include "bitfield.h"
 
 struct Position
 {
@@ -90,6 +91,9 @@ enum ComponentType : u32
 
     CT_Count
 };
+
+using ComponentData = Slice<u8>;
+using ComponentFlags = BitField<CT_Count>;
 
 // ----------------------------------------------------------------------------
 

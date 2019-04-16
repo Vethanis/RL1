@@ -4,43 +4,36 @@
 #include "bitfield.h"
 #include "find.h"
 
-#include "component_types.h"
 #include "component_funcs.h"
-
-// ----------------------------------------------------------------------------
-
-using ComponentFlags = BitField<CT_Count>;
-
-static constexpr Allocator ms_alloc =
-{
-    Malloc::Allocate,
-    Malloc::Reallocate,
-    Malloc::Free,
-    4096u,
-};
-
-static GenIndices<ms_alloc>                     ms_indices;                     // active slots
-static Slice<ComponentFlags>                    ms_flags;                       // what components exist, per-entity
-static ComponentData                            ms_components[CT_Count];        // component allocations as bytes
-static u32                                      ms_counts[CT_Count];            // how many components exist
-static u32                                      ms_capacity;                    // capacity of component arrays
-
-// ----------------------------------------------------------------------------
-
-static ComponentData GetComponentData(u32 e, u32 c)
-{
-    return ms_components[c].opaque(e, sc_ComponentSize[c]);
-}
-
-// ----------------------------------------------------------------------------
 
 namespace ECS
 {
+    static constexpr Allocator ms_alloc =
+    {
+        Malloc::Allocate,
+        Malloc::Reallocate,
+        Malloc::Free,
+        4096u,
+    };
+
+    static GenIndices<ms_alloc>     ms_indices;                 // active slots
+    static Slice<ComponentFlags>    ms_flags;                   // what components exist, per-entity
+    static ComponentData            ms_components[CT_Count];    // component allocations as bytes
+    static u32                      ms_capacity;                // capacity of component arrays
+
+    static ComponentData GetComponentData(u32 e, u32 c)
+    {
+        return ms_components[c].opaque(e, sc_ComponentSize[c]);
+    }
+
     void Init()
     {
 
     }
+    void Update()
+    {
 
+    }
     void Shutdown()
     {
         const u32 cap = ms_indices.capacity();
@@ -58,13 +51,12 @@ namespace ECS
         
         ms_alloc.Free(ms_flags);
         ms_indices.reset();
-        EraseA(ms_counts);
         ms_capacity = 0u;
     }
 
     Entity Create()
     {
-        const Slot s     = ms_indices.create();
+        const Slot s = ms_indices.create();
         const u32 newCap = s.id + 1u;
 
         if (newCap > ms_capacity)
@@ -111,42 +103,9 @@ namespace ECS
         return ms_indices.exists(e.s);
     }
 
-    u32 Query(Slice<const ComponentType> query, Entity* pOut)
+    Slice<const ComponentFlags> GetFlags()
     {
-        ComponentFlags qflags;
-        EraseR(qflags);
-        qflags.set(ToDwords(query));
-
-        CDwordSlice gens = ms_indices.gens();
-        u32 count = 0;
-
-        if(pOut)
-        {
-            for(u32 e = 0; e < gens.size(); ++e)
-            {
-                if((gens[e] & 1u) && ms_flags[e].has_all(qflags))
-                {
-                    Slot s;
-                    s.id  = e;
-                    s.gen = gens[e];
-
-                    pOut[count] = { s };
-                    ++count;
-                }
-            }
-        }
-        else
-        {
-            for(u32 e = 0; e < gens.size(); ++e)
-            {
-                if((gens[e] & 1u) && ms_flags[e].has_all(qflags))
-                {
-                    ++count;
-                }
-            }
-        }
-        
-        return count;
+        return ms_flags.subslice(0, ms_capacity).to_const();
     }
 
     bool AddComponent(Entity e, ComponentType type)
@@ -156,7 +115,6 @@ namespace ECS
         {
             sc_ComponentNew[type](GetComponentData(id, type));
             ms_flags[id].set(type);
-            ms_counts[type]++;
             return true;
         }
         return false;
@@ -169,7 +127,6 @@ namespace ECS
         {
             sc_ComponentDrop[type](GetComponentData(id, type));
             ms_flags[id].unset(type);
-            ms_counts[type]--;
             return true;
         }
         return false;

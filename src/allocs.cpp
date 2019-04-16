@@ -58,10 +58,32 @@ namespace Malloc
 
 namespace LinAlloc
 {
-    static LinearAllocator ms_linear;
+    static constexpr size_t ms_capacity = PageSize * 256;
+    static LinearAllocator  ms_linear;
 
-    Allocation Alloc(size_t bytes, size_t align)
+    void Init()
+    {
+        ms_linear.Init(ms_capacity);
+    }
+    void Update()
+    {
+        ms_linear.Reset();
+    }
+    void Shutdown()
+    {
+        ms_linear.Shutdown();
+    }
+
+    Allocation Allocate(size_t bytes, size_t align)
     {
         return ms_linear.Allocate(bytes, align);
+    }
+    Allocation Reallocate(Allocation prev, size_t bytes, size_t align)
+    {
+        return ms_linear.Reallocate(prev, bytes, align);
+    }
+    void Free(Allocation x)
+    {
+        ms_linear.Free(x);
     }
 };

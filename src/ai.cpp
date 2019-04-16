@@ -1,6 +1,6 @@
-#include "renderer.h"
+#include "ai.h"
 
-namespace Renderer
+namespace AI
 {
     void Init()
     {

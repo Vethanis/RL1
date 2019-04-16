@@ -62,26 +62,58 @@
     }
 #endif // _DEBUG
 
+static void SetCallbacks(GLFWwindow* window)
+{
+    glfwSetWindowSizeCallback(window, [](GLFWwindow* w, i32 width, i32 height)
+        {
+            Ctrl::WindowSizeCB(width, height);
+        });
+    glfwSetKeyCallback(window, 
+        [](GLFWwindow* w, i32 key, i32 scancode, i32 action, i32 mods)
+        {
+            ImGuiIO& io = ImGui::GetIO();
+            if(key >= 0 && key < 512)
+            {
+                io.KeysDown[key] = action != GLFW_RELEASE;
+            }
+            io.KeyCtrl  = (0 != (mods & GLFW_MOD_CONTROL));
+            io.KeyAlt   = (0 != (mods & GLFW_MOD_ALT));
+            io.KeyShift = (0 != (mods & GLFW_MOD_SHIFT));
+            Ctrl::KeyCB(key, action, mods);
+        });
+    glfwSetMouseButtonCallback(window, 
+        [](GLFWwindow* w, i32 btn, i32 action, i32 mods)
+        {
+            if(btn >= 0 && btn < 3)
+            {
+                ImGui::GetIO().MouseDown[btn] = (action == GLFW_PRESS);
+            }
+            Ctrl::MouseButtonCB(btn, action, mods);
+        });
+    glfwSetCursorPosCallback(window, 
+        [](GLFWwindow* w, f64 x, f64 y)
+        {
+            ImGui::GetIO().MousePos.x = (f32)x;
+            ImGui::GetIO().MousePos.y = (f32)y;
+            Ctrl::CursorPosCB((f32)x, (f32)y);
+        });
+    glfwSetScrollCallback(window, 
+        [](GLFWwindow* w, f64 x, f64 y)
+        {
+            ImGui::GetIO().MouseWheel = (f32)y;
+            Ctrl::ScrollWheelCB((f32)x, (f32)y);
+        });
+}
+
 namespace Window
 {
-    static WindowHandle ms_active;
-    static i32          ms_glfwRefs;
-    static bool         ms_gladInit;
+    static GLFWwindow*  ms_window;
+    static bool         ms_fullscreen = false;
 
-    static GLFWwindow* ToWindow(WindowHandle hdl)
+    void Init()
     {
-        DebugAssert(hdl.ptr);
-        return (GLFWwindow*)hdl.ptr;
-    }
-
-    WindowHandle Create(const char* title, bool fullscreen)
-    {
-        ++ms_glfwRefs;
-        if(ms_glfwRefs == 1)
-        {
-            i32 glfwLoaded = glfwInit();
-            DebugAssert(glfwLoaded);
-        }
+        i32 glfwLoaded = glfwInit();
+        DebugAssert(glfwLoaded);
 
         glfwSetErrorCallback(
             [](i32 error, const char* msg)
@@ -111,68 +143,23 @@ namespace Window
         GLFWwindow* window = glfwCreateWindow(
             mode->width, 
             mode->height, 
-            title, 
-            fullscreen ? monitor : nullptr, 
+            "RL1", 
+            ms_fullscreen ? monitor : nullptr, 
             nullptr);
         DebugAssert(window);
+
+        SetCallbacks(window);
         
         glfwMakeContextCurrent(window);
         glfwSwapInterval(1);
 
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-        if(!ms_gladInit)
-        {
-            i32 gladLoaded = gladLoadGL();
-            DebugAssert(gladLoaded);
-            ms_gladInit = true;
-        }
+        i32 gladLoaded = gladLoadGL();
+        DebugAssert(gladLoaded);
 
-        glfwSetMouseButtonCallback(window, 
-            [](GLFWwindow* w, i32 btn, i32 action, i32 mods)
-            {
-                if(btn >= 0 && btn < 3)
-                {
-                    ImGui::GetIO().MouseDown[btn] = (action == GLFW_PRESS);
-                }
-                Ctrl::MouseButtonCB(btn, action, mods);
-            });
-        glfwSetCursorPosCallback(window, 
-            [](GLFWwindow* w, f64 x, f64 y)
-            {
-                ImGui::GetIO().MousePos.x = (f32)x;
-                ImGui::GetIO().MousePos.y = (f32)y;
-                Ctrl::CursorPosCB((f32)x, (f32)y);
-            });
-        glfwSetScrollCallback(window, 
-            [](GLFWwindow* w, f64 x, f64 y)
-            {
-                ImGui::GetIO().MouseWheel = (f32)y;
-                Ctrl::ScrollWheelCB((f32)x, (f32)y);
-            });
-        glfwSetKeyCallback(window, 
-            [](GLFWwindow* w, i32 key, i32 scancode, i32 action, i32 mods)
-            {
-                ImGuiIO& io = ImGui::GetIO();
-                if(key >= 0 && key < 512)
-                {
-                    io.KeysDown[key] = action != GLFW_RELEASE;
-                }
-                io.KeyCtrl  = (0 != (mods & GLFW_MOD_CONTROL));
-                io.KeyAlt   = (0 != (mods & GLFW_MOD_ALT));
-                io.KeyShift = (0 != (mods & GLFW_MOD_SHIFT));
-                Ctrl::KeyCB(key, action, mods);
-            });
-        glfwSetCharCallback(window, 
-            [](GLFWwindow* w, uint32_t codepoint)
-            {
-                ImGui::GetIO().AddInputCharacter((ImWchar)codepoint);
-            });
-
-        i32 wwidth = 0;
-        i32 wheight = 0;
-        Window::GetSize({ window }, wwidth, wheight);
-        glViewport(0, 0, wwidth, wheight);
+        Ctrl::WindowSizeCB(mode->width, mode->height);
+        glViewport(0, 0, mode->width, mode->height);
 
 #if _DEBUG
         i32 flags = 0; 
@@ -184,61 +171,36 @@ namespace Window
         glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, 0, GL_TRUE);
 #endif // _DEBUG
 
-        return { window };
+        ms_window = window;
     }
 
-    void Destroy(WindowHandle window)
+    void Update()
     {
-        glfwDestroyWindow(ToWindow(window));
-
-        --ms_glfwRefs;
-        if(ms_glfwRefs == 0)
-        {
-            glfwTerminate();
-        }
+        glfwSwapBuffers(ms_window);
     }
 
-    bool IsOpen(WindowHandle window)
+    void Shutdown()
     {
-        return !glfwWindowShouldClose(ToWindow(window));
+        glfwDestroyWindow(ms_window);
+        glfwTerminate();
     }
 
-    void SetShouldClose(WindowHandle window, bool closed)
+    bool IsOpen()
     {
-        glfwSetWindowShouldClose(ToWindow(window), closed);
+        return !glfwWindowShouldClose(ms_window);
     }
 
-    void Swap(WindowHandle window)
+    void SetShouldClose(bool closed)
     {
-        glfwSwapBuffers(ToWindow(window));
+        glfwSetWindowShouldClose(ms_window, closed);
     }
 
-    void GetSize(WindowHandle window, i32& width, i32& height)
-    {
-        glfwGetWindowSize(ToWindow(window), &width, &height);
-    }
-
-    void GetCursorPos(WindowHandle window, double& xpos, double& ypos)
-    {
-        glfwGetCursorPos(ToWindow(window), &xpos, &ypos);
-    }
-
-    void SetCursorHidden(WindowHandle window, bool hidden)
+    void SetCursorHidden(bool hidden)
     {
         glfwSetInputMode(
-            ToWindow(window), 
+            ms_window, 
             GLFW_CURSOR, 
             hidden ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
-    }
-
-    WindowHandle GetActive()
-    {
-        return ms_active;
-    }
-
-    void SetActive(WindowHandle window)
-    {
-        ms_active = window;
     }
 
 }; // Window

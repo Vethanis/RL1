@@ -176,7 +176,7 @@ namespace Ctrl
     };
 
     void Init();
-    void Update(f32 dt);
+    void Update();
     void Shutdown();
 
     void SetCursorHidden(bool hidden);
@@ -191,4 +191,5 @@ namespace Ctrl
     void MouseButtonCB(i32 button, i32 action, i32 mods);
     void CursorPosCB(f32 x, f32 y);
     void ScrollWheelCB(f32 dx, f32 dy);
+    void WindowSizeCB(i32 width, i32 height);
 };

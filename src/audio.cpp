@@ -1,6 +1,6 @@
-#include "renderer.h"
+#include "audio.h"
 
-namespace Renderer
+namespace Audio
 {
     void Init()
     {
