@@ -170,9 +170,8 @@ namespace Ctrl
 
     struct Event
     {
-        Channel channel;
-        f32     value;
-        u64     tick;
+        f32 value;
+        u64 tick;
     };
 
     void Init();
@@ -185,7 +184,7 @@ namespace Ctrl
     void CloseMainWindow();
 
     // searches for an event on the channel that has occurred within the last N seconds
-    bool Get(Channel ch, f64 secsElapsed, Event& evtOut);
+    bool Get(Channel ch, f64 secsElapsed, Event& evt);
 
     void KeyCB(i32 key, i32 action, i32 mods);
     void MouseButtonCB(i32 button, i32 action, i32 mods);

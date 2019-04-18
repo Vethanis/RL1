@@ -1,0 +1,12 @@
+.vs/
+
+.vscode/
+
+*.user
+
+
+x64/
+x86/
+Debug/
+Release/
+imgui.ini

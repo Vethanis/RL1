@@ -4,6 +4,7 @@
 #include "allocs.h"
 #include "audio.h"
 #include "control.h"
+#include "ctrlbinding.h"
 #include "ecs.h"
 #include "physics.h"
 #include "renderer.h"
@@ -24,6 +25,7 @@ static constexpr SystemInitFn sc_SystemInits[] =
     Renderer::Init,
     UI::Init,
     Physics::Init,
+    CtrlBinding::Init,
     AI::Init,
 };
 
@@ -33,6 +35,7 @@ static constexpr SystemUpdateFn sc_SystemUpdates[] =
     UI::Begin,
     Ctrl::Update,
 // -------------------
+    CtrlBinding::Update,
     AI::Update,
     ECS::Update,
     Physics::Update,
@@ -46,6 +49,7 @@ static constexpr SystemUpdateFn sc_SystemUpdates[] =
 static constexpr SystemShutdownFn sc_SystemShutdowns[] =
 {
     AI::Shutdown,
+    CtrlBinding::Shutdown,
     Physics::Shutdown,
     UI::Shutdown,
     Renderer::Shutdown,

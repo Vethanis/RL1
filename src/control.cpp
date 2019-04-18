@@ -18,16 +18,23 @@ namespace Ctrl
 
     static GLFWgamepadstate ms_prevPad;
 
+    static u64  ms_curTick = 0;
     static f32  ms_scrollX = 0.0f;
     static f32  ms_scrollY = 0.0f;
     static i32  ms_winWidth;
     static i32  ms_winHeight;
+    static bool ms_cursorHidden;
 
     static void PushEvent(u32 ch, f32 value)
     {
         ms_channels.push(ch);
         ms_values.push(value);
-        ms_ticks.push(stm_now());
+        ms_ticks.push(ms_curTick);
+    }
+
+    static u64 SecsToTicks(f64 secs)
+    {
+        return (u64)(secs * 1000000000.0);
     }
 
     void Init()
@@ -38,19 +45,19 @@ namespace Ctrl
     }
     void Update()
     {
+        ms_curTick = stm_now();
         glfwPollEvents();
         {
             GLFWgamepadstate state;
             EraseR(state);
             if(glfwGetGamepadState(0, &state) == GLFW_TRUE)
             {
-                const u64 tick = stm_now();
                 for(u32 i = 0; i < CountOf(state.axes); ++i)
                 {
                     if(state.axes[i] != ms_prevPad.axes[i])
                     {
                         ms_prevPad.axes[i] = state.axes[i];
-                        ms_ticks.push(tick);
+                        ms_ticks.push(ms_curTick);
                         ms_channels.push(PadAxis_LX + i);
                         ms_values.push(state.axes[i]);
                     }
@@ -60,7 +67,7 @@ namespace Ctrl
                     if(state.buttons[i] != ms_prevPad.axes[i])
                     {
                         ms_prevPad.buttons[i] = state.buttons[i];
-                        ms_ticks.push(tick);
+                        ms_ticks.push(ms_curTick);
                         ms_channels.push(PadBtn_A + i);
                         ms_values.push(state.buttons ? 1.0f : 0.0f);
                     }
@@ -75,7 +82,6 @@ namespace Ctrl
         EraseR(ms_values);
     }
 
-    static bool ms_cursorHidden;
     void SetCursorHidden(bool hidden)
     {
         ms_cursorHidden = hidden;
@@ -91,29 +97,26 @@ namespace Ctrl
         Window::SetShouldClose(true);
     }
 
-    bool Get(Channel ch, f64 secsElapsed, Event& evtOut)
+    bool Get(Channel ch, f64 secsElapsed, Event& evt)
     {
-        const u64 maxElapsed = (u64)(secsElapsed * 1000000000.0);
-        const u64 now        = stm_now();
-
-        const u64* pTicks   = ms_ticks.m_data;
-        const u32* pChans   = ms_channels.m_data;
-        const u32 bot       = ms_channels.bottom_idx();
+        const u64  maxElapsed = SecsToTicks(secsElapsed);
+        const u64  now    = ms_curTick;
+        const u64* pTicks = ms_ticks.m_data;
+        const u32* pChans = ms_channels.m_data;
+        const u32  bot    = ms_channels.bottom_idx();
 
         for(u32 i  = ms_channels.top_idx();
                 i != bot;
                 i  = circular_prev<ms_StackCap>(i))
         {
-            const u64 elapsed = now - pTicks[i];
-            if(elapsed > maxElapsed)
+            if((now - pTicks[i]) > maxElapsed)
             {
                 return false;
             }
             if(pChans[i] == ch)
             {
-                evtOut.channel = ch;
-                evtOut.tick    = ms_ticks[i];
-                evtOut.value   = ms_values[i];
+                evt.tick = ms_ticks[i];
+                evt.value = ms_values[i];
                 return true;
             }
         }

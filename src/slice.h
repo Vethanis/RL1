@@ -49,12 +49,12 @@ struct Slice
 
     inline Slice<T> subslice(size_t start, size_t count) 
     {
-        DebugAssert(start + count < m_len);
+        DebugAssert(start + count <= m_len);
         return { m_ptr + start, count };
     }
     inline Slice<const T> subslice(size_t start, size_t count) const 
     {
-        DebugAssert(start + count < m_len);
+        DebugAssert(start + count <= m_len);
         return { m_ptr + start, count };
     }
 
