@@ -4,8 +4,9 @@
 #include <GLFW/glfw3.h>
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_glfw.h"
+
+#include "macro.h"
 #include "window.h"
-#include "scalar_types.h"
 #include "sokol_time.h"
 
 namespace UI

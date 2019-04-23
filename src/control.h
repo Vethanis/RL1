@@ -1,6 +1,6 @@
 #pragma once
 
-#include "scalar_types.h"
+#include "macro.h"
 
 namespace Ctrl
 {

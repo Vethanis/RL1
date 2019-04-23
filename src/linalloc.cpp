@@ -3,7 +3,6 @@
 #include <malloc.h>
 #include "memreq.h"
 
-
 void LinearAllocator::Init(size_t size)
 {
     EraseR(*this);
@@ -55,7 +54,7 @@ Allocation LinearAllocator::Allocate(size_t bytes, size_t align)
     const size_t start = AlignGrow(m_head, req.align);
 
     m_head = start + req.bytes;
-    Allocation outAlloc = m_memory.subslice(start, req.bytes);
+    Allocation outAlloc = Subslice(m_memory, start, req.bytes);
     m_stack.push(outAlloc);
 
     return outAlloc;
@@ -90,7 +89,7 @@ Allocation LinearAllocator::Reallocate(Allocation prev, size_t bytes, size_t ali
     }
 
     m_head = start + req.bytes;
-    Allocation outAlloc = m_memory.subslice(start, req.bytes);
+    Allocation outAlloc = Subslice(m_memory, start, req.bytes);
     m_stack.push(outAlloc);
 
     return outAlloc;

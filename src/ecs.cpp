@@ -2,7 +2,6 @@
 
 #include "gen_array.h"
 #include "bitfield.h"
-#include "find.h"
 
 #include "component_funcs.h"
 
@@ -23,7 +22,7 @@ namespace ECS
 
     static ComponentData GetComponentData(u32 e, u32 c)
     {
-        return ms_components[c].opaque(e, sc_ComponentSize[c]);
+        return Opaque(ms_components[c], e, sc_ComponentSize[c]);
     }
 
     void Init()
@@ -105,7 +104,7 @@ namespace ECS
 
     Slice<const ComponentFlags> GetFlags()
     {
-        return ms_flags.subslice(0, ms_capacity).to_const();
+        return CSubslice(ms_flags, 0, ms_capacity);
     }
 
     bool AddComponent(Entity e, ComponentType type)
@@ -144,6 +143,7 @@ namespace ECS
 
     ComponentData GetAllComponents(ComponentType type)
     {
-        return ms_components[type].subslice(0, ms_indices.capacity() * sc_ComponentSize[type]);
+        let bytes = ms_indices.capacity() * sc_ComponentSize[type];
+        return Subslice(ms_components[type], 0, bytes);
     }
 };

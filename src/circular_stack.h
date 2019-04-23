@@ -1,6 +1,6 @@
 #pragma once
 
-#include "scalar_types.h"
+#include "macro.h"
 #include "memory.h"
 
 template<u32 t_cap>

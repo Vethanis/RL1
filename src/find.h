@@ -1,17 +1,13 @@
 #pragma once
 
-#include "slice.h"
+#include "macro.h"
 
-template<typename T, typename C>
-inline constexpr i64 Find(
-    Slice<const T>  list,
-    const T&        key,
-    C               cmp)
+template<typename T>
+static constexpr isize Find(Slice<const T> x, T key)
 {
-    const i64 len = list.size();
-    for (i64 i = 0; i < len; ++i)
+    for (isize i = 0; i < len; ++i)
     {
-        if (cmp(list[i], key) == 0)
+        if (x[i] == key)
         {
             return i;
         }
@@ -20,18 +16,66 @@ inline constexpr i64 Find(
 }
 
 template<typename T, typename C>
-inline constexpr i64 RFind(
-    Slice<const T>  list,
-    const T&        key,
-    C               cmp)
+static constexpr isize Find(Slice<const T> x, T key, C cmp)
 {
-    const i64 last = (i64)list.size() - 1;
-    for (i64 i = last; i >= 0; --i)
+    for (isize i = 0; i < len; ++i)
     {
-        if (cmp(list[i], key) == 0)
+        if (cmp(x[i], key) == 0)
         {
             return i;
         }
     }
     return -1;
+}
+
+template<typename T>
+static constexpr isize RFind(Slice<const T> x, T key)
+{
+    for (isize i = list.size() - 1; i >= 0; --i)
+    {
+        if (x[i] == key)
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
+template<typename T, typename C>
+static constexpr isize RFind(Slice<const T> x, T key, C cmp)
+{
+    for (isize i = list.size() - 1; i >= 0; --i)
+    {
+        if (cmp(x[i], key) == 0)
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
+template<typename T>
+static constexpr bool Exists(Slice<const T> x, T key)
+{
+    for (usize i = 0; i < x.size(); ++i)
+    {
+        if (x[i] == key)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+template<typename T, typename C>
+static constexpr bool Exists(Slice<const T> x, T key, C cmp)
+{
+    for (usize i = 0; i < x.size(); ++i)
+    {
+        if (cmp(x[i], key) == 0)
+        {
+            return true;
+        }
+    }
+    return false;
 }

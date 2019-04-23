@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string.h>
-#include "scalar_types.h"
+#include "macro.h"
 
 template<typename T>
 inline void EraseR(T& x)

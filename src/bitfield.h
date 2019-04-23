@@ -1,8 +1,6 @@
 #pragma once
 
 #include "macro.h"
-#include "scalar_types.h"
-#include "slice.h"
 
 template<u32 bitCount>
 struct BitField

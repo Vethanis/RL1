@@ -131,7 +131,6 @@
       <LargeAddressAware>true</LargeAddressAware>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -262,11 +261,13 @@
     <ClInclude Include="..\src\matrix_types.h" />
     <ClInclude Include="..\src\memory.h" />
     <ClInclude Include="..\src\memreq.h" />
+    <ClInclude Include="..\src\parsers.h" />
+    <ClInclude Include="..\src\parser_funcs.h" />
+    <ClInclude Include="..\src\parser_types.h" />
     <ClInclude Include="..\src\physics.h" />
     <ClInclude Include="..\src\prng.h" />
     <ClInclude Include="..\src\remove.h" />
     <ClInclude Include="..\src\renderer.h" />
-    <ClInclude Include="..\src\scalar_types.h" />
     <ClInclude Include="..\src\slice.h" />
     <ClInclude Include="..\src\slot.h" />
     <ClInclude Include="..\src\sokol_audio.h" />
