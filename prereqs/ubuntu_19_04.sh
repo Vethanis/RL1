@@ -4,4 +4,3 @@
 
 apt-get install clang
 apt-get install libglfw3-dev
-apt-get install lldb

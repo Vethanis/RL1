@@ -14,7 +14,7 @@ namespace UI
     static u64 ms_time = 0;
 
     void Init()
-    {    
+    {
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
         ImGuiIO& io = ImGui::GetIO();
@@ -22,7 +22,7 @@ namespace UI
         //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
         //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
         ImGui_ImplGlfw_InitForOpenGL(Window::Get(), false);
-        ImGui_ImplOpenGL3_Init("#version 330 core");
+        ImGui_ImplOpenGL3_Init("#version 410 core");
         ImGui::StyleColorsDark();
     }
     void Shutdown()

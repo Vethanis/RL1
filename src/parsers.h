@@ -2,7 +2,7 @@
 
 #include "parser_funcs.h"
 
-#define ParDef constant Parser
+#define ParDef def Parser
 
 ParDef NullParser = { 0, 0, 0 };
 
@@ -27,7 +27,7 @@ enum RuleID
 
 namespace Rule
 {
-    constant ParseFn Fn = RepRule;
+    def ParseFn Fn = RepRule;
 
     ParDef Blank{ Fn, Rule_Blank, IsBlank };
     ParDef Whitespace{ Fn, Rule_Whitespace, IsWhitespace };
@@ -72,7 +72,7 @@ enum CharLitID
 
 namespace CharLit
 {
-    constant ParseFn Fn = CharLiteral;
+    def ParseFn Fn = CharLiteral;
 
     ParDef LBracket{ Fn, CharLit_LBracket, "[" };
     ParDef RBracket{ Fn, CharLit_RBracket, "]" };
@@ -109,7 +109,7 @@ enum CharLitInsID
 
 namespace CharLitIns
 {
-    constant ParseFn Fn = CharLiteralIns;
+    def ParseFn Fn = CharLiteralIns;
 
     ParDef E{ Fn, CharLitIns_E, "eE" };
     ParDef X{ Fn, CharLitIns_X, "xX" };
@@ -124,7 +124,7 @@ enum StrLitID
 
 namespace StrLit
 {
-    constant ParseFn Fn = StrLiteral;
+    def ParseFn Fn = StrLiteral;
 
 };
 
@@ -137,7 +137,7 @@ enum StrLitInsID
 
 namespace StrLitIns
 {
-    constant ParseFn Fn = StrliteralIns;
+    def ParseFn Fn = StrliteralIns;
 
 };
 

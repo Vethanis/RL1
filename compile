@@ -118,3 +118,5 @@ if [[ "${RUN}" == "1" ]]; then
     ./"${EXE_NAME}"
     cd "${PROJ_DIR}"
 fi
+
+echo "compile finished"

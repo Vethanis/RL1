@@ -1,8 +1,8 @@
 #pragma once
 
+#include "component_types_thin.h"
 #include "hlsl_types.h"
 #include "array.h"
-#include "bitfield.h"
 
 struct Position
 {
@@ -74,29 +74,6 @@ struct Health
 
 // ----------------------------------------------------------------------------
 
-enum ComponentType : u32
-{
-    CT_Position = 0,
-    CT_Orientation,
-    CT_Scale,
-    CT_Velocity,
-    CT_Mass,
-    CT_AABB,
-    CT_Sphere,
-    CT_Plane,
-    CT_Name,
-    CT_NameHash,
-    CT_Inventory,
-    CT_Health,
-
-    CT_Count
-};
-
-using ComponentData = Slice<u8>;
-using ComponentFlags = BitField<CT_Count>;
-
-// ----------------------------------------------------------------------------
-
 static constexpr usize sc_ComponentSize[] =
 {
     sizeof(Position),
@@ -115,9 +92,6 @@ static constexpr usize sc_ComponentSize[] =
 CountAssert(sc_ComponentSize, CT_Count);
 
 // ----------------------------------------------------------------------------
-
-template<typename T>
-inline constexpr ComponentType GetComponentType();
 
 #define GCT(T, id) \
     template<> \

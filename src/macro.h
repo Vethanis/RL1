@@ -21,7 +21,7 @@
 
 #define let                 const auto
 #define letmut              auto
-#define constant            static constexpr
+#define def                 static constexpr
 
 #define CountOf(x)          ( sizeof(x) / (sizeof((x)[0])) )
 
@@ -58,10 +58,10 @@ using f64 = double;
 
 using cstr = const char*;
 
-constant usize MaxPathLen = 256;
-constant usize PageSize = 4096;
-constant usize MinAlign = 16;
-constant usize MaxAlign = PageSize;
+def usize MaxPathLen = 256;
+def usize PageSize = 4096;
+def usize MinAlign = 16;
+def usize MaxAlign = PageSize;
 
 template<typename T>
 struct Slice

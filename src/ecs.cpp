@@ -5,33 +5,42 @@
 
 #include "component_funcs.h"
 
+#if _DEBUG
+    #include "imvis.h"
+    #include "component_debug.h"
+    #include <stdio.h>
+#endif // _DEBUG
+
+static constexpr Allocator ms_alloc =
+{
+    Malloc::Allocate,
+    Malloc::Reallocate,
+    Malloc::Free,
+    4096u,
+};
+
+static GenIndices<ms_alloc>             ms_indices;                 // active slots
+static Array<bool, ms_alloc>            ms_alive;                   // is entity alive
+static Array<ComponentFlags, ms_alloc>  ms_flags;                   // what components exist, per-entity
+static ComponentData                    ms_components[CT_Count];    // component allocations as bytes
+static u32                              ms_capacity;                // capacity of component arrays
+
+static ComponentData GetComponentData(u32 e, u32 c)
+{
+    return Opaque(ms_components[c], e, sc_ComponentSize[c]);
+}
+
+DebugOnly(static void DebugVis());
+
 namespace ECS
 {
-    static constexpr Allocator ms_alloc =
-    {
-        Malloc::Allocate,
-        Malloc::Reallocate,
-        Malloc::Free,
-        4096u,
-    };
-
-    static GenIndices<ms_alloc>     ms_indices;                 // active slots
-    static Slice<ComponentFlags>    ms_flags;                   // what components exist, per-entity
-    static ComponentData            ms_components[CT_Count];    // component allocations as bytes
-    static u32                      ms_capacity;                // capacity of component arrays
-
-    static ComponentData GetComponentData(u32 e, u32 c)
-    {
-        return Opaque(ms_components[c], e, sc_ComponentSize[c]);
-    }
-
     void Init()
     {
 
     }
     void Update()
     {
-
+        DebugOnly(DebugVis());
     }
     void Shutdown()
     {
@@ -47,9 +56,10 @@ namespace ECS
             }
             ms_alloc.Free(ms_components[c]);
         }
-        
-        ms_alloc.Free(ms_flags);
+
+        ms_flags.reset();
         ms_indices.reset();
+        ms_alive.reset();
         ms_capacity = 0u;
     }
 
@@ -61,7 +71,8 @@ namespace ECS
         if (newCap > ms_capacity)
         {
             ms_capacity = newCap;
-            ms_alloc.Realloc(ms_flags, newCap);
+            ms_flags.resize(newCap);
+            ms_alive.resize(newCap);
 
             for(u32 i = 0; i < CT_Count; ++i)
             {
@@ -75,14 +86,18 @@ namespace ECS
         }
         EraseR(ms_flags[s.id]);
 
+        ms_alive[s.id] = true;
+
         return { s };
     }
 
     bool Destroy(Entity e)
     {
-        if (ms_indices.destroy(e.s))
+        let id = e.s.id;
+        if (ms_alive[id] && ms_indices.destroy(e.s))
         {
-            const u32 id = e.s.id;
+            ms_alive[id] = false;
+
             for(u32 c = 0u; c < CT_Count; ++c)
             {
                 if(ms_flags[id].has(c))
@@ -99,12 +114,12 @@ namespace ECS
 
     bool Exists(Entity e)
     {
-        return ms_indices.exists(e.s);
+        return ms_indices.exists(e.s) && ms_alive[e.s.id];
     }
 
     Slice<const ComponentFlags> GetFlags()
     {
-        return CSubslice(ms_flags, 0, ms_capacity);
+        return Subslice(ToCSlice(ms_flags), 0, ms_capacity);
     }
 
     bool AddComponent(Entity e, ComponentType type)
@@ -147,3 +162,73 @@ namespace ECS
         return Subslice(ms_components[type], 0, bytes);
     }
 };
+
+#if _DEBUG
+    static void DebugVis()
+    {
+        ImGui::Begin("ECS");
+
+        ImGui::Text("Capacity: %u\n", ms_capacity);
+
+        if(ImGui::Button("Add Entity"))
+        {
+            ECS::Create();
+        }
+
+        for(u32 e = 0; e < ms_capacity; ++e)
+        {
+            if(!ms_alive[e])
+            {
+                continue;
+            }
+
+            let ent = Entity { e, ms_indices.m_gen[e] };
+
+            char entlabel[64];
+            sprintf(entlabel, "Entity %u", e);
+
+            if(ImGui::CollapsingHeader(entlabel))
+            {
+                IDScope entScope(e);
+                if(ImGui::Button("Destroy Entity"))
+                {
+                    ECS::Destroy(ent);
+                    continue;
+                }
+
+                for(u32 uType = 0; uType < CT_Count; ++uType)
+                {
+                    let type = (ComponentType)uType;
+                    let name = ComponentName(type);
+
+                    {
+                        char button[64];
+                        sprintf(button, "Add %s", name);
+                        if(ImGui::Button(button))
+                        {
+                            ECS::AddComponent(ent, type);
+                        }
+
+                        ImGui::SameLine();
+
+                        sprintf(button, "Remove %s", name);
+                        if(ImGui::Button(button))
+                        {
+                            ECS::RemoveComponent(ent, type);
+                        }
+                    }
+
+                    if(ms_flags[e].has(type))
+                    {
+                        if(ImGui::CollapsingHeader(name))
+                        {
+                            ImVisComponent(type, ToConst(GetComponentData(e, type)));
+                        }
+                    }
+                }
+            }
+        }
+
+        ImGui::End();
+    }
+#endif // _DEBUG
