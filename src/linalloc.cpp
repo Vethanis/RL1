@@ -1,9 +1,9 @@
 #include "linalloc.h"
 
-#include <malloc.h>
+#include <stdlib.h>
 #include "memreq.h"
 
-void LinearAllocator::Init(size_t size)
+void LinearAllocator::Init(usize size)
 {
     EraseR(*this);
 
@@ -12,10 +12,10 @@ void LinearAllocator::Init(size_t size)
         DebugInterrupt();
         return;
     }
-    
-    const size_t newSize = AlignGrow(size, PageSize);
 
-    uint8_t* ptr = (uint8_t*)_aligned_malloc(newSize, PageSize);
+    let newSize = AlignGrow(size, PageSize);
+
+    u8* ptr = (u8*)aligned_alloc(PageSize, newSize);
     DebugAssert(ptr);
 
     m_memory = { ptr, newSize };
@@ -23,7 +23,7 @@ void LinearAllocator::Init(size_t size)
 
 void LinearAllocator::Shutdown()
 {
-    uint8_t* ptr = m_memory.begin();
+    u8* ptr = m_memory.begin();
     EraseR(*this);
 
     if(!ptr)
@@ -32,7 +32,7 @@ void LinearAllocator::Shutdown()
         return;
     }
 
-    _aligned_free(ptr);
+    free(ptr);
 }
 
 void LinearAllocator::Reset()
@@ -42,7 +42,7 @@ void LinearAllocator::Reset()
     m_memory = alloc;
 }
 
-Allocation LinearAllocator::Allocate(size_t bytes, size_t align)
+Allocation LinearAllocator::Allocate(usize bytes, usize align)
 {
     if(bytes == 0)
     {
@@ -50,8 +50,8 @@ Allocation LinearAllocator::Allocate(size_t bytes, size_t align)
         return { nullptr, 0 };
     }
 
-    const MemReq req = FixRequest(bytes, align);
-    const size_t start = AlignGrow(m_head, req.align);
+    let req = FixRequest(bytes, align);
+    let start = AlignGrow(m_head, req.align);
 
     m_head = start + req.bytes;
     Allocation outAlloc = Subslice(m_memory, start, req.bytes);
@@ -60,7 +60,7 @@ Allocation LinearAllocator::Allocate(size_t bytes, size_t align)
     return outAlloc;
 }
 
-Allocation LinearAllocator::Reallocate(Allocation prev, size_t bytes, size_t align)
+Allocation LinearAllocator::Reallocate(Allocation prev, usize bytes, usize align)
 {
     if(!prev.begin())
     {
@@ -72,15 +72,15 @@ Allocation LinearAllocator::Reallocate(Allocation prev, size_t bytes, size_t ali
         return { nullptr, 0 };
     }
 
-    const MemReq req = FixRequest(bytes, align);
-    size_t start = AlignGrow(m_head, req.align);
+    let req = FixRequest(bytes, align);
+    letmut start = AlignGrow(m_head, req.align);
 
     if(req.bytes <= prev.size())
     {
         return prev;
     }
 
-    const Allocation lastAlloc = m_stack.peek();
+    let lastAlloc = m_stack.peek();
     if(lastAlloc.begin() == prev.begin())
     {
         m_stack.pop();
@@ -89,7 +89,7 @@ Allocation LinearAllocator::Reallocate(Allocation prev, size_t bytes, size_t ali
     }
 
     m_head = start + req.bytes;
-    Allocation outAlloc = Subslice(m_memory, start, req.bytes);
+    letmut outAlloc = Subslice(m_memory, start, req.bytes);
     m_stack.push(outAlloc);
 
     return outAlloc;
@@ -101,11 +101,11 @@ void LinearAllocator::Free(Allocation user)
     {
         return;
     }
-    const Allocation prev = m_stack.peek();
+    let prev = m_stack.peek();
     if(CompareV(user, prev) == 0)
     {
         m_stack.pop();
-        const size_t start = prev.begin() - m_memory.begin();
+        usize start = prev.begin() - m_memory.begin();
         m_head = Min(m_head, start);
     }
 }

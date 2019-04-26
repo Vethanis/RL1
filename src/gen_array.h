@@ -52,7 +52,7 @@ struct GenIndices
     {
         return m_gen.cslice();
     }
-    inline size_t capacity()
+    inline usize capacity()
     {
         return m_gen.size();
     }

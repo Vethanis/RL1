@@ -9,14 +9,14 @@ inline void EraseR(T& x)
     memset(&x, 0, sizeof(T));
 }
 
-template<typename T, size_t capacity>
+template<typename T, usize capacity>
 inline void EraseA(T (&x)[capacity])
 {
     memset(x, 0, sizeof(T) * capacity);
 }
 
 template<typename T>
-inline void EraseP(T* x, size_t count)
+inline void EraseP(T* x, usize count)
 {
     memset(x, 0, sizeof(T) * count);
 }
@@ -28,7 +28,7 @@ inline void CopyR(T& dst, const T& src)
 }
 
 template<typename T>
-inline void CopyP(T* dst, const T* src, size_t count)
+inline void CopyP(T* dst, const T* src, usize count)
 {
     memcpy(dst, src, sizeof(T) * count);
 }
@@ -40,7 +40,7 @@ inline void MoveR(T& dst, const T& src)
 }
 
 template<typename T>
-inline void MoveP(T* dst, const T* src, size_t count)
+inline void MoveP(T* dst, const T* src, usize count)
 {
     memmove(dst, src, sizeof(T) * count);
 }
@@ -61,7 +61,7 @@ inline i32 CompareR(const T& a, const T& b)
 }
 
 template<typename T>
-inline i32 CompareP(const T* a, const T* b, size_t len)
+inline i32 CompareP(const T* a, const T* b, usize len)
 {
     return memcmp(a, b, sizeof(T) * len);
 }

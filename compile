@@ -1,0 +1,120 @@
+#!/bin/bash
+
+# -----------------------------------------------------------------------------
+# user options
+
+Usage()
+{
+    echo "Usage: compile [options]"
+    echo "    -c: clean build folder"
+    echo "    -d: build debug target"
+    echo "    -r: run exe"
+    echo "    -h: help"
+}
+
+TARG=0
+RUN=0
+CLEAN=0
+
+while getopts "cdrh" ARG; do
+    case "${ARG}" in
+        c)
+            CLEAN=1
+            ;;
+        d)
+            TARG=1
+            ;;
+        r)
+            RUN=1
+            ;;
+        h)
+            Usage
+            exit 0
+            ;;
+        *)
+            Usage
+            exit 1
+            ;;
+    esac
+done
+
+# -----------------------------------------------------------------------------
+# compile settings
+
+# https://clang.llvm.org/docs/ClangCommandLineReference.html
+
+C_FLAGS="-std=c99 -Wall -pthread"
+CPP_FLAGS="-std=c++17 -Wall -fno-exceptions -fno-rtti -pthread"
+
+REL_FLAGS="-O3 -g0 -finline-functions -finline-hint-functions"
+DBG_FLAGS="-O0 -g2"
+
+INCS="-I /usr/include -I ./include -I ./src"
+LIBS="-L /usr/lib -lm -ldl -lglfw"
+
+EXE_NAME="rl1.exe"
+
+TARG_NAMES=("Release" "Debug")
+TARG_DEFS=("-D NDEBUG" "-D _DEBUG")
+TARG_FLAGS=("${REL_FLAGS}" "${DBG_FLAGS}")
+
+TARG_NAME="${TARG_NAMES[${TARG}]}"
+DEFS="${TARG_DEFS[${TARG}]}"
+C_FLAGS="${C_FLAGS} ${TARG_FLAGS[${TARG}]}"
+CPP_FLAGS="${CPP_FLAGS} ${TARG_FLAGS[${TARG}]}"
+
+PROJ_DIR=$(pwd)
+BIN_DIR="bin/${TARG_NAME}"
+BUILD_DIR="build/${TARG_NAME}"
+
+# -----------------------------------------------------------------------------
+# folders
+
+rm -r bin
+
+if [[ "${CLEAN}" == "1" ]]; then
+    rm -r build
+fi
+
+mkdir -p "${BIN_DIR}"
+mkdir -p "${BUILD_DIR}"
+
+# -----------------------------------------------------------------------------
+# compile
+
+for C_FNAME in lib/*.c; do
+    OBJ_FNAME=$( echo ${C_FNAME} | sed s/\.c/\.o/ | sed s@lib@${BUILD_DIR}@ )
+
+    if [[ "${C_FNAME}" -nt "${OBJ_FNAME}" ]]; then
+        eval "clang -c ${C_FNAME} ${C_FLAGS} ${DEFS} ${INCS} -o ${OBJ_FNAME}" &
+    fi
+done
+
+for CPP_FNAME in lib/*.cpp; do
+    OBJ_FNAME=$( echo ${CPP_FNAME} | sed s/\.cpp/\.o/ | sed s@lib@${BUILD_DIR}@ )
+
+    if [[ "${CPP_FNAME}" -nt "${OBJ_FNAME}" ]]; then
+        eval "clang -c ${CPP_FNAME} ${CPP_FLAGS} ${DEFS} ${INCS} -o ${OBJ_FNAME}" &
+    fi
+done
+
+for CPP_FNAME in src/*.cpp; do
+    OBJ_FNAME=$( echo ${CPP_FNAME} | sed s/\.cpp/\.o/ | sed s@src@${BUILD_DIR}@ )
+    eval "clang -c ${CPP_FNAME} ${CPP_FLAGS} ${DEFS} ${INCS} -o ${OBJ_FNAME}" &
+done
+
+wait
+
+# -----------------------------------------------------------------------------
+# link
+
+eval "clang ${BUILD_DIR}/*.o ${LIBS} -o ${BIN_DIR}/${EXE_NAME}"
+
+# -----------------------------------------------------------------------------
+# run
+
+if [[ "${RUN}" == "1" ]]; then
+    cd "${BIN_DIR}"
+    ./"${EXE_NAME}"
+    cd "${PROJ_DIR}"
+fi

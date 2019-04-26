@@ -97,7 +97,7 @@ using ComponentFlags = BitField<CT_Count>;
 
 // ----------------------------------------------------------------------------
 
-static constexpr size_t sc_ComponentSize[] =
+static constexpr usize sc_ComponentSize[] =
 {
     sizeof(Position),
     sizeof(Orientation),
@@ -117,29 +117,23 @@ CountAssert(sc_ComponentSize, CT_Count);
 // ----------------------------------------------------------------------------
 
 template<typename T>
-static constexpr ComponentType GetComponentType();
+inline constexpr ComponentType GetComponentType();
 
-template<>
-static constexpr ComponentType GetComponentType<Position>()     { return CT_Position;       }
-template<>
-static constexpr ComponentType GetComponentType<Orientation>()  { return CT_Orientation;    }
-template<>
-static constexpr ComponentType GetComponentType<Scale>()        { return CT_Scale;          }
-template<>
-static constexpr ComponentType GetComponentType<Velocity>()     { return CT_Velocity;       }
-template<>
-static constexpr ComponentType GetComponentType<Mass>()         { return CT_Mass;           }
-template<>
-static constexpr ComponentType GetComponentType<AABB>()         { return CT_AABB;           }
-template<>
-static constexpr ComponentType GetComponentType<Sphere>()       { return CT_Sphere;         }
-template<>
-static constexpr ComponentType GetComponentType<Plane>()        { return CT_Plane;          }
-template<>
-static constexpr ComponentType GetComponentType<Name>()         { return CT_Name;           }
-template<>
-static constexpr ComponentType GetComponentType<NameHash>()     { return CT_NameHash;       }
-template<>
-static constexpr ComponentType GetComponentType<Inventory>()    { return CT_Inventory;      }
-template<>
-static constexpr ComponentType GetComponentType<Health>()       { return CT_Health;         }
+#define GCT(T, id) \
+    template<> \
+    inline constexpr ComponentType GetComponentType<T>() { return id; }
+
+GCT(Position, CT_Position)
+GCT(Orientation, CT_Orientation)
+GCT(Scale, CT_Scale)
+GCT(Velocity, CT_Velocity)
+GCT(Mass, CT_Mass)
+GCT(AABB, CT_AABB)
+GCT(Sphere, CT_Sphere)
+GCT(Plane, CT_Plane)
+GCT(NameHash, CT_NameHash)
+GCT(Name, CT_Name)
+GCT(Inventory, CT_Inventory)
+GCT(Health, CT_Health)
+
+#undef GCT

@@ -22,7 +22,7 @@
         if(id == 131169 || id == 131185 || id == 131218 || id == 131204)
         {
             return;
-        } 
+        }
 
         puts("-----------------------------");
         printf("Debug message (%d): %s\n", id, message);
@@ -40,7 +40,7 @@
         {
             case GL_DEBUG_TYPE_ERROR:               puts("Type: Error"); break;
             case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: puts("Type: Deprecated Behaviour"); break;
-            case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:  puts("Type: Undefined Behaviour"); break; 
+            case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:  puts("Type: Undefined Behaviour"); break;
             case GL_DEBUG_TYPE_PORTABILITY:         puts("Type: Portability"); break;
             case GL_DEBUG_TYPE_PERFORMANCE:         puts("Type: Performance"); break;
             case GL_DEBUG_TYPE_MARKER:              puts("Type: Marker"); break;
@@ -48,7 +48,7 @@
             case GL_DEBUG_TYPE_POP_GROUP:           puts("Type: Pop Group"); break;
             case GL_DEBUG_TYPE_OTHER:               puts("Type: Other"); break;
         }
-        
+
         switch (severity)
         {
             case GL_DEBUG_SEVERITY_HIGH:         puts("Severity: high"); break;
@@ -68,7 +68,7 @@ static void SetCallbacks(GLFWwindow* window)
         {
             Ctrl::WindowSizeCB(width, height);
         });
-    glfwSetKeyCallback(window, 
+    glfwSetKeyCallback(window,
         [](GLFWwindow* w, i32 key, i32 scancode, i32 action, i32 mods)
         {
             ImGuiIO& io = ImGui::GetIO();
@@ -81,7 +81,7 @@ static void SetCallbacks(GLFWwindow* window)
             io.KeyShift = (0 != (mods & GLFW_MOD_SHIFT));
             Ctrl::KeyCB(key, action, mods);
         });
-    glfwSetMouseButtonCallback(window, 
+    glfwSetMouseButtonCallback(window,
         [](GLFWwindow* w, i32 btn, i32 action, i32 mods)
         {
             if(btn >= 0 && btn < 3)
@@ -90,14 +90,14 @@ static void SetCallbacks(GLFWwindow* window)
             }
             Ctrl::MouseButtonCB(btn, action, mods);
         });
-    glfwSetCursorPosCallback(window, 
+    glfwSetCursorPosCallback(window,
         [](GLFWwindow* w, f64 x, f64 y)
         {
             ImGui::GetIO().MousePos.x = (f32)x;
             ImGui::GetIO().MousePos.y = (f32)y;
             Ctrl::CursorPosCB((f32)x, (f32)y);
         });
-    glfwSetScrollCallback(window, 
+    glfwSetScrollCallback(window,
         [](GLFWwindow* w, f64 x, f64 y)
         {
             ImGui::GetIO().MouseWheel = (f32)y;
@@ -112,21 +112,21 @@ namespace Window
 
     void Init()
     {
-        i32 glfwLoaded = glfwInit();
-        DebugAssert(glfwLoaded);
-
         glfwSetErrorCallback(
-            [](i32 error, const char* msg)
+            [](i32 error, cstr msg)
             {
-                fprintf(stdout, "%d :: %s\n", error, msg);
+                puts(msg);
+                DebugInterrupt();
             });
+
+        VerifyEQ(glfwInit(), GLFW_TRUE);
 
         GLFWmonitor* monitor = glfwGetPrimaryMonitor();
         DebugAssert(monitor);
 
-        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+        let mode = glfwGetVideoMode(monitor);
         DebugAssert(mode);
-        
+
         glfwWindowHint(GLFW_RED_BITS,       mode->redBits);
         glfwWindowHint(GLFW_GREEN_BITS,     mode->greenBits);
         glfwWindowHint(GLFW_BLUE_BITS,      mode->blueBits);
@@ -141,28 +141,27 @@ namespace Window
         glfwWindowHint(GLFW_OPENGL_PROFILE,         GLFW_OPENGL_CORE_PROFILE);
 
         GLFWwindow* window = glfwCreateWindow(
-            mode->width, 
-            mode->height, 
-            "RL1", 
-            ms_fullscreen ? monitor : nullptr, 
+            mode->width,
+            mode->height,
+            "RL1",
+            ms_fullscreen ? monitor : nullptr,
             nullptr);
         DebugAssert(window);
 
         SetCallbacks(window);
-        
+
         glfwMakeContextCurrent(window);
         glfwSwapInterval(1);
 
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-        i32 gladLoaded = gladLoadGL();
-        DebugAssert(gladLoaded);
+        VerifyEQ(gladLoadGL(), 1);
 
         Ctrl::WindowSizeCB(mode->width, mode->height);
         glViewport(0, 0, mode->width, mode->height);
 
 #if _DEBUG
-        i32 flags = 0; 
+        i32 flags = 0;
         glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
         Assert(flags & GL_CONTEXT_FLAG_DEBUG_BIT);
         glEnable(GL_DEBUG_OUTPUT);
@@ -198,8 +197,8 @@ namespace Window
     void SetCursorHidden(bool hidden)
     {
         glfwSetInputMode(
-            ms_window, 
-            GLFW_CURSOR, 
+            ms_window,
+            GLFW_CURSOR,
             hidden ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
     }
 

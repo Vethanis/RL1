@@ -4,8 +4,8 @@
 
 namespace Malloc
 {
-    Allocation Allocate(size_t bytes, size_t align);
-    Allocation Reallocate(Allocation prev, size_t bytes, size_t align);
+    Allocation Allocate(usize bytes, usize align);
+    Allocation Reallocate(Allocation prev, usize bytes, usize align);
     void Free(Allocation x);
 };
 
@@ -15,8 +15,8 @@ namespace LinAlloc
     void Update();
     void Shutdown();
 
-    Allocation Allocate(size_t bytes, size_t align);
-    Allocation Reallocate(Allocation prev, size_t bytes, size_t align);
+    Allocation Allocate(usize bytes, usize align);
+    Allocation Reallocate(Allocation prev, usize bytes, usize align);
     void Free(Allocation x);
 };
 

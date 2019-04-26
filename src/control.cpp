@@ -8,6 +8,14 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
+#define GamepadEnabled ((GLFW_VERSION_MAJOR >= 3) && (GLFW_VERSION_MINOR >= 3))
+
+#if GamepadEnabled
+    #define GamepadOnly(x) x
+#else
+    #define GamepadOnly(x)
+#endif // Glfw3.3
+
 namespace Ctrl
 {
     static constexpr u32 ms_StackCap = 256;
@@ -16,7 +24,7 @@ namespace Ctrl
     static CircularStack<f32, ms_StackCap>  ms_values;
     static CircularStack<u64, ms_StackCap>  ms_ticks;
 
-    static GLFWgamepadstate ms_prevPad;
+    GamepadOnly(static GLFWgamepadstate ms_prevPad);
 
     static u64  ms_curTick = 0;
     static f32  ms_scrollX = 0.0f;
@@ -47,6 +55,8 @@ namespace Ctrl
     {
         ms_curTick = stm_now();
         glfwPollEvents();
+
+        #if GamepadEnabled
         {
             GLFWgamepadstate state;
             EraseR(state);
@@ -54,26 +64,32 @@ namespace Ctrl
             {
                 for(u32 i = 0; i < CountOf(state.axes); ++i)
                 {
-                    if(state.axes[i] != ms_prevPad.axes[i])
+                    let newAxis = state.axes[i];
+                    let oldAxis = ms_prevPad.axes[i];
+                    if(newAxis != oldAxis)
                     {
-                        ms_prevPad.axes[i] = state.axes[i];
+                        ms_prevPad.axes[i] = newAxis;
                         ms_ticks.push(ms_curTick);
                         ms_channels.push(PadAxis_LX + i);
-                        ms_values.push(state.axes[i]);
+                        ms_values.push(newAxis);
                     }
                 }
                 for(u32 i = 0; i < CountOf(state.buttons); ++i)
                 {
-                    if(state.buttons[i] != ms_prevPad.axes[i])
+                    let newBtn = state.buttons[i];
+                    let oldBtn = ms_prevPad.axes[i];
+                    if(newBtn != oldBtn)
                     {
-                        ms_prevPad.buttons[i] = state.buttons[i];
+                        ms_prevPad.buttons[i] = newBtn;
                         ms_ticks.push(ms_curTick);
                         ms_channels.push(PadBtn_A + i);
-                        ms_values.push(state.buttons ? 1.0f : 0.0f);
+                        ms_values.push(newBtn ? 1.0f : 0.0f);
                     }
                 }
             }
         }
+        #endif // GamepadEnabled
+
     }
     void Shutdown()
     {

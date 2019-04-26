@@ -3,8 +3,8 @@
 #include "slice.h"
 
 using Allocation = Slice<u8>;
-using AllocFn    = Allocation (*)(size_t bytes, size_t align);
-using ReallocFn  = Allocation (*)(Allocation prev, size_t bytes, size_t align);
+using AllocFn    = Allocation (*)(usize bytes, usize align);
+using ReallocFn  = Allocation (*)(Allocation prev, usize bytes, usize align);
 using FreeFn     =       void (*)(Allocation x);
 
 struct Allocator
@@ -12,21 +12,21 @@ struct Allocator
     const AllocFn   m_alloc;
     const ReallocFn m_realloc;
     const FreeFn    m_free;
-    const size_t    m_align;
+    const usize    m_align;
 
     template<typename T>
-    inline Slice<T> Alloc(size_t reqLen) const
+    inline Slice<T> Alloc(usize reqLen) const
     {
         return ToType<T>(m_alloc(reqLen * sizeof(T), m_align));
     }
 
     template<typename T>
-    inline void Realloc(Slice<T>& mem, size_t reqLen) const
+    inline void Realloc(Slice<T>& mem, usize reqLen) const
     {
-        const size_t prevLen = mem.size();
+        const usize prevLen = mem.size();
         if(reqLen > prevLen)
         {
-            const size_t newBytes = Max(reqLen, prevLen << size_t(1)) * sizeof(T);
+            const usize newBytes = Max(reqLen, prevLen << usize(1)) * sizeof(T);
             mem = ToType<T>(m_realloc(ToBytes(mem), newBytes, m_align));
         }
     }

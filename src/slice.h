@@ -2,38 +2,38 @@
 
 #include "macro.h"
 
-template<typename T, size_t len>
+template<typename T, usize len>
 static Slice<T> ToSlice(T(&arr)[len])
 {
     return { arr, len };
 }
-template<typename T, size_t len>
+template<typename T, usize len>
 static Slice<const T> ToSlice(const T(&arr)[len])
 {
     return { arr, len };
 }
-template<typename T, size_t len>
+template<typename T, usize len>
 static Slice<const T> ToCSlice(T(&arr)[len])
 {
     return { arr, len };
 }
 
 template<typename T>
-static Slice<T> ToSlice(T* ptr, size_t len)
+static Slice<T> ToSlice(T* ptr, usize len)
 {
     DebugAssert(!ptr ? !len : true);
 
     return { ptr, len };
 }
 template<typename T>
-static Slice<const T> ToSlice(const T* ptr, size_t len)
+static Slice<const T> ToSlice(const T* ptr, usize len)
 {
     DebugAssert(!ptr ? !len : true);
 
     return { ptr, len };
 }
 template<typename T>
-static Slice<const T> ToCSlice(T* ptr, size_t len)
+static Slice<const T> ToCSlice(T* ptr, usize len)
 {
     DebugAssert(!ptr ? !len : true);
 
@@ -47,35 +47,35 @@ static Slice<const T> ToConst(Slice<T> x)
 }
 
 template<typename T>
-static Slice<T> Subslice(Slice<T> x, size_t start, size_t count)
+static Slice<T> Subslice(Slice<T> x, usize start, usize count)
 {
     DebugAssert(start + count <= x.size());
     return { x.begin() + start, count };
 }
 template<typename T>
-static Slice<const T> Subslice(Slice<const T> x, size_t start, size_t count)
+static Slice<const T> Subslice(Slice<const T> x, usize start, usize count)
 {
     DebugAssert(start + count <= x.size());
     return { x.begin() + start, count };
 }
 template<typename T>
-static Slice<const T> CSubslice(Slice<T> x, size_t start, size_t count)
+static Slice<const T> CSubslice(Slice<T> x, usize start, usize count)
 {
     return Subslice(ToConst(x), start, count);
 }
 
 template<typename T>
-static Slice<T> Opaque(Slice<T> x, size_t idx, size_t typeSize)
+static Slice<T> Opaque(Slice<T> x, usize idx, usize typeSize)
 {
     return Subslice(x, idx * typeSize, typeSize);
 }
 template<typename T>
-static Slice<const T> Opaque(Slice<const T> x, size_t idx, size_t typeSize)
+static Slice<const T> Opaque(Slice<const T> x, usize idx, usize typeSize)
 {
     return Subslice(x, idx * typeSize, typeSize);
 }
 template<typename T>
-static Slice<const T> COpaque(Slice<T> x, size_t idx, size_t typeSize)
+static Slice<const T> COpaque(Slice<T> x, usize idx, usize typeSize)
 {
     return CSubslice(x, idx * typeSize, typeSize);
 }
@@ -97,17 +97,17 @@ static Slice<const To> ToCType(Slice<From> x)
 }
 
 template<typename B, typename A>
-static Slice<B> ToType(A* ptr, size_t len)
+static Slice<B> ToType(A* ptr, usize len)
 {
     return ToType<B>(ToSlice(ptr, len));
 }
 template<typename B, typename A>
-static Slice<const B> ToCType(A* ptr, size_t len)
+static Slice<const B> ToCType(A* ptr, usize len)
 {
     return ToType<const B>(ToCSlice(ptr, len));
 }
 template<typename B, typename A>
-static Slice<const B> ToType(const A* ptr, size_t len)
+static Slice<const B> ToType(const A* ptr, usize len)
 {
     return ToType<const B>(ToSlice(ptr, len));
 }

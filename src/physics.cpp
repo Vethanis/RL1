@@ -5,7 +5,7 @@
 
 namespace Physics
 {
-    static u64 ms_time = 0;
+    //static u64 ms_time = 0;
 
     void Init()
     {
@@ -13,13 +13,12 @@ namespace Physics
     }
     void Update()
     {
-        f32 dt = (f32)stm_sec(stm_laptime(&ms_time));
+        //f32 dt = (f32)stm_sec(stm_laptime(&ms_time));
 
-        Slice<Position> positions = ECS::GetAll<Position>();
+        //Slice<Position> positions = ECS::GetAll<Position>();
     }
     void Shutdown()
     {
 
     }
 };
-

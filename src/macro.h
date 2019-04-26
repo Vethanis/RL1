@@ -3,6 +3,22 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#if _MSVC_VER
+    #define MsvcOnly(x)     x
+    #define PosixOnly(x)
+#else
+    #define MsvcOnly(x)
+    #define PosixOnly(x)    x
+#endif // _MSVC_VER
+
+#if _DEBUG
+    #define DebugOnly(x)    x
+    #define ReleaseOnly(x)
+#else
+    #define DebugOnly(x)
+    #define ReleaseOnly(x)  x
+#endif // _DEBUG
+
 #define let                 const auto
 #define letmut              auto
 #define constant            static constexpr
@@ -16,14 +32,10 @@
 #define CountAssert(x, len) StaticAssert(CountOf(x) == len)
 #define CountAssertEQ(x, y) StaticAssert(CountOf(x) == CountOf(y))
 
-#define Interrupt()         __debugbreak()
+#define Interrupt()         MsvcOnly(__debugbreak()) PosixOnly(__builtin_trap())
 #define Assert(x)           WhenFalse(x, Interrupt())
-
-#if _DEBUG
-    #define DebugOnly(x)    x
-#else
-    #define DebugOnly(x)
-#endif // _DEBUG
+#define Verify(x)           Assert(x)
+#define VerifyEQ(lhs, rhs)  Assert((lhs) == (rhs))
 
 #define DebugInterrupt()    DebugOnly(Interrupt())
 #define DebugAssert(x)      DebugOnly(Assert(x))

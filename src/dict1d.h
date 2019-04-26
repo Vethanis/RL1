@@ -10,7 +10,7 @@ struct Dict1D
     Array<K>   m_keys;
     Array<V>   m_values;
 
-    inline size_t size() const
+    inline usize size() const
     {
         return m_keys.size();
     }
@@ -31,7 +31,7 @@ struct Dict1D
         }
         return &m_values[idx];
     }
-    inline const V* get(K key) const 
+    inline const V* get(K key) const
     {
         const i64 idx = findKey(key);
         if(idx == -1)
