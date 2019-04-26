@@ -1,8 +1,8 @@
 #pragma once
 
-#include "slot.h"
+#include "macro.h"
+#include "component_types_thin.h"
 #include "slice.h"
-#include "component_types.h"
 
 struct Entity
 {
@@ -31,7 +31,7 @@ namespace ECS
     {
         return AddComponent(e, GetComponentType<T>());
     }
-    
+
     template<typename T>
     inline bool Remove(Entity e)
     {

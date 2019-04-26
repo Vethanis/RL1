@@ -1,6 +1,6 @@
 #pragma once
 
-#include "slot.h"
+#include "macro.h"
 #include "array.h"
 
 template<const Allocator& t_alloc>

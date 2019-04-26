@@ -1,8 +1,6 @@
 #pragma once
 
-#include "slot.h"
-#include "slice.h"
-#include "hlsl_types.h"
+#include "macro.h"
 
 namespace Renderer
 {

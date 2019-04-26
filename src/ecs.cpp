@@ -3,6 +3,7 @@
 #include "gen_array.h"
 #include "bitfield.h"
 
+#include "component_types.h"
 #include "component_funcs.h"
 
 #if _DEBUG

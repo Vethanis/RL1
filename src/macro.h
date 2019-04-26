@@ -63,6 +63,12 @@ def usize PageSize = 4096;
 def usize MinAlign = 16;
 def usize MaxAlign = PageSize;
 
+struct Slot
+{
+    u32 id;
+    u32 gen;
+};
+
 template<typename T>
 struct Slice
 {
