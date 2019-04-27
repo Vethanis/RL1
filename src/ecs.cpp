@@ -6,7 +6,7 @@
 #include "component_types.h"
 #include "component_funcs.h"
 
-#if _DEBUG
+#if _DEBUG || 1
     #include "imvis.h"
     #include "component_debug.h"
     #include <stdio.h>
@@ -31,7 +31,7 @@ static ComponentData GetComponentData(u32 e, u32 c)
     return Opaque(ms_components[c], e, sc_ComponentSize[c]);
 }
 
-DebugOnly(static void DebugVis());
+static void DebugVis();
 
 namespace ECS
 {
@@ -164,70 +164,128 @@ namespace ECS
     }
 };
 
-#if _DEBUG
+#if _DEBUG || 1
+
     static void DebugVis()
     {
+        let flags = ECS::GetFlags();
+        let gens = ms_indices.gens();
+
         ImGui::Begin("ECS");
 
-        ImGui::Text("Capacity: %u\n", ms_capacity);
+        ImGui::Text("Entity Capacity: %u\n", ms_capacity);
 
-        if(ImGui::Button("Add Entity"))
+        u32 count = 0;
+        for(let alive : ms_alive)
         {
-            ECS::Create();
+            count += alive ? 1 : 0;
         }
 
-        for(u32 e = 0; e < ms_capacity; ++e)
         {
-            if(!ms_alive[e])
+            // add / remove entity row
+            ImGui::Columns(count + 1);
             {
-                continue;
-            }
-
-            let ent = Entity { e, ms_indices.m_gen[e] };
-
-            char entlabel[64];
-            sprintf(entlabel, "Entity %u", e);
-
-            if(ImGui::CollapsingHeader(entlabel))
-            {
-                IDScope entScope(e);
-                if(ImGui::Button("Destroy Entity"))
+                IDScope btn("ECS::Create");
+                if(ImGui::Button("+"))
                 {
-                    ECS::Destroy(ent);
+                    ECS::Create();
+                }
+                ImGui::NextColumn();
+            }
+            for(u32 e = 0; e < flags.size(); ++e)
+            {
+                if(ms_alive[e])
+                {
+                    IDScope btn("ECS::Destroy", e);
+                    if(ImGui::Button("-"))
+                    {
+                        ECS::Destroy({ e, gens[e] });
+                    }
+                    ImGui::NextColumn();
+                }
+            }
+        }
+
+        ImGui::Separator();
+
+        {
+            // ID row
+            ImGui::Columns(count + 1);
+            {
+                ImGui::Text("ID");
+                ImGui::NextColumn();
+            }
+            for(u32 e = 0; e < flags.size(); ++e)
+            {
+                if(ms_alive[e])
+                {
+                    ImGui::Text("%u", e);
+                    ImGui::NextColumn();
+                }
+            }
+        }
+
+        ImGui::Separator();
+
+        {
+            // gen row
+            ImGui::Columns(count + 1);
+            {
+                ImGui::Text("Gen");
+                ImGui::NextColumn();
+            }
+            for(u32 e = 0; e < flags.size(); ++e)
+            {
+                if(ms_alive[e])
+                {
+                    ImGui::Text("%u", gens[e]);
+                    ImGui::NextColumn();
+                }
+            }
+        }
+
+        ImGui::Separator();
+
+        // component rows
+        for(u32 c = 0; c < CT_Count; ++c)
+        {
+            let type = (ComponentType)c;
+
+            ImGui::Columns(count + 1);
+
+            ImGui::Text("%s", ComponentName(type));
+            ImGui::NextColumn();
+
+            for(u32 e = 0; e < flags.size(); ++e)
+            {
+                if(!ms_alive[e])
+                {
                     continue;
                 }
 
-                for(u32 uType = 0; uType < CT_Count; ++uType)
+                IDScope addbtn("ECS::AddComponent", c, e);
+                if(!flags[e].has(type) && ImGui::Button("+"))
                 {
-                    let type = (ComponentType)uType;
-                    let name = ComponentName(type);
-
-                    {
-                        char button[64];
-                        sprintf(button, "Add %s", name);
-                        if(ImGui::Button(button))
-                        {
-                            ECS::AddComponent(ent, type);
-                        }
-
-                        ImGui::SameLine();
-
-                        sprintf(button, "Remove %s", name);
-                        if(ImGui::Button(button))
-                        {
-                            ECS::RemoveComponent(ent, type);
-                        }
-                    }
-
-                    if(ms_flags[e].has(type))
-                    {
-                        if(ImGui::CollapsingHeader(name))
-                        {
-                            ImVisComponent(type, ToConst(GetComponentData(e, type)));
-                        }
-                    }
+                    ECS::AddComponent({ e, gens[e] }, type);
                 }
+
+                IDScope rembtn("ECS::RemoveComponent", c, e);
+                if(flags[e].has(type) && ImGui::Button("-"))
+                {
+                    ECS::RemoveComponent({ e, gens[e] }, type);
+                }
+
+                if(flags[e].has(type))
+                {
+                    ImGui::SameLine();
+                    let data = ToConst(GetComponentData(e, c));
+                    ImVisComponent(type, data);
+                }
+
+                ImGui::NextColumn();
             }
+
+            ImGui::Separator();
         }
 
         ImGui::End();

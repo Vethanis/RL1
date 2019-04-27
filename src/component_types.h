@@ -6,65 +6,40 @@
 
 struct Position
 {
-    float3 position;
+    float3 value;
 };
 
 struct Orientation
 {
-    float4 orientation;
+    float3 forward;
+    float3 up;
 };
 
 struct Scale
 {
-    float3 scale;
+    float2 value;
 };
 
 struct Velocity
 {
-    float3 velocity;
+    float3 value;
 };
 
 struct Mass
 {
-    f32 mass;
-};
-
-struct AABB
-{
-    float3 lo;
-    float3 hi;
-};
-
-struct Sphere
-{
-    float3  center;
-    f32     radius;
-};
-
-struct Plane
-{
-    float3  normal;
-    f32     distance;
-};
-
-struct Name
-{
-    char str[64];
+    f32 value;
 };
 
 struct NameHash
 {
-    u64 hash;
+    u64 value;
 };
 
-struct ItemID
+struct DrawInfo
 {
-    u32 value;
-};
-
-struct Inventory
-{
-    Array<ItemID> ids;
+    u32 id;     // which texture
+    f32 phase;  // position in texture animation
+    f32 hz;     // animation loops per second
 };
 
 struct Health
@@ -81,12 +56,8 @@ static constexpr usize sc_ComponentSize[] =
     sizeof(Scale),
     sizeof(Velocity),
     sizeof(Mass),
-    sizeof(AABB),
-    sizeof(Sphere),
-    sizeof(Plane),
-    sizeof(Name),
     sizeof(NameHash),
-    sizeof(Inventory),
+    sizeof(DrawInfo),
     sizeof(Health),
 };
 CountAssert(sc_ComponentSize, CT_Count);
@@ -102,12 +73,8 @@ GCT(Orientation, CT_Orientation)
 GCT(Scale, CT_Scale)
 GCT(Velocity, CT_Velocity)
 GCT(Mass, CT_Mass)
-GCT(AABB, CT_AABB)
-GCT(Sphere, CT_Sphere)
-GCT(Plane, CT_Plane)
 GCT(NameHash, CT_NameHash)
-GCT(Name, CT_Name)
-GCT(Inventory, CT_Inventory)
+GCT(DrawInfo, CT_DrawInfo)
 GCT(Health, CT_Health)
 
 #undef GCT

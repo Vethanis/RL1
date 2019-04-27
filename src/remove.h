@@ -1,18 +1,20 @@
 #pragma once
 
-#include "slice.h"
+#include "macro.h"
+#include "memory.h"
 
 template<typename T>
 inline usize SwapRemove(Slice<T> list, usize i)
 {
-    Copy(list[i], list.back());
-    return list.size() - 1;
+    usize len = list.size() - 1;
+    CopyR(list[i], list[len]);
+    return len;
 }
 
 template<typename T>
 inline usize ShiftRemove(Slice<T> list, usize i)
 {
     usize len = list.size() - 1;
-    Move(&list[i], &list[i + 1], len - i);
+    MoveP(&list[i], &list[i + 1], len - i);
     return len;
 }

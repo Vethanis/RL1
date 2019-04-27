@@ -4,11 +4,6 @@
 #include "component_types_thin.h"
 #include "slice.h"
 
-struct Entity
-{
-    Slot s;
-};
-
 namespace ECS
 {
     void Init();

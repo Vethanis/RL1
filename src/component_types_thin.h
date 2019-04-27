@@ -2,6 +2,11 @@
 
 #include "macro.h"
 
+struct Entity
+{
+    Slot s;
+};
+
 enum ComponentType : u32
 {
     CT_Position = 0,
@@ -9,12 +14,8 @@ enum ComponentType : u32
     CT_Scale,
     CT_Velocity,
     CT_Mass,
-    CT_AABB,
-    CT_Sphere,
-    CT_Plane,
-    CT_Name,
     CT_NameHash,
-    CT_Inventory,
+    CT_DrawInfo,
     CT_Health,
 
     CT_Count
@@ -22,9 +23,7 @@ enum ComponentType : u32
 
 struct ComponentFlags
 {
-    static constexpr u32 sc_dwords = DivCeil((u32)CT_Count, 32u);
-
-    u32 flags[sc_dwords];
+    u32 flags[DivCeil((u32)CT_Count, 32u)];
 
     inline bool has(u32 type) const
     {
@@ -53,6 +52,8 @@ struct ComponentFlags
 
 using ComponentData     = Slice<u8>;
 using CComponentData    = Slice<const u8>;
+using ComponentNewFn    = void(*)(ComponentData component);
+using ComponentDropFn   = void(*)(ComponentData component);
 
 template<typename T>
 inline constexpr ComponentType GetComponentType();

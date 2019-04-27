@@ -1,30 +1,29 @@
 #pragma once
 
+#include "macro.h"
 #include "array.h"
-#include "find.h"
-#include "remove.h"
 
 template<typename K, typename V>
 struct Dict1D
 {
-    Array<K>   m_keys;
-    Array<V>   m_values;
+    Array<K> m_keys;
+    Array<V> m_values;
 
     inline usize size() const
     {
         return m_keys.size();
     }
-    inline i64 findKey(K key) const
+    inline isize findKey(K key) const
     {
-        return RFind(m_keys.cslice(), key, CompareV<K>);
+        return m_keys.rfind(key);
     }
-    inline i64 findValue(V value) const
+    inline isize findValue(V value) const
     {
-        return RFind(m_values.cslice(), value, CompareV<V>);
+        return m_values.rfind(value);
     }
     inline V* get(K key)
     {
-        const i64 idx = findKey(key);
+        const isize idx = findKey(key);
         if(idx == -1)
         {
             return nullptr;
@@ -33,7 +32,7 @@ struct Dict1D
     }
     inline const V* get(K key) const
     {
-        const i64 idx = findKey(key);
+        const isize idx = findKey(key);
         if(idx == -1)
         {
             return nullptr;
@@ -55,14 +54,14 @@ struct Dict1D
         }
         return false;
     }
-    inline void removeAtIdx(i64 idx)
+    inline void removeAtIdx(isize idx)
     {
-        m_keys.m_size   = SwapRemove(m_keys.slice(),   idx);
-        m_values.m_size = SwapRemove(m_values.slice(), idx);
+        m_keys.remove(idx);
+        m_values.remove(idx);
     }
     inline bool remove(K key)
     {
-        const i64 idx = findKey(key);
+        const isize idx = findKey(key);
         if(idx == -1)
         {
             return false;
@@ -72,7 +71,7 @@ struct Dict1D
     }
     inline bool removeValue(V value)
     {
-        const i64 idx = findValue(value);
+        const isize idx = findValue(value);
         if(idx == -1)
         {
             return false;

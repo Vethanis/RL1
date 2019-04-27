@@ -79,14 +79,40 @@ struct Array
     inline void remove(usize i)
     {
         DebugAssert(i < m_size);
-        Copy(m_mem[i], back());
+        CopyR(m_mem[i], back());
         pop();
     }
     inline void remove(const T* ptr)
     {
         DebugAssert(ptr < end() && ptr >= begin());
-        Copy(*ptr, back());
+        CopyR(*ptr, back());
         pop();
+    }
+    inline isize find(T key) const
+    {
+        const isize len = m_size;
+        const T* keys = begin();
+        for(isize i = 0; i < len; ++i)
+        {
+            if(keys[i] == key)
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+    inline isize rfind(T key) const
+    {
+        const isize len = m_size;
+        const T* keys = begin();
+        for(isize i = len - 1; i >= 0; --i)
+        {
+            if(keys[i] == key)
+            {
+                return i;
+            }
+        }
+        return -1;
     }
 
     inline void reset()
