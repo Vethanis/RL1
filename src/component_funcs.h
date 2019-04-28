@@ -1,9 +1,12 @@
 #pragma once
 
-#include "macro.h"
+#include "lang.h"
 #include "component_types.h"
 #include "memory.h"
 #include "ecs.h"
+
+using ComponentNewFn    = void(*)(ComponentData component);
+using ComponentDropFn   = void(*)(ComponentData component);
 
 inline void EraseComp(ComponentData comp)
 {

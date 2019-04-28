@@ -1,6 +1,6 @@
 #pragma once
 
-#include "macro.h"
+#include "lang.h"
 #include "array.h"
 
 struct Parser;

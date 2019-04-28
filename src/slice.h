@@ -1,6 +1,6 @@
 #pragma once
 
-#include "macro.h"
+#include "templates.h"
 
 template<typename T, usize len>
 static Slice<T> ToSlice(T(&arr)[len])

@@ -1,9 +1,12 @@
 #include "ctrlbinding.h"
 #include "control.h"
+#include "system.h"
+#include "sokol_time.h"
 
 namespace CtrlBinding
 {
-    static constexpr float OneFrame = 1.0f / 60.0f;
+    static u64 ms_lastTick = 0;
+    static u64 ms_curTick = 0;
 
     void Init()
     {
@@ -11,10 +14,14 @@ namespace CtrlBinding
     }
     void Update()
     {
-        Ctrl::Event evt;
-        if (Ctrl::Get(Ctrl::Key_ESCAPE, OneFrame, evt))
+        let after   = ms_curTick;
+        ms_lastTick = after;
+        ms_curTick  = stm_now();
+
+        if (Ctrl::GetAfter(Key_Escape, after))
         {
-            Ctrl::CloseMainWindow();
+            Systems::Quit();
+            return;
         }
     }
     void Shutdown()

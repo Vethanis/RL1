@@ -1,7 +1,7 @@
 #pragma once
 
 #include "pcg32.h"
-#include "macro.h"
+#include "lang.h"
 
 static constexpr u32 NumPrngStates = 16;
 

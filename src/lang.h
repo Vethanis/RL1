@@ -3,6 +3,11 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#define let         const auto
+#define letmut      auto
+#define def         static constexpr
+#define CountOf(x)  ( sizeof(x) / (sizeof((x)[0])) )
+
 #if _MSVC_VER
     #define MsvcOnly(x)     x
     #define PosixOnly(x)
@@ -18,12 +23,6 @@
     #define DebugOnly(x)
     #define ReleaseOnly(x)  x
 #endif // _DEBUG
-
-#define let                 const auto
-#define letmut              auto
-#define def                 static constexpr
-
-#define CountOf(x)          ( sizeof(x) / (sizeof((x)[0])) )
 
 #define WhenTrue(x, expr)   { if ( (x)) { expr; } }
 #define WhenFalse(x, expr)  { if (!(x)) { expr; } }
@@ -58,11 +57,6 @@ using f64 = double;
 
 using cstr = const char*;
 
-def usize MaxPathLen = 256;
-def usize PageSize = 4096;
-def usize MinAlign = 16;
-def usize MaxAlign = PageSize;
-
 struct Slot
 {
     u32 id;
@@ -76,12 +70,12 @@ struct Slice
     usize m_len;
 
     inline usize    size()  const { return m_len; }
-    inline T*       begin() { return m_ptr; }
+    inline T*       begin()       { return m_ptr; }
     inline const T* begin() const { return m_ptr; }
 
     inline usize    bytes() const { return m_len * sizeof(T); }
     inline bool     empty() const { return m_len == (usize)0; }
-    inline T*       end() { return m_ptr + m_len; }
+    inline T*       end()         { return m_ptr + m_len; }
     inline const T* end()   const { return m_ptr + m_len; }
 
     inline T& operator[](usize i)
@@ -107,45 +101,3 @@ using CQwordSlice = Slice<const u64>;
 
 using FloatSlice = Slice<f32>;
 using CFloatSlice = Slice<const f32>;
-
-template<typename T>
-static constexpr T Min(T a, T b)
-{
-    return a < b ? a : b;
-}
-
-template<typename T>
-static constexpr  T Max(T a, T b)
-{
-    return a > b ? a : b;
-}
-
-template<typename T>
-static constexpr  T Clamp(T x, T lo, T hi)
-{
-    return Min(hi, Max(lo, x));
-}
-
-template<typename T>
-static constexpr T Select(T x0, T x1, bool s)
-{
-    return s ? x1 : x0;
-}
-
-template<typename T>
-static constexpr T Lerp(T a, T b, T i)
-{
-    return a + i * (b - a);
-}
-
-template<typename T>
-static constexpr T DivCeil(T nom, T denom)
-{
-    return (nom + (denom - T(1))) / denom;
-}
-
-template<typename T>
-static constexpr T AlignGrow(T x, T align)
-{
-    return DivCeil(x, align) * align;
-}

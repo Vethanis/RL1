@@ -1,8 +1,9 @@
 #pragma once
 
 #include "imgui.h"
-#include "macro.h"
+#include "lang.h"
 #include "fnv.h"
+#include "hlsl_types.h"
 
 struct IDScope
 {
@@ -38,3 +39,28 @@ struct IDScope
         ImGui::PopID();
     }
 };
+
+inline void ImVisCstr(cstr x)
+{
+    ImGui::Text("%s", x);
+}
+
+inline void ImVisF32(f32 x)
+{
+    ImGui::Text("%g", x);
+}
+
+inline void ImVisFloat2(float2 x)
+{
+    ImGui::Text("%g %g", x.x, x.y);
+}
+
+inline void ImVisFloat3(float3 x)
+{
+    ImGui::Text("%g %g %g", x.x, x.y, x.z);
+}
+
+inline void ImVisFloat4(float4 x)
+{
+    ImGui::Text("%g %g %g %g", x.x, x.y, x.z, x.w);
+}

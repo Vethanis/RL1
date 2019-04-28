@@ -1,7 +1,7 @@
 #include "window.h"
 
 #include <stdio.h>
-#include "macro.h"
+#include "lang.h"
 #include "control.h"
 #include "imgui.h"
 
@@ -152,7 +152,10 @@ static void SetCallbacks(GLFWwindow* window)
             io.KeyCtrl  = (0 != (mods & GLFW_MOD_CONTROL));
             io.KeyAlt   = (0 != (mods & GLFW_MOD_ALT));
             io.KeyShift = (0 != (mods & GLFW_MOD_SHIFT));
-            Ctrl::KeyCB(key, action, mods);
+            if(action != GLFW_REPEAT)
+            {
+                Ctrl::KeyCB(key, action, mods);
+            }
         });
     glfwSetMouseButtonCallback(window,
         [](GLFWwindow* w, i32 btn, i32 action, i32 mods)
@@ -161,7 +164,10 @@ static void SetCallbacks(GLFWwindow* window)
             {
                 ImGui::GetIO().MouseDown[btn] = (action == GLFW_PRESS);
             }
-            Ctrl::MouseButtonCB(btn, action, mods);
+            if(action != GLFW_REPEAT)
+            {
+                Ctrl::MouseButtonCB(btn, action, mods);
+            }
         });
     glfwSetCursorPosCallback(window,
         [](GLFWwindow* w, f64 x, f64 y)

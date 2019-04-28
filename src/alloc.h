@@ -1,8 +1,9 @@
 #pragma once
 
+#include "templates.h"
 #include "slice.h"
 
-using Allocation = Slice<u8>;
+using Allocation = ByteSlice;
 using AllocFn    = Allocation (*)(usize bytes, usize align);
 using ReallocFn  = Allocation (*)(Allocation prev, usize bytes, usize align);
 using FreeFn     =       void (*)(Allocation x);

@@ -1,8 +1,7 @@
 #pragma once
 
-#include "macro.h"
+#include "templates.h"
 #include "component_types_thin.h"
-#include "slice.h"
 
 namespace ECS
 {
@@ -15,6 +14,7 @@ namespace ECS
     bool Exists(Entity e);
 
     Slice<const ComponentFlags> GetFlags();
+    CDwordSlice GetGens();
 
     bool AddComponent(Entity e, ComponentType type);
     bool RemoveComponent(Entity e, ComponentType type);
@@ -36,12 +36,16 @@ namespace ECS
     template<typename T>
     inline T* Get(Entity e)
     {
-        return ToType<T>(GetComponent(e, GetComponentType<T>())).begin();
+        return Cast<T>(GetComponent(e, GetComponentType<T>()));
     }
 
     template<typename T>
     inline Slice<T> GetAll()
     {
-        return ToType<T>(GetAllComponents(GetComponentType<T>()));
+        let data = GetAllComponents(GetComponentType<T>());
+        return { Cast<T>(data), data.bytes() / sizeof(T) };
     }
+
+    bool& ImVisEnabled();
+    void ImVisUpdate();
 };

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "macro.h"
+#include "lang.h"
 #include "array.h"
 
 template<typename K, typename V>

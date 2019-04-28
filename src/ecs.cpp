@@ -1,37 +1,31 @@
 #include "ecs.h"
 
 #include "gen_array.h"
-#include "bitfield.h"
 
 #include "component_types.h"
 #include "component_funcs.h"
 
-#if _DEBUG || 1
-    #include "imvis.h"
-    #include "component_debug.h"
-    #include <stdio.h>
-#endif // _DEBUG
+#include "imvis.h"
+#include "component_debug.h"
+#include <stdio.h>
 
 static constexpr Allocator ms_alloc =
 {
     Malloc::Allocate,
     Malloc::Reallocate,
     Malloc::Free,
-    4096u,
+    4096,
 };
 
 static GenIndices<ms_alloc>             ms_indices;                 // active slots
-static Array<bool, ms_alloc>            ms_alive;                   // is entity alive
 static Array<ComponentFlags, ms_alloc>  ms_flags;                   // what components exist, per-entity
 static ComponentData                    ms_components[CT_Count];    // component allocations as bytes
 static u32                              ms_capacity;                // capacity of component arrays
 
-static ComponentData GetComponentData(u32 e, u32 c)
+static ComponentData GetData(u32 ent, u32 comp)
 {
-    return Opaque(ms_components[c], e, sc_ComponentSize[c]);
+    return Opaque(ms_components[comp], ent, sc_ComponentSize[comp]);
 }
-
-static void DebugVis();
 
 namespace ECS
 {
@@ -41,18 +35,18 @@ namespace ECS
     }
     void Update()
     {
-        DebugOnly(DebugVis());
+
     }
     void Shutdown()
     {
         const u32 cap = (u32)ms_indices.capacity();
-        for(u32 c = 0u; c < CT_Count; ++c)
+        for(u32 c = 0; c < CT_Count; ++c)
         {
-            for(u32 e = 0u; e < cap; ++e)
+            for(u32 e = 0; e < cap; ++e)
             {
-                if(ms_flags[e].has(c))
+                if(HasFlag(ms_flags[e], c))
                 {
-                    sc_ComponentDrop[c](GetComponentData(e, c));
+                    sc_ComponentDrop[c](GetData(e, c));
                 }
             }
             ms_alloc.Free(ms_components[c]);
@@ -60,20 +54,19 @@ namespace ECS
 
         ms_flags.reset();
         ms_indices.reset();
-        ms_alive.reset();
-        ms_capacity = 0u;
+        ms_capacity = 0;
     }
 
     Entity Create()
     {
-        const Slot s = ms_indices.create();
-        const u32 newCap = s.id + 1u;
+        let slot = ms_indices.create();
+        let e = slot.id;
+        let newCap = e + 1;
 
         if (newCap > ms_capacity)
         {
             ms_capacity = newCap;
             ms_flags.resize(newCap);
-            ms_alive.resize(newCap);
 
             for(u32 i = 0; i < CT_Count; ++i)
             {
@@ -81,29 +74,25 @@ namespace ECS
             }
         }
 
-        for(u32 c = 0u; c < CT_Count; ++c)
+        for(u32 c = 0; c < CT_Count; ++c)
         {
-            EraseComp(GetComponentData(s.id, c));
+            EraseComp(GetData(e, c));
         }
-        EraseR(ms_flags[s.id]);
+        EraseR(ms_flags[e]);
 
-        ms_alive[s.id] = true;
-
-        return { s };
+        return { slot };
     }
 
     bool Destroy(Entity e)
     {
         let id = e.s.id;
-        if (ms_alive[id] && ms_indices.destroy(e.s))
+        if (ms_indices.destroy(e.s))
         {
-            ms_alive[id] = false;
-
-            for(u32 c = 0u; c < CT_Count; ++c)
+            for(u32 c = 0; c < CT_Count; ++c)
             {
-                if(ms_flags[id].has(c))
+                if(HasFlag(ms_flags[id], c))
                 {
-                    sc_ComponentDrop[c](GetComponentData(id, c));
+                    sc_ComponentDrop[c](GetData(id, c));
                 }
             }
             EraseR(ms_flags[id]);
@@ -115,21 +104,27 @@ namespace ECS
 
     bool Exists(Entity e)
     {
-        return ms_indices.exists(e.s) && ms_alive[e.s.id];
+        return ms_indices.exists(e.s);
     }
 
     Slice<const ComponentFlags> GetFlags()
     {
-        return Subslice(ToCSlice(ms_flags), 0, ms_capacity);
+        return ToCSlice(ms_flags);
+    }
+    CDwordSlice GetGens()
+    {
+        return ToConst(ms_indices.gens());
     }
 
     bool AddComponent(Entity e, ComponentType type)
     {
-        const u32 id = e.s.id;
-        if(Exists(e) && !ms_flags[id].has(type))
+        let id = e.s.id;
+        let uType = (u32)type;
+
+        if(Exists(e) && !HasFlag(ms_flags[id], uType))
         {
-            sc_ComponentNew[type](GetComponentData(id, type));
-            ms_flags[id].set(type);
+            sc_ComponentNew[uType](GetData(id, uType));
+            SetFlag(ms_flags[id], uType);
             return true;
         }
         return false;
@@ -137,11 +132,13 @@ namespace ECS
 
     bool RemoveComponent(Entity e, ComponentType type)
     {
-        const u32 id = e.s.id;
-        if(Exists(e) && ms_flags[id].has(type))
+        let id = e.s.id;
+        let uType = (u32)type;
+
+        if(Exists(e) && HasFlag(ms_flags[id], uType))
         {
-            sc_ComponentDrop[type](GetComponentData(id, type));
-            ms_flags[id].unset(type);
+            sc_ComponentDrop[uType](GetData(id, uType));
+            UnsetFlag(ms_flags[id], uType);
             return true;
         }
         return false;
@@ -149,10 +146,12 @@ namespace ECS
 
     ComponentData GetComponent(Entity e, ComponentType type)
     {
-        const u32 id = e.s.id;
-        if(Exists(e) && ms_flags[id].has(type))
+        let id = e.s.id;
+        let uType = (u32)type;
+
+        if(Exists(e) && HasFlag(ms_flags[id], uType))
         {
-            return GetComponentData(id, type);
+            return GetData(id, uType);
         }
         return { 0, 0 };
     }
@@ -162,25 +161,28 @@ namespace ECS
         let bytes = ms_indices.capacity() * sc_ComponentSize[type];
         return Subslice(ms_components[type], 0, bytes);
     }
-};
 
-#if _DEBUG || 1
-
-    static void DebugVis()
+    static bool ms_imvisEnabled = false;
+    bool& ImVisEnabled()
     {
-        let flags = ECS::GetFlags();
-        let gens = ms_indices.gens();
-
+        return ms_imvisEnabled;
+    }
+    void ImVisUpdate()
+    {
+        ImGui::SetNextWindowSize({ 400, 400 }, ImGuiCond_FirstUseEver);
         ImGui::Begin("ECS");
 
-        ImGui::Text("Entity Capacity: %u\n", ms_capacity);
-
         u32 count = 0;
-        for(let alive : ms_alive)
         {
-            count += alive ? 1 : 0;
+            let gens = ECS::GetGens();
+            for(let gen : gens)
+            {
+                count += gen & 1;
+            }
+            ImGui::Text("Count:    %u\n", count);
+            ImGui::Text("Capacity: %zu\n", gens.size());
         }
-
+        ImGui::Separator();
         {
             // add / remove entity row
             ImGui::Columns(count + 1);
@@ -192,9 +194,11 @@ namespace ECS
                 }
                 ImGui::NextColumn();
             }
+            let flags   = ECS::GetFlags();
+            let gens    = ECS::GetGens();
             for(u32 e = 0; e < flags.size(); ++e)
             {
-                if(ms_alive[e])
+                if(gens[e] & 1)
                 {
                     IDScope btn("ECS::Destroy", e);
                     if(ImGui::Button("-"))
@@ -205,89 +209,71 @@ namespace ECS
                 }
             }
         }
-
         ImGui::Separator();
-
         {
             // ID row
             ImGui::Columns(count + 1);
             {
-                ImGui::Text("ID");
+                ImGui::Text("ID, Gen");
                 ImGui::NextColumn();
             }
+            let flags = ECS::GetFlags();
+            let gens = ECS::GetGens();
             for(u32 e = 0; e < flags.size(); ++e)
             {
-                if(ms_alive[e])
+                if(gens[e] & 1)
                 {
-                    ImGui::Text("%u", e);
+                    ImGui::Text("%u, %u", e, gens[e] >> 1);
                     ImGui::NextColumn();
                 }
             }
         }
-
         ImGui::Separator();
-
         {
-            // gen row
-            ImGui::Columns(count + 1);
+            // component rows
+            let flags = ECS::GetFlags();
+            let gens = ECS::GetGens();
+            for(u32 c = 0; c < CT_Count; ++c)
             {
-                ImGui::Text("Gen");
+                let type = (ComponentType)c;
+
+                ImGui::Columns(count + 1);
+
+                ImGui::Text("%s", ComponentName(type));
                 ImGui::NextColumn();
-            }
-            for(u32 e = 0; e < flags.size(); ++e)
-            {
-                if(ms_alive[e])
+
+                for(u32 e = 0; e < flags.size(); ++e)
                 {
-                    ImGui::Text("%u", gens[e]);
+                    if(!(gens[e] & 1))
+                    {
+                        continue;
+                    }
+
+                    IDScope addbtn("ECS::AddComponent", c, e);
+                    if(!HasFlag(flags[e], c) && ImGui::Button("+"))
+                    {
+                        ECS::AddComponent({ e, gens[e] }, type);
+                    }
+
+                    IDScope rembtn("ECS::RemoveComponent", c, e);
+                    if(HasFlag(flags[e], c) && ImGui::Button("-"))
+                    {
+                        ECS::RemoveComponent({ e, gens[e] }, type);
+                    }
+
+                    if(HasFlag(flags[e], c))
+                    {
+                        ImGui::SameLine();
+                        ImVisComponent(type, ToConst(GetData(e, c)));
+                    }
+
                     ImGui::NextColumn();
                 }
+
+                ImGui::Separator();
             }
-        }
-
-        ImGui::Separator();
-
-        // component rows
-        for(u32 c = 0; c < CT_Count; ++c)
-        {
-            let type = (ComponentType)c;
-
-            ImGui::Columns(count + 1);
-
-            ImGui::Text("%s", ComponentName(type));
-            ImGui::NextColumn();
-
-            for(u32 e = 0; e < flags.size(); ++e)
-            {
-                if(!ms_alive[e])
-                {
-                    continue;
-                }
-
-                IDScope addbtn("ECS::AddComponent", c, e);
-                if(!flags[e].has(type) && ImGui::Button("+"))
-                {
-                    ECS::AddComponent({ e, gens[e] }, type);
-                }
-
-                IDScope rembtn("ECS::RemoveComponent", c, e);
-                if(flags[e].has(type) && ImGui::Button("-"))
-                {
-                    ECS::RemoveComponent({ e, gens[e] }, type);
-                }
-
-                if(flags[e].has(type))
-                {
-                    ImGui::SameLine();
-                    let data = ToConst(GetComponentData(e, c));
-                    ImVisComponent(type, data);
-                }
-
-                ImGui::NextColumn();
-            }
-
-            ImGui::Separator();
         }
 
         ImGui::End();
     }
-#endif // _DEBUG
+};

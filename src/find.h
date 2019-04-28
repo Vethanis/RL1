@@ -1,6 +1,6 @@
 #pragma once
 
-#include "macro.h"
+#include "lang.h"
 
 template<typename T>
 static constexpr isize Find(Slice<const T> x, T key)

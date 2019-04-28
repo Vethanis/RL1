@@ -1,6 +1,6 @@
 #pragma once
 
-#include "macro.h"
+#include "lang.h"
 #include "slice.h"
 
 template<typename T, usize t_capacity>

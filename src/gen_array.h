@@ -1,6 +1,6 @@
 #pragma once
 
-#include "macro.h"
+#include "lang.h"
 #include "array.h"
 
 template<const Allocator& t_alloc>
@@ -21,10 +21,10 @@ struct GenIndices
             m_gen.grow()  = 0u;
         }
 
-        const u32 idx = m_free.back();
-        m_free.pop();
+        let idx = m_free.pop_value();
+        let gen = (m_gen[idx] |= 1u);
 
-        return { idx, m_gen[idx] };
+        return { idx, gen };
     }
     inline bool destroy(Slot s)
     {
@@ -34,7 +34,7 @@ struct GenIndices
         }
 
         m_free.grow() = s.id;
-        m_gen[s.id]++;
+        m_gen[s.id] = (m_gen[s.id] + 2u) & (~0x1);
 
         return true;
     }
@@ -48,6 +48,7 @@ struct GenIndices
         m_gen.clear();
         m_free.clear();
     }
+    // gens[id] & 1 => IsAlive(id)
     inline Slice<const u32> gens() const
     {
         return m_gen.cslice();

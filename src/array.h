@@ -1,6 +1,6 @@
 #pragma once
 
-#include "macro.h"
+#include "lang.h"
 #include "memory.h"
 #include "allocs.h"
 
@@ -16,45 +16,45 @@ struct Array
     inline usize   size()     const { return m_size;        }
 
     inline usize capacity_bytes() const { return capacity() * sizeof(T); }
-    inline usize size_bytes()     const { return m_size * sizeof(T); }
+    inline usize size_bytes()     const { return size() * sizeof(T); }
 
-    inline bool full()  const { return m_size == capacity(); }
-    inline bool empty() const { return m_size == (usize)0; }
+    inline bool full()  const { return size() == capacity(); }
+    inline bool empty() const { return size() == (usize)0; }
 
-    inline       T* end()       { return begin() + m_size; }
-    inline const T* end() const { return begin() + m_size; }
+    inline       T* end()       { return begin() + size(); }
+    inline const T* end() const { return begin() + size(); }
 
     inline T& front()
     {
         DebugAssert(!empty());
-        return m_mem[0];
+        return begin()[0];
     }
     inline const T& front() const
     {
         DebugAssert(!empty());
-        return m_mem[0];
+        return begin()[0];
     }
 
     inline T& back()
     {
         DebugAssert(!empty());
-        return m_mem[m_size - 1];
+        return begin()[size() - 1];
     }
     inline const T& back() const
     {
         DebugAssert(!empty());
-        return m_mem[m_size - 1];
+        return begin()[size() - 1];
     }
 
     inline T& operator[](usize i)
     {
-        DebugAssert(i < m_size);
-        return m_mem[i];
+        DebugAssert(i < size());
+        return begin()[i];
     }
     inline const T& operator[](usize i) const
     {
-        DebugAssert(i < m_size);
-        return m_mem[i];
+        DebugAssert(i < size());
+        return begin()[i];
     }
 
     inline void clear()
@@ -64,7 +64,8 @@ struct Array
     inline T& append()
     {
         DebugAssert(!full());
-        return m_mem[m_size++];
+        ++m_size;
+        return back();
     }
     inline void pop()
     {
@@ -74,12 +75,14 @@ struct Array
     inline T pop_value()
     {
         DebugAssert(!empty());
-        return m_mem[m_size--];
+        T& y = back();
+        pop();
+        return y;
     }
     inline void remove(usize i)
     {
-        DebugAssert(i < m_size);
-        CopyR(m_mem[i], back());
+        DebugAssert(i < size());
+        CopyR(begin()[i], back());
         pop();
     }
     inline void remove(const T* ptr)
@@ -90,7 +93,7 @@ struct Array
     }
     inline isize find(T key) const
     {
-        const isize len = m_size;
+        const isize len = size();
         const T* keys = begin();
         for(isize i = 0; i < len; ++i)
         {
@@ -103,7 +106,7 @@ struct Array
     }
     inline isize rfind(T key) const
     {
-        const isize len = m_size;
+        const isize len = size();
         const T* keys = begin();
         for(isize i = len - 1; i >= 0; --i)
         {
@@ -126,15 +129,15 @@ struct Array
     }
     inline void expand(usize step)
     {
-        reserve(m_size + step);
+        reserve(size() + step);
     }
     inline T& grow()
     {
         if(full())
         {
-            reserve(m_size + 1);
+            reserve(size() + 1);
         }
-        return m_mem[m_size++];
+        return append();
     }
     inline void resize(usize count)
     {

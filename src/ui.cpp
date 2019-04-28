@@ -5,7 +5,7 @@
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_glfw.h"
 
-#include "macro.h"
+#include "lang.h"
 #include "window.h"
 #include "sokol_time.h"
 

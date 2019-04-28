@@ -1,6 +1,6 @@
 #pragma once
 
-#include "macro.h"
+#include "lang.h"
 
 #define Subscript(x)                                                    \
     inline       auto& operator[](u32 i)       { return (&x)[i]; }   \

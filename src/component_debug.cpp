@@ -1,10 +1,9 @@
 #include "component_debug.h"
 #include "component_types.h"
 #include "names.h"
+#include "imvis.h"
 
-#include "imgui.h"
-
-using ComponentImVisFn  = void(*)(CComponentData compData);
+using ComponentImVisFn  = void(*)(CComponentData component);
 
 // ----------------------------------------------------------------------------
 
@@ -30,54 +29,55 @@ const char* ComponentName(ComponentType type)
 
 static void ImVisPosition(CComponentData x)
 {
-    let pos = ToType<Position>(x)[0].value;
-    ImGui::Text("%g %g %g", pos.x, pos.y, pos.z);
+    let pos = Cast<Position>(x)->value;
+    ImVisFloat3(pos);
 }
 
 static void ImVisOrientation(CComponentData x)
 {
-    let orien = ToType<Orientation>(x)[0];
-    let dir = orien.forward;
-    let up = orien.up;
-    ImGui::Text("%g %g %g | ", dir.x, dir.y, dir.z);
-    ImGui::SameLine();
-    ImGui::Text("%g %g %g", up.x, up.y, up.z);
+    let orien = Cast<Orientation>(x);
+    let f = orien->forward;
+    let u = orien->up;
+    ImGui::Text(
+        "%g %g %g, %g %g %g",
+        f.x, f.y, f.z,
+        u.x, u.y, u.z);
 }
 
 static void ImVisScale(CComponentData x)
 {
-    let scale = ToType<Scale>(x)[0].value;
-    ImGui::Text("%g %g", scale.x, scale.y);
+    let scale = Cast<Scale>(x)->value;
+    ImVisFloat3(scale);
 }
 
 static void ImVisVelocity(CComponentData x)
 {
-    let vel = ToType<Velocity>(x)[0].value;
-    ImGui::Text("%g %g %g", vel.x, vel.y, vel.z);
+    let vel = Cast<Velocity>(x)->value;
+    ImVisFloat3(vel);
 }
 
 static void ImVisMass(CComponentData x)
 {
-    let mass = ToType<Mass>(x)[0].value;
-    ImGui::Text("%g", mass);
+    let mass = Cast<Mass>(x)->value;
+    ImVisF32(mass);
 }
 
 static void ImVisNameHash(CComponentData x)
 {
-    let hash = ToType<NameHash>(x)[0].value;
-    ImGui::Text("%s", Names::Lookup(hash));
+    let hash = Cast<NameHash>(x)->value;
+    ImVisCstr(Names::Lookup(hash));
 }
 
 static void ImVisDrawInfo(CComponentData x)
 {
-    let info = ToType<DrawInfo>(x)[0];
-    ImGui::Text("%u %g %g", info.id, info.phase, info.hz);
+    let info = Cast<DrawInfo>(x);
+    ImGui::Text("%u %g %g", info->id, info->phase, info->hz);
 }
 
 static void ImVisHealth(CComponentData x)
 {
     let health = ToType<Health>(x)[0].value;
-    ImGui::Text("%g", health);
+    ImVisF32(health);
 }
 
 // ----------------------------------------------------------------------------

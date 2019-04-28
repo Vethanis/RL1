@@ -17,7 +17,7 @@ struct Orientation
 
 struct Scale
 {
-    float2 value;
+    float3 value;
 };
 
 struct Velocity

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "macro.h"
+#include "lang.h"
 #include "alloc.h"
 #include "circular_stack.h"
 
