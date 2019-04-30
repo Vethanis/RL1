@@ -1,27 +1,26 @@
 #pragma once
 
-#include "memory.h"
-#include "slice.h"
+#include "lang.h"
 
 template<typename T, typename C>
-inline void Sort(Slice<T> list, C cmp)
+inline void Sort(T* x, i32 len, C cmp)
 {
-    const int64_t len = list.size();
     if(len < 2)
     {
         return;
     }
-    int64_t i = 0;
-    int64_t j = len - 1;
+
+    i32 i = 0;
+    i32 j = len - 1;
     {
-        const int64_t p = len >> 1;
-        while(i >= j)
+        let p = x[len / 2];
+        while(i < j)
         {
-            while(cmp(x[i], x[p]) < 0)
+            while(cmp(x[i], p) < 0)
             {
                 ++i;
             }
-            while(cmp(x[j], x[p]) > 0)
+            while(cmp(x[j], p) > 0)
             {
                 --j;
             }
@@ -31,13 +30,15 @@ inline void Sort(Slice<T> list, C cmp)
                 break;
             }
 
-            Swap(x[i], x[j]);
+            let t = x[i];
+            x[i] = x[j];
+            x[j] = t;
 
             ++i;
             --j;
         }
     }
 
-    Sort(list.subslice(0, i), cmp);
-    Sort(list.subslice(i, len - i), cmp);
+    Sort(x, i, cmp);
+    Sort(x + i, len - i, cmp);
 }

@@ -2,11 +2,14 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <signal.h>
 
-#define let         const auto
-#define letmut      auto
-#define def         static constexpr
-#define CountOf(x)  ( sizeof(x) / (sizeof((x)[0])) )
+#define let                     const auto
+#define letmut                  auto
+#define def                     static constexpr
+
+#define LEN(x)                  ( sizeof(x) / (sizeof((x)[0])) )
+#define Format(dst, fmt, ...)   { snprintf(dst, LEN(dst) - 1, fmt, __VA_ARGS__); dst[LEN(dst) - 1] = 0; }
 
 #if _MSVC_VER
     #define MsvcOnly(x)     x
@@ -28,10 +31,10 @@
 #define WhenFalse(x, expr)  { if (!(x)) { expr; } }
 
 #define StaticAssert(x)     typedef char __C_ASSERT__[(x) ? 1 : -1];
-#define CountAssert(x, len) StaticAssert(CountOf(x) == len)
-#define CountAssertEQ(x, y) StaticAssert(CountOf(x) == CountOf(y))
+#define CountAssert(x, len) StaticAssert(LEN(x) == len)
+#define CountAssertEQ(x, y) StaticAssert(LEN(x) == LEN(y))
 
-#define Interrupt()         MsvcOnly(__debugbreak()) PosixOnly(__builtin_trap())
+#define Interrupt()         raise(SIGINT)
 #define Assert(x)           WhenFalse(x, Interrupt())
 #define Verify(x)           Assert(x)
 #define VerifyEQ(lhs, rhs)  Assert((lhs) == (rhs))
@@ -63,41 +66,114 @@ struct Slot
     u32 gen;
 };
 
+def usize MaxPathLen = 256;
+def usize PageSize = 4096;
+def usize MinAlign = 16;
+def usize MaxAlign = PageSize;
+
 template<typename T>
-struct Slice
+inline constexpr T Min(T a, T b)
 {
-    T*    m_ptr;
-    usize m_len;
+    return a < b ? a : b;
+}
 
-    inline usize    size()  const { return m_len; }
-    inline T*       begin()       { return m_ptr; }
-    inline const T* begin() const { return m_ptr; }
+template<typename T>
+inline constexpr  T Max(T a, T b)
+{
+    return a > b ? a : b;
+}
 
-    inline usize    bytes() const { return m_len * sizeof(T); }
-    inline bool     empty() const { return m_len == (usize)0; }
-    inline T*       end()         { return m_ptr + m_len; }
-    inline const T* end()   const { return m_ptr + m_len; }
+template<typename T>
+inline constexpr  T Clamp(T x, T lo, T hi)
+{
+    return Min(hi, Max(lo, x));
+}
 
-    inline T& operator[](usize i)
+template<typename T>
+inline constexpr T Select(T x0, T x1, bool s)
+{
+    return s ? x1 : x0;
+}
+
+template<typename T>
+inline constexpr T Lerp(T a, T b, T i)
+{
+    return a + i * (b - a);
+}
+
+template<typename T>
+inline constexpr T DivCeil(T nom, T denom)
+{
+    return (nom + (denom - T(1))) / denom;
+}
+
+template<typename T>
+inline constexpr T AlignGrow(T x, T align)
+{
+    return DivCeil(x, align) * align;
+}
+
+inline void SetFlag(u32& x, u32 y)
+{
+    x |= u32(1) << y;
+}
+inline void UnsetFlag(u32& x, u32 y)
+{
+    x &= ~(u32(1) << y);
+}
+inline bool HasFlag(u32 x, u32 y)
+{
+    return (x >> y) & u32(1);
+}
+inline bool HasMask(u32 x, u32 mask)
+{
+    return (x & mask) == mask;
+}
+
+template<typename T>
+inline constexpr T Sum(const T* x, usize len)
+{
+    T y = T(0);
+    for (usize i = 0; i < len; ++i)
     {
-        DebugAssert(i < m_len);
-        return m_ptr[i];
+        y += x[i];
     }
-    inline const T& operator[](usize i) const
+    return y;
+}
+
+template<typename T>
+inline constexpr T MaxA(const T* x, usize len)
+{
+    usize y = 0;
+    for(usize i = 0; i < len; ++i)
     {
-        DebugAssert(i < m_len);
-        return m_ptr[i];
+        if(x[i] > x[y])
+        {
+            y = i;
+        }
     }
-};
+    return x[y];
+}
 
-using ByteSlice = Slice<u8>;
-using CByteSlice = Slice<const u8>;
+template<typename T>
+inline constexpr T MinA(const T* x, usize len)
+{
+    usize y = 0;
+    for(usize i = 0; i < len; ++i)
+    {
+        if(x[i] < x[y])
+        {
+            y = i;
+        }
+    }
+    return x[y];
+}
 
-using DwordSlice = Slice<u32>;
-using CDwordSlice = Slice<const u32>;
-
-using QwordSlice = Slice<u64>;
-using CQwordSlice = Slice<const u64>;
-
-using FloatSlice = Slice<f32>;
-using CFloatSlice = Slice<const f32>;
+template<typename T>
+inline void IndexFill(T* x, T len)
+{
+    for(T i = T(0); i < len; ++i)
+    {
+        x[i] = i;
+    }
+}

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "templates.h"
+#include "lang.h"
 #include "slice.h"
 
 using Allocation = ByteSlice;

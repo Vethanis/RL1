@@ -162,14 +162,9 @@ namespace ECS
         return Subslice(ms_components[type], 0, bytes);
     }
 
-    static bool ms_imvisEnabled = false;
-    bool& ImVisEnabled()
-    {
-        return ms_imvisEnabled;
-    }
     void ImVisUpdate()
     {
-        ImGui::SetNextWindowSize({ 400, 400 }, ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize({ 600, 350 }, ImGuiCond_FirstUseEver);
         ImGui::Begin("ECS");
 
         u32 count = 0;

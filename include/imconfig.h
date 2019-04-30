@@ -17,6 +17,14 @@
 //#define IM_ASSERT(_EXPR)  MyAssert(_EXPR)
 //#define IM_ASSERT(_EXPR)  ((void)(_EXPR))     // Disable asserts
 
+#include <signal.h>
+
+#if _DEBUG
+    #define IM_ASSERT(_expr) do { if(!(_expr)) { raise(SIGINT); } } while(0);
+#else
+    #define IM_ASSERT(_expr)
+#endif // _DEBUG
+
 //---- Define attributes of all API symbols declarations, e.g. for DLL under Windows.
 //#define IMGUI_API __declspec( dllexport )
 //#define IMGUI_API __declspec( dllimport )

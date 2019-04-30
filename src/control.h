@@ -31,6 +31,5 @@ namespace Ctrl
     void ScrollWheelCB(f32 dx, f32 dy);
     void WindowSizeCB(i32 width, i32 height);
 
-    bool& ImVisEnabled();
     void ImVisUpdate();
 };

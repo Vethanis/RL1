@@ -1,6 +1,57 @@
 #pragma once
 
-#include "templates.h"
+#include "lang.h"
+
+template<typename T>
+struct Slice
+{
+    T*    m_ptr;
+    usize m_len;
+
+    inline usize    size()  const { return m_len; }
+    inline T*       begin()       { return m_ptr; }
+    inline const T* begin() const { return m_ptr; }
+
+    inline usize    bytes() const { return m_len * sizeof(T); }
+    inline bool     empty() const { return m_len == (usize)0; }
+    inline T*       end()         { return m_ptr + m_len; }
+    inline const T* end()   const { return m_ptr + m_len; }
+
+    inline T& operator[](usize i)
+    {
+        DebugAssert(i < m_len);
+        return m_ptr[i];
+    }
+    inline const T& operator[](usize i) const
+    {
+        DebugAssert(i < m_len);
+        return m_ptr[i];
+    }
+};
+
+using ByteSlice = Slice<u8>;
+using CByteSlice = Slice<const u8>;
+
+using DwordSlice = Slice<u32>;
+using CDwordSlice = Slice<const u32>;
+
+using QwordSlice = Slice<u64>;
+using CQwordSlice = Slice<const u64>;
+
+using FloatSlice = Slice<f32>;
+using CFloatSlice = Slice<const f32>;
+
+template<typename T, typename Y>
+inline T* Cast(Slice<Y> x)
+{
+    return reinterpret_cast<T*>(x.m_ptr);
+}
+
+template<typename T, typename Y>
+inline const T* Cast(Slice<const Y> x)
+{
+    return reinterpret_cast<const T*>(x.m_ptr);
+}
 
 template<typename T, usize len>
 static Slice<T> ToSlice(T(&arr)[len])

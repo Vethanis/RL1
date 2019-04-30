@@ -50,7 +50,7 @@ REL_FLAGS="-O3 -g0 -finline-functions -finline-hint-functions"
 DBG_FLAGS="-O0 -g2"
 
 INCS="-I /usr/include -I ./include -I ./src"
-LIBS="-L /usr/lib -lm -ldl -lglfw"
+LIBS="-L /usr/lib -lm -ldl -lglfw -pthread"
 
 EXE_NAME="rl1.exe"
 

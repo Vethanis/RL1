@@ -1,6 +1,6 @@
 #pragma once
 
-#include "templates.h"
+#include "lang.h"
 #include "component_types_thin.h"
 
 namespace ECS
@@ -46,6 +46,5 @@ namespace ECS
         return { Cast<T>(data), data.bytes() / sizeof(T) };
     }
 
-    bool& ImVisEnabled();
     void ImVisUpdate();
 };

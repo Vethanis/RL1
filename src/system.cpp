@@ -3,7 +3,6 @@
 #include <stdio.h>
 
 #include "lang.h"
-#include "templates.h"
 #include "ai.h"
 #include "allocs.h"
 #include "audio.h"
@@ -16,6 +15,7 @@
 #include "ui.h"
 #include "window.h"
 #include "sokol_time.h"
+#include "sort.h"
 
 // ----------------------------------------------------------------------------
 
@@ -51,7 +51,7 @@ def cstr SystemImVisNames[] =
 };
 CountAssertEQ(SystemImVis, SystemImVisNames);
 
-static bool ms_imvisEnables[CountOf(SystemImVis)];
+static bool ms_imvisEnables[LEN(SystemImVis)];
 
 // ----------------------------------------------------------------------------
 
@@ -107,7 +107,7 @@ def SystemUpdateFn SystemUpdates[] =
 def cstr SystemUpdateNames[] =
 {
     "LinAlloc",
-    "UI",
+    "UIBegin",
     "Ctrl",
     "CtrlBinding",
     "AI",
@@ -116,7 +116,7 @@ def cstr SystemUpdateNames[] =
     "Audio",
     "Renderer",
     "ImVis",
-    "UI",
+    "UIEnd",
     "Window",
 };
 CountAssertEQ(SystemUpdates, SystemUpdateNames);
@@ -154,10 +154,12 @@ CountAssertEQ(SystemShutdowns, SystemShutdownNames);
 
 // ----------------------------------------------------------------------------
 
-static u64  ms_initTics[CountOf(SystemInits)];
-static u64  ms_updateTics[CountOf(SystemUpdates)];
-static u64  ms_shutdownTics[CountOf(SystemShutdowns)];
-static u64  ms_imvisTics[CountOf(SystemImVis)];
+static f64  ms_initMs[LEN(SystemInits)];
+static f64  ms_updateMs[LEN(SystemUpdates)];
+static f64  ms_shutdownMs[LEN(SystemShutdowns)];
+static f64  ms_imvisMs[LEN(SystemImVis)];
+
+static f32  ms_timeSmooth = 60.0;
 
 // ----------------------------------------------------------------------------
 
@@ -178,25 +180,25 @@ CountAssertEQ(PhaseNames, PhaseSubsystemNames);
 
 def u32 PhaseSubsystemCounts[] =
 {
-    CountOf(SystemInits),
-    CountOf(SystemUpdates),
-    CountOf(SystemImVis),
+    LEN(SystemInits),
+    LEN(SystemUpdates),
+    LEN(SystemImVis),
 };
 CountAssertEQ(PhaseNames, PhaseSubsystemCounts);
 
-def const u64* PhaseSubsystemTics[] =
+def const f64* PhaseSubsystemMs[] =
 {
-    ms_initTics,
-    ms_updateTics,
-    ms_imvisTics,
+    ms_initMs,
+    ms_updateMs,
+    ms_imvisMs,
 };
-CountAssertEQ(PhaseNames, PhaseSubsystemTics);
+CountAssertEQ(PhaseNames, PhaseSubsystemMs);
 
 // ----------------------------------------------------------------------------
 
 namespace Systems
 {
-    static u64  ms_laptime;
+    static u64 ms_laptime;
 
     void Quit()
     {
@@ -217,26 +219,28 @@ namespace Systems
     static void Init()
     {
         u64 now = stm_now();
-        for(u32 i = 0; i < CountOf(SystemInits); ++i)
+        for(u32 i = 0; i < LEN(SystemInits); ++i)
         {
             SystemInits[i]();
-            ms_initTics[i] = stm_laptime(&now);
+            ms_initMs[i] = stm_ms(stm_laptime(&now));
         }
     }
 
     static void Update()
     {
+        let smoothing = 1.0 / ms_timeSmooth;
         u64 now = stm_now();
-        for(u32 i = 0; i < CountOf(SystemUpdates); ++i)
+        for(u32 i = 0; i < LEN(SystemUpdates); ++i)
         {
             SystemUpdates[i]();
-            ms_updateTics[i] = stm_laptime(&now);
+            let ms = stm_ms(stm_laptime(&now));
+            ms_updateMs[i] = Lerp(ms_updateMs[i], ms, smoothing);
         }
 
         let after = ms_laptime;
         ms_laptime = now;
 
-        for(u32 i = 0; i < CountOf(SystemImVis); ++i)
+        for(u32 i = 0; i < LEN(SystemImVis); ++i)
         {
             let chan = Channel(Key_F1 + i);
             Ctrl::Event evt;
@@ -252,79 +256,108 @@ namespace Systems
 
     static void Shutdown()
     {
+        constexpr u32 len = LEN(SystemShutdowns);
+
         u64 now = stm_now();
-        for(u32 i = 0; i < CountOf(SystemShutdowns); ++i)
+        for(u32 i = 0; i < len; ++i)
         {
             SystemShutdowns[i]();
-            ms_shutdownTics[i] = stm_laptime(&now);
+            ms_shutdownMs[i] = stm_ms(stm_laptime(&now));
         }
 
-        f64 sum = 0.0;
-        for(let tics : ms_shutdownTics)
-        {
-            sum += stm_ms(tics);
-        }
-        let inv = 100.0f / sum;
+        let sum = Sum(ms_shutdownMs, len);
+        let inv = 100.0 / sum;
 
-        printf("Shutdown\n");
-        printf("Total: %gms\n", sum);
-        printf("%-12s | %-12s | %-12s\n", "Name", "ms", "Percent");
-        for(u32 i = 0; i < CountOf(SystemShutdowns); ++i)
+        u32 order[len];
+        IndexFill(order, len);
+
+        Sort(order, len, [&](u32 a, u32 b) -> i32
         {
-            let name = SystemShutdownNames[i];
-            let ms = stm_ms(ms_shutdownTics[i]);
+            let msA = ms_shutdownMs[a];
+            let msB = ms_shutdownMs[b];
+            if(msA == msB)
+            {
+                return 0;
+            }
+            return (msA > msB) ? -1 : 1;
+        });
+
+        printf("-----------------------------\n");
+        printf("Shutdown: %fms\n", sum);
+        printf("-----------------------------\n");
+        printf("%-12s | %-5s | %c\n", "Name", "ms", '%');
+        printf("-------------|-------|-------\n");
+        for(u32 i = 0; i < len; ++i)
+        {
+            let ind = order[i];
+            let name = SystemShutdownNames[ind];
+            let ms = ms_shutdownMs[ind];
             let pct = ms * inv;
-            printf("%-12s | %-12g | %-12g\n", name, ms, pct);
+            printf("%-12s | %05.2f | %05.2f\n", name, ms, pct);
         }
+        printf("-------------|-------|-------\n\n");
     }
 
     static void ImVisChildren()
     {
+        let smoothing = 1.0 / ms_timeSmooth;
         u64 now = stm_now();
-        for(u32 i = 0; i < CountOf(SystemImVis); ++i)
+        for(u32 i = 0; i < LEN(SystemImVis); ++i)
         {
             if(ms_imvisEnables[i])
             {
                 SystemImVis[i]();
             }
-            ms_imvisTics[i] = stm_laptime(&now);
+            let ms = stm_ms(stm_laptime(&now));
+            ms_imvisMs[i] = Lerp(ms_imvisMs[i], ms, smoothing);
         }
     }
 
     static void ImVisUpdate()
     {
-        ImGui::SetNextWindowSize({ 400, 400 }, ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize({ 300, 650 }, ImGuiCond_FirstUseEver);
         ImGui::Begin("Systems");
 
-        for(u32 phase = 0; phase < CountOf(PhaseNames); ++phase)
+        ImGui::SliderFloat("Smoothing", &ms_timeSmooth, 1.0f, 240.0f, "%05.2f frames", 3.0f);
+
+        u32 order[MaxA(PhaseSubsystemCounts, LEN(PhaseNames))];
+
+        for(u32 phase = 0; phase < LEN(PhaseNames); ++phase)
         {
-            let name        = PhaseNames[phase];
-            let subTics     = PhaseSubsystemTics[phase];
+            let subMs       = PhaseSubsystemMs[phase];
             let subNames    = PhaseSubsystemNames[phase];
             let subCount    = PhaseSubsystemCounts[phase];
+            let sum         = Sum(subMs, subCount);
+            let inv         = 100.0 / sum;
 
-            if(ImGui::CollapsingHeader(name))
+            IndexFill(order, subCount);
+            Sort(order, subCount, [&](u32 a, u32 b) -> i32
             {
-                f32 sum = 0.0f;
-                for(u32 i = 0; i < subCount; ++i)
+                let msA = subMs[a];
+                let msB = subMs[b];
+                if(msA == msB)
                 {
-                    sum += stm_ms(subTics[i]);
+                    return 0;
                 }
-                let inv = 100.0f / sum;
+                return (msA > msB) ? -1 : 1;
+            });
 
-                ImGui::Text("Total: %gms", sum);
+            char hdr[64];
+            Format(hdr, "%s: %05.2fms", PhaseNames[phase], sum);
 
+            if(ImGui::CollapsingHeader(hdr, ImGuiTreeNodeFlags_DefaultOpen))
+            {
                 ImGui::Columns(3);
                 ImGui::Text("Name");    ImGui::NextColumn();
                 ImGui::Text("ms");      ImGui::NextColumn();
                 ImGui::Text("%%");      ImGui::NextColumn();
-
+                ImGui::Separator();
                 for(u32 i = 0; i < subCount; ++i)
                 {
-                    let ms = stm_ms(subTics[i]);
-                    ImGui::Text("%s", subNames[i]); ImGui::NextColumn();
-                    ImGui::Text("%g", ms);          ImGui::NextColumn();
-                    ImGui::Text("%g", ms * inv);    ImGui::NextColumn();
+                    let ind = order[i];
+                    ImGui::Text("%-12s",  subNames[ind]);     ImGui::NextColumn();
+                    ImGui::Text("%05.2f", subMs[ind]);        ImGui::NextColumn();
+                    ImGui::Text("%05.2f", subMs[ind] * inv);  ImGui::NextColumn();
                 }
                 ImGui::Columns();
             }

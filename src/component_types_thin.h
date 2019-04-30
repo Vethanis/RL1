@@ -1,6 +1,7 @@
 #pragma once
 
 #include "lang.h"
+#include "slice.h"
 
 struct Entity
 {
